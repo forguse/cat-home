@@ -1,8 +1,102 @@
-"""Derive the native cast's compact pose, target and trigger table from the design."""
-
-from pathlib import Path
+"""Derive the native cast's compact rules from the design and authored effects."""
 
 from export_characters import HERE, PROFILES, load_tsv, resident_rows
+
+
+# Location fixes for rules whose prose names an activity but omits the plot's type.
+PLOT_TARGETS = {
+    "H01-04": "flower",
+    "H01-05": "flower",
+    "H01-06": "flower",
+    "H01-08": "tree",
+    "H01-09": "tree",
+    "H01-10": "tree",
+    "H01-17": "crop",
+    "H01-18": "crop",
+    "H02-02": "garden",
+    "H02-04": "flower",
+    "H02-06": "flower",
+    "H06-04": "crop",
+    "H08-04": "pond",
+    "A11-08": "flower",
+    "A12-01": "crop",
+    "A12-03": "crop",
+    "A14-02": "flower",
+    "A17-04": "flower",
+    "A17-10": "flower",
+}
+
+
+def numbered_effects():
+    """Bind each designed action ID to its world effect, independent of row order."""
+    profiles = {
+        "H01": """
+            Sow Survey TendPlant TendPlant TendPlant Harvest TendPlant TendPlant TendPlant TendPlant
+            SeedTrade Survey TendPlant TendPlant TendPlant Survey Harvest TendPlant Build Build
+            Build Build Build Shelter Repair Drain Tidy Repair Survey Forage
+            Repair Repair Water Drain Repair Sow Food Water Shelter Tidy
+            Tidy Shelter Food Trail Survey Build Food Deliver Tidy Tidy
+            Tidy Shelter Rest Tidy Survey Survey Survey Survey Lamp Rest
+        """,
+        "H02": "Survey TendPlant TendPlant TendPlant Shelter Sow SeedTrade TendPlant Sow Shelter",
+        "H03": "Build Build Build Build Build Repair Repair Repair Repair Tidy",
+        "H04": "Lamp Lamp Tidy Shelter Survey Trail Tidy Tidy Deliver Shelter",
+        "H05": "Forecast Forecast Forecast Forecast Forecast Survey Forecast Survey Forecast Forecast",
+        "H06": "Food Food Food Harvest Tidy Harvest Food Food Survey Tidy",
+        "H07": "Deliver Deliver Deliver Deliver Deliver Deliver Deliver Deliver Survey Deliver",
+        "H08": "Drain Water Water Drain Drain Drain Drain Drain Water Drain",
+        "H09": "Art Art Art Art Art Art Art Art Art Art",
+        "H10": "SeedTrade SeedTrade SeedTrade SeedTrade SeedTrade SeedTrade SeedTrade SeedTrade SeedTrade SeedTrade",
+        "A01": """
+            Signal Forage Tidy Rest Forage Forage Rest Rest Rest Rest
+            Rest Bond Trail Trail Trail Survey MoveObject Trail Survey Survey
+            Rest MoveObject Survey Rest Survey Forage MoveObject Trail Survey Rest
+            Survey Rest Trail MoveObject Trail Survey Bond Bond Trail Rest
+            Survey Survey Bond Bond Survey Bond Trail Signal Trail Shelter
+            Tidy Survey Survey MoveObject Signal Survey Signal Rest Bond Survey
+        """,
+        "A02": "Trail Trail MoveObject Trail Trail Bond Tidy Bond Signal MoveObject",
+        "A03": "Trail Rest MoveObject Bond Rest Rest MoveObject Bond Trail MoveObject",
+        "A04": "Sow Tidy Water Signal Nest Forage Forage Tidy MoveObject Signal",
+        "A05": "Sow Forage Survey Forage Signal Bond Trail MoveObject MoveObject Nest",
+        "A06": "Forage Nest Rest MoveObject Tidy Trail Tidy Tidy Nest Water",
+        "A07": "Forage Forage Drain Trail Nest Forage TendPlant Bond Survey MoveObject",
+        "A08": "Water Forage Signal Nest Trail MoveObject Signal Shelter Sow Bond",
+        "A09": "Nest Nest Forage Trail Nest Nest Bond Survey Forage Nest",
+        "A10": "Trail Water Water Tidy MoveObject Trail Survey MoveObject Rest Signal",
+        "A11": "Trail Forage Forage Shelter Shelter Trail Shelter Pollinate Survey Trail",
+        "A12": "TendPlant Nest TendPlant Nest Trail Shelter Water Rest Shelter Forage",
+        "A13": "Signal Signal Signal Trail Trail Nest Forage Nest Signal Rest",
+        "A14": "Pollinate Pollinate Signal Water Nest Nest Survey Shelter Trail Bond",
+        "A15": "Nest Forage Forage Forage Signal MoveObject MoveObject Forage Signal Signal",
+        "A16": "Forage Nest Nest Signal Shelter Nest Forage Tidy Bond Signal",
+        "A17": "Rest Water Shelter Pollinate Bond Nest Forage Nest Trail Pollinate",
+        "A18": "Rest Signal Forage Trail Nest Tidy Water Survey Tidy Shelter",
+        "A19": "Trail Nest Nest Forage Tidy Water Trail Shelter Rest Nest",
+        "A20": "Forage Forage Water Bond Nest Nest Nest Trail Shelter Bond",
+    }
+    shared = """
+        Trail Rest Bond Shelter Trail Trail Trail Trail Tidy Trail Water Signal
+        Survey Trail Trail Trail Bond Survey Trail Tidy Trail Signal Trail Bond
+    """
+    effects = {
+        f"{role}-{index:02}": effect
+        for role, entries in profiles.items()
+        for index, effect in enumerate(entries.split(), start=1)
+    }
+    effects.update({f"S{index:02}": effect for index, effect in enumerate(shared.split(), start=1)})
+    return effects
+
+
+def effect_prop(effect, prop, role):
+    if effect in {"Sow", "Pollinate", "Art", "Deliver", "Forecast", "SeedTrade"}:
+        return {
+            "Sow": "seed", "Pollinate": "flower", "Art": "book",
+            "Deliver": "note", "Forecast": "book", "SeedTrade": "seed",
+        }[effect]
+    if role.startswith("A") and prop == "tool":
+        return "leaf"
+    return prop
 
 
 def match(text, *rules, default):
@@ -104,6 +198,8 @@ def main():
         rows += load_tsv(filename, 8)
     shared = load_tsv("character-shared.tsv", 6)
     lines = ["\t".join(("@" + code, label, tags)) for code, label, tags, _ in profiles]
+    effects = numbered_effects()
+    assert effects.keys() == {row[0] for row in rows + shared}
     for row in rows + shared:
         if len(row) == 8:
             code, role, _, _, name, when, detail, _ = row
@@ -115,9 +211,13 @@ def main():
             "-",
         )
         gate = trigger(when, name)
-        site = target(name, detail, gate)
+        site = PLOT_TARGETS.get(code, target(name, detail, gate))
         motion, prop = pose(name, detail)
-        lines.append("\t".join((code, gate, site, motion, prop, partner)))
+        effect = effects[code]
+        prop = effect_prop(effect, prop, role)
+        if code == "H02-03":
+            prop = "leaf"
+        lines.append("\t".join((code, gate, site, motion, prop, partner, effect)))
     assert len(lines) == 30 + 424
     (HERE / "cast-rules.tsv").write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
 

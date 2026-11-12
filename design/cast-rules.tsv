@@ -28,427 +28,427 @@
 @A18	蜥蜴	visitor ground small
 @A19	田鼠	visitor ground small night plant
 @A20	白鸽	visitor flight social
-H01-01	seed	flower	bob	seed	-
-H01-02	seed	path	bob	book	-
-H01-03	sprout	garden	still	leaf	-
-H01-04	growing	path	bob	spark	-
-H01-05	any	path	bob	spark	-
-H01-06	harvest	path	bob	spark	-
-H01-07	sprout	tree	bob	spark	-
-H01-08	any	path	still	wood	-
-H01-09	growing	path	bob	spark	-
-H01-10	autumn	path	bob	leaf	-
-H01-11	harvest	path	bob	spark	-
-H01-12	winter	tree	still	spark	-
-H01-13	harvest	crop	bob	spark	-
-H01-14	growing	garden	still	spark	-
-H01-15	budding	crop	bob	wood	-
-H01-16	budding	crop	bob	spark	-
-H01-17	harvest	path	still	spark	-
-H01-18	harvest	path	bob	spark	-
-H01-19	any	build	patrol	spark	-
-H01-20	build	path	patrol	wood	-
-H01-21	any	build	bob	tool	-
-H01-22	frame	pond	bob	spark	-
-H01-23	frame	build	bob	tool	-
-H01-24	build	build	still	wood	-
-H01-25	any	fence	bob	wood	-
-H01-26	wet	path	bob	spark	-
-H01-27	any	path	bob	tool	-
-H01-28	any	path	still	paw	-
-H01-29	any	pond	still	food	-
-H01-30	fish	path	still	food	-
-H01-31	storm	damage	still	spark	-
-H01-32	frost	damage	bob	leaf	-
-H01-33	any	path	bob	water	-
-H01-34	flood	damage	patrol	spark	-
-H01-35	storm	damage	bob	spark	-
-H01-36	any	garden	bob	seed	-
-H01-37	eat	pantry	still	food	-
-H01-38	water	water	bob	water	-
-H01-39	wet	mat	still	spark	-
-H01-40	any	mat	still	spark	-
-H01-41	any	pantry	still	food	A01
-H01-42	sleep	path	bob	spark	-
-H01-43	any	path	still	food	-
-H01-44	any	fence	still	spark	A07
-H01-45	damage	damage	still	spark	H02
-H01-46	build	build	still	book	H03
-H01-47	eat	pantry	still	food	-
-H01-48	any	mailbox	still	note	-
-H01-49	any	path	still	paw	-
-H01-50	any	pantry	still	spark	-
-H01-51	build	build	still	tool	-
-H01-52	rain	path	still	rain	-
-H01-53	rest	porch	still	spark	-
-H01-54	any	porch	still	rain	-
-H01-55	mature	flower	bob	book	-
-H01-56	build	build	still	spark	-
-H01-57	harvest	path	still	spark	-
-H01-58	any	path	still	wood	-
-H01-59	finished	build	bob	spark	-
-H01-60	night	porch	still	spark	-
-A01-01	eat	pantry	tilt	food	-
-A01-02	eat	pantry	tilt	food	-
-A01-03	any	water	bob	leaf	-
-A01-04	water	path	still	water	-
-A01-05	treat	mat	bob	food	-
-A01-06	fish	pond	tilt	food	-
-A01-07	sleep	path	still	paw	-
-A01-08	nap	mat	nap	star	-
-A01-09	any	path	still	spark	-
-A01-10	night	porch	still	spark	-
-A01-11	night	path	still	spark	-
-A01-12	fish	pond	still	spark	-
-A01-13	any	path	bob	food	-
-A01-14	any	path	patrol	spark	-
-A01-15	any	porch	still	spark	-
-A01-16	any	fence	tilt	spark	-
-A01-17	any	path	bob	stone	-
-A01-18	expanded	path	still	spark	-
-A01-19	any	build	patrol	wood	-
-A01-20	finished	build	hop	spark	-
-A01-21	finished	path	still	spark	-
-A01-22	any	build	still	wood	-
-A01-23	damage	damage	tilt	wood	-
-A01-24	finished	build	bob	spark	-
-A01-25	mature	flower	tilt	flower	-
-A01-26	any	path	hop	star	A17
-A01-27	any	flower	hop	flower	-
-A01-28	day	path	tilt	spark	-
-A01-29	any	tree	still	spark	A04
-A01-30	mature	tree	still	spark	-
-A01-31	any	crop	still	spark	-
-A01-32	any	crop	still	spark	-
-A01-33	any	crop	patrol	food	-
-A01-34	any	path	bob	spark	-
-A01-35	any	garden	patrol	paw	-
-A01-36	harvest	path	tilt	spark	-
-A01-37	any	path	bob	spark	-
-A01-38	any	pantry	still	heart	-
-A01-39	rain	path	patrol	rain	-
-A01-40	any	mat	still	spark	-
-A01-41	any	path	patrol	book	H09
-A01-42	any	mailbox	tilt	note	-
-A01-43	any	path	still	heart	A02
-A01-44	dusk	mat	bob	spark	A03
-A01-45	any	path	still	spark	A05
-A01-46	any	path	still	heart	A06
-A01-47	any	path	hop	spark	A07
-A01-48	wet	path	still	puddle	A08
-A01-49	snow	path	bob	spark	-
-A01-50	rain	porch	still	rain	-
-A01-51	wet	lamp	still	lamp	-
-A01-52	any	garden	tilt	spark	-
-A01-53	flood	damage	still	spark	-
-A01-54	any	porch	bob	spark	-
-A01-55	knock	path	tilt	spark	-
-A01-56	water	water	still	water	-
-A01-57	lamp	path	still	spark	-
-A01-58	any	path	still	spark	-
-A01-59	any	path	bob	heart	-
-A01-60	expanded	path	patrol	spark	-
-H02-01	any	path	tilt	spark	-
-H02-02	growing	path	still	spark	-
-H02-03	day	tree	bob	food	-
-H02-04	harvest	path	still	spark	-
-H02-05	any	garden	still	mist	-
-H02-06	harvest	path	still	spark	-
-H02-07	mature	path	bob	seed	-
-H02-08	autumn	tree	bob	leaf	-
-H02-09	budding	tree	still	spark	-
-H02-10	frost	damage	bob	spark	-
-H03-01	any	build	still	tool	-
-H03-02	frame	path	still	crumb	-
-H03-03	any	path	bob	wood	-
-H03-04	rain	path	still	wood	-
-H03-05	finished	build	bob	spark	-
-H03-06	frame	path	bob	spark	-
-H03-07	storm	damage	still	spark	-
-H03-08	any	path	bob	spark	-
-H03-09	any	path	bob	tool	-
-H03-10	finished	path	still	spark	-
-H04-01	any	path	patrol	spark	-
-H04-02	lamp	lamp	bob	lamp	-
-H04-03	any	path	bob	spark	-
-H04-04	any	path	still	spark	-
-H04-05	night	path	bob	book	-
-H04-06	wet	path	patrol	stone	-
-H04-07	any	path	bob	bell	-
-H04-08	damage	damage	still	water	-
-H04-09	any	path	patrol	spark	-
-H04-10	night	mat	still	spark	-
-H05-01	rain	path	still	puddle	-
-H05-02	any	path	tilt	spark	-
-H05-03	any	path	still	spark	-
-H05-04	any	path	still	spark	-
-H05-05	dawn	path	still	spark	-
-H05-06	day	path	still	spark	H02
-H05-07	rain	pond	still	puddle	-
-H05-08	any	path	still	spark	-
-H05-09	flood	damage	bob	spark	-
-H05-10	any	path	still	spark	-
-H06-01	any	path	still	food	-
-H06-02	dawn	path	still	crumb	-
-H06-03	any	pantry	still	food	-
-H06-04	harvest	path	still	spark	-
-H06-05	eat	pantry	bob	spark	-
-H06-06	harvest	crop	still	food	-
-H06-07	any	path	bob	spark	-
-H06-08	wet	pantry	bob	food	-
-H06-09	any	pantry	still	food	-
-H06-10	any	path	still	food	-
-H07-01	dawn	mailbox	still	note	-
-H07-02	any	flower	still	tool	-
-H07-03	any	path	still	spark	-
-H07-04	rain	path	bob	spark	-
-H07-05	any	path	still	spark	-
-H07-06	any	path	still	spark	-
-H07-07	any	path	still	leaf	-
-H07-08	any	build	still	tool	-
-H07-09	any	path	bob	spark	-
-H07-10	any	path	bob	spark	-
-H08-01	any	path	still	puddle	-
-H08-02	any	path	still	wood	-
-H08-03	rain	porch	still	puddle	-
-H08-04	any	path	still	puddle	-
-H08-05	any	path	still	spark	-
-H08-06	any	path	still	puddle	-
-H08-07	flood	damage	still	spark	-
-H08-08	frost	damage	still	spark	-
-H08-09	water	water	bob	water	-
-H08-10	any	path	still	spark	-
-H09-01	mature	flower	bob	book	-
-H09-02	rain	path	bob	book	-
-H09-03	dusk	path	bob	spark	-
-H09-04	any	path	tilt	stone	-
-H09-05	day	path	still	star	-
-H09-06	any	pond	still	book	-
-H09-07	harvest	path	bob	leaf	-
-H09-08	damage	damage	still	tool	-
-H09-09	seed	garden	still	tool	-
-H09-10	any	porch	still	spark	-
-H10-01	any	path	still	spark	-
-H10-02	harvest	path	still	food	-
-H10-03	harvest	path	still	spark	H02
-H10-04	any	garden	still	seed	-
-H10-05	any	garden	still	seed	-
-H10-06	expanded	mailbox	bob	spark	-
-H10-07	any	path	still	spark	-
-H10-08	any	path	still	spark	-
-H10-09	any	path	still	spark	H02
-H10-10	any	path	bob	spark	-
-A02-01	expanded	path	still	paw	-
-A02-02	any	path	bob	paw	-
-A02-03	any	fence	still	stone	-
-A02-04	any	path	still	spark	-
-A02-05	wet	path	patrol	puddle	A01
-A02-06	harvest	path	patrol	food	A07
-A02-07	any	path	patrol	leaf	-
-A02-08	any	path	patrol	spark	-
-A02-09	storm	damage	patrol	wood	-
-A02-10	autumn	path	still	leaf	-
-A03-01	night	lamp	patrol	lamp	-
-A03-02	lamp	lamp	patrol	lamp	-
-A03-03	lamp	lamp	still	lamp	-
-A03-04	lamp	path	still	spark	A06
-A03-05	night	lamp	nap	lamp	-
-A03-06	food	pantry	still	food	A05
-A03-07	damage	damage	bob	spark	-
-A03-08	any	porch	still	heart	A01
-A03-09	wet	path	bob	rain	A11
-A03-10	night	path	patrol	spark	-
-A04-01	seed	flower	bob	seed	-
-A04-02	any	tree	bob	wood	-
-A04-03	day	water	hop	water	-
-A04-04	any	porch	still	spark	-
-A04-05	any	porch	bob	feather	A09
-A04-06	mature	path	bob	spark	-
-A04-07	any	path	bob	spark	-
-A04-08	snow	path	hop	spark	-
-A04-09	any	fence	hop	wood	A05
-A04-10	dawn	sky	patrol	note	-
-A05-01	mature	tree	still	seed	-
-A05-02	dawn	tree	bob	seed	-
-A05-03	any	tree	bob	seed	-
-A05-04	any	fence	still	seed	-
-A05-05	storm	damage	hop	wood	-
-A05-06	any	fence	bob	wood	A02
-A05-07	mature	tree	hop	spark	-
-A05-08	any	path	still	tool	-
-A05-09	any	build	patrol	seed	-
-A05-10	any	tree	patrol	seed	-
-A06-01	night	fence	bob	wood	-
-A06-02	autumn	path	patrol	leaf	-
-A06-03	any	porch	nap	spark	-
-A06-04	night	path	still	spark	-
-A06-05	any	path	still	spark	-
-A06-06	night	path	patrol	spark	A11
-A06-07	food	pantry	still	leaf	-
-A06-08	any	tree	still	leaf	-
-A06-09	night	path	still	spark	-
-A06-10	any	pond	still	spark	-
-A07-01	sprout	crop	still	spark	-
-A07-02	harvest	crop	patrol	leaf	-
-A07-03	wet	path	still	spark	-
-A07-04	any	path	bob	leaf	-
-A07-05	any	path	patrol	spark	-
-A07-06	mature	tree	hop	food	-
-A07-07	mature	crop	still	crumb	-
-A07-08	any	path	hop	spark	-
-A07-09	rain	garden	hop	spark	-
-A07-10	harvest	crop	bob	food	-
-A08-01	wet	path	hop	puddle	-
-A08-02	any	pond	hop	butterfly	-
-A08-03	night	path	still	note	-
-A08-04	any	path	still	spark	-
-A08-05	any	pond	hop	puddle	-
-A08-06	day	path	still	spark	-
-A08-07	any	pond	hop	puddle	-
-A08-08	frost	damage	hop	stone	-
-A08-09	any	garden	still	seed	-
-A08-10	any	path	bob	spark	A10
-A09-01	wet	pond	hop	spark	-
-A09-02	storm	damage	patrol	spark	-
-A09-03	any	garden	still	butterfly	-
-A09-04	any	sky	hop	spark	A01
-A09-05	wet	porch	bob	wood	-
-A09-06	any	sky	hop	spark	-
-A09-07	autumn	path	still	spark	-
-A09-08	spring	path	patrol	spark	-
-A09-09	any	pond	hop	puddle	A10
-A09-10	any	sky	still	spark	-
-A10-01	wet	path	still	paw	-
-A10-02	growing	garden	bob	water	-
-A10-03	any	path	still	spark	-
-A10-04	any	path	bob	spark	-
-A10-05	harvest	crop	bob	leaf	-
-A10-06	any	pond	patrol	spark	-
-A10-07	any	path	hop	spark	-
-A10-08	wet	path	patrol	wood	-
-A10-09	any	path	bob	feather	-
-A10-10	flood	damage	still	puddle	-
-A11-01	wet	path	still	mist	-
-A11-02	any	path	still	leaf	-
-A11-03	mature	garden	bob	spark	-
-A11-04	any	path	still	puddle	-
-A11-05	drought	damage	still	mist	-
-A11-06	finished	build	patrol	mist	-
-A11-07	wet	path	still	wood	-
-A11-08	wet	path	still	spark	-
-A11-09	any	path	still	spark	A06
-A11-10	growing	path	still	leaf	-
-A12-01	growing	path	still	spark	-
-A12-02	any	path	still	spark	-
-A12-03	any	path	still	tool	-
-A12-04	any	path	still	spark	-
-A12-05	any	path	still	spark	-
-A12-06	any	path	bob	spark	-
-A12-07	dawn	path	still	spark	-
-A12-08	day	path	still	spark	-
-A12-09	snow	path	still	leaf	-
-A12-10	any	flower	still	flower	-
-A13-01	any	path	bob	spark	-
-A13-02	any	path	still	spark	-
-A13-03	any	path	still	spark	-
-A13-04	any	porch	patrol	mist	-
-A13-05	rain	path	still	spark	-
-A13-06	any	path	still	spark	-
-A13-07	night	path	patrol	spark	A11
-A13-08	any	path	still	spark	-
-A13-09	any	path	still	spark	-
-A13-10	any	path	still	spark	-
-A14-01	mature	flower	bob	flower	-
-A14-02	any	path	still	butterfly	-
-A14-03	any	path	patrol	spark	-
-A14-04	any	water	still	paw	-
-A14-05	any	path	bob	butterfly	-
-A14-06	day	path	still	spark	-
-A14-07	any	path	still	butterfly	-
-A14-08	any	flower	hop	flower	-
-A14-09	any	path	still	butterfly	-
-A14-10	any	tree	patrol	spark	-
-A15-01	any	tree	still	seed	-
-A15-02	any	path	still	food	-
-A15-03	any	path	bob	spark	-
-A15-04	any	path	still	spark	-
-A15-05	any	tree	still	spark	-
-A15-06	damage	damage	bob	paw	-
-A15-07	any	tree	still	spark	-
-A15-08	any	path	hop	food	-
-A15-09	dusk	path	still	spark	-
-A15-10	any	path	bob	spark	-
-A16-01	any	path	bob	spark	-
-A16-02	any	tree	bob	seed	-
-A16-03	spring	path	bob	spark	-
-A16-04	any	tree	still	spark	-
-A16-05	any	path	still	feather	-
-A16-06	autumn	garden	bob	seed	-
-A16-07	any	sky	bob	spark	-
-A16-08	any	fence	patrol	wood	-
-A16-09	any	tree	hop	spark	-
-A16-10	growing	path	hop	spark	-
-A17-01	any	path	still	butterfly	-
-A17-02	wet	path	still	butterfly	-
-A17-03	any	path	nap	leaf	-
-A17-04	any	path	still	butterfly	-
-A17-05	any	flower	patrol	flower	-
-A17-06	any	path	still	butterfly	-
-A17-07	any	path	patrol	spark	-
-A17-08	any	path	still	spark	-
-A17-09	mature	path	still	spark	-
-A17-10	mature	path	still	butterfly	-
-A18-01	day	path	bob	spark	-
-A18-02	any	path	still	star	-
-A18-03	any	path	still	spark	-
-A18-04	day	path	still	spark	-
-A18-05	any	path	bob	spark	-
-A18-06	any	path	still	spark	-
-A18-07	water	path	still	water	-
-A18-08	any	path	still	spark	-
-A18-09	any	path	still	spark	-
-A18-10	any	path	still	spark	-
-A19-01	any	path	still	paw	-
-A19-02	any	path	patrol	leaf	-
-A19-03	wet	path	bob	spark	-
-A19-04	any	path	bob	spark	-
-A19-05	any	path	bob	spark	-
-A19-06	wet	path	still	spark	-
-A19-07	any	path	patrol	spark	-
-A19-08	any	path	still	spark	-
-A19-09	any	path	still	spark	-
-A19-10	any	path	patrol	spark	-
-A20-01	dawn	path	tilt	spark	-
-A20-02	any	path	still	spark	-
-A20-03	any	path	still	spark	-
-A20-04	any	path	bob	spark	-
-A20-05	any	path	bob	food	-
-A20-06	any	path	still	spark	-
-A20-07	any	path	tilt	spark	-
-A20-08	any	porch	patrol	spark	-
-A20-09	any	path	still	spark	-
-A20-10	dawn	sky	hop	spark	-
-S01	any	path	still	spark	-
-S02	any	path	still	spark	-
-S03	any	path	still	spark	-
-S04	rain	path	still	spark	-
-S05	any	path	patrol	spark	-
-S06	lamp	path	still	star	-
-S07	any	path	still	leaf	-
-S08	wet	path	still	paw	-
-S09	any	path	bob	spark	-
-S10	any	path	bob	spark	-
-S11	rain	path	still	water	-
-S12	any	path	still	mist	-
-S13	any	path	patrol	spark	-
-S14	any	path	still	food	-
-S15	any	path	hop	spark	-
-S16	any	path	still	paw	-
-S17	any	path	still	spark	-
-S18	finished	path	bob	paw	-
-S19	any	path	patrol	spark	-
-S20	any	path	patrol	spark	-
-S21	any	path	still	spark	-
-S22	any	path	still	bell	-
-S23	any	water	patrol	puddle	-
-S24	any	path	bob	spark	-
+H01-01	seed	flower	bob	seed	-	Sow
+H01-02	seed	path	bob	book	-	Survey
+H01-03	sprout	garden	still	leaf	-	TendPlant
+H01-04	growing	flower	bob	spark	-	TendPlant
+H01-05	any	flower	bob	spark	-	TendPlant
+H01-06	harvest	flower	bob	spark	-	Harvest
+H01-07	sprout	tree	bob	spark	-	TendPlant
+H01-08	any	tree	still	wood	-	TendPlant
+H01-09	growing	tree	bob	spark	-	TendPlant
+H01-10	autumn	tree	bob	leaf	-	TendPlant
+H01-11	harvest	path	bob	seed	-	SeedTrade
+H01-12	winter	tree	still	spark	-	Survey
+H01-13	harvest	crop	bob	spark	-	TendPlant
+H01-14	growing	garden	still	spark	-	TendPlant
+H01-15	budding	crop	bob	wood	-	TendPlant
+H01-16	budding	crop	bob	spark	-	Survey
+H01-17	harvest	crop	still	spark	-	Harvest
+H01-18	harvest	crop	bob	spark	-	TendPlant
+H01-19	any	build	patrol	spark	-	Build
+H01-20	build	path	patrol	wood	-	Build
+H01-21	any	build	bob	tool	-	Build
+H01-22	frame	pond	bob	spark	-	Build
+H01-23	frame	build	bob	tool	-	Build
+H01-24	build	build	still	wood	-	Shelter
+H01-25	any	fence	bob	wood	-	Repair
+H01-26	wet	path	bob	spark	-	Drain
+H01-27	any	path	bob	tool	-	Tidy
+H01-28	any	path	still	paw	-	Repair
+H01-29	any	pond	still	food	-	Survey
+H01-30	fish	path	still	food	-	Forage
+H01-31	storm	damage	still	spark	-	Repair
+H01-32	frost	damage	bob	leaf	-	Repair
+H01-33	any	path	bob	water	-	Water
+H01-34	flood	damage	patrol	spark	-	Drain
+H01-35	storm	damage	bob	spark	-	Repair
+H01-36	any	garden	bob	seed	-	Sow
+H01-37	eat	pantry	still	food	-	Food
+H01-38	water	water	bob	water	-	Water
+H01-39	wet	mat	still	spark	-	Shelter
+H01-40	any	mat	still	spark	-	Tidy
+H01-41	any	pantry	still	food	A01	Tidy
+H01-42	sleep	path	bob	spark	-	Shelter
+H01-43	any	path	still	food	-	Food
+H01-44	any	fence	still	spark	A07	Trail
+H01-45	damage	damage	still	spark	H02	Survey
+H01-46	build	build	still	book	H03	Build
+H01-47	eat	pantry	still	food	-	Food
+H01-48	any	mailbox	still	note	-	Deliver
+H01-49	any	path	still	paw	-	Tidy
+H01-50	any	pantry	still	spark	-	Tidy
+H01-51	build	build	still	tool	-	Tidy
+H01-52	rain	path	still	rain	-	Shelter
+H01-53	rest	porch	still	spark	-	Rest
+H01-54	any	porch	still	rain	-	Tidy
+H01-55	mature	flower	bob	book	-	Survey
+H01-56	build	build	still	spark	-	Survey
+H01-57	harvest	path	still	spark	-	Survey
+H01-58	any	path	still	wood	-	Survey
+H01-59	finished	build	bob	spark	-	Lamp
+H01-60	night	porch	still	spark	-	Rest
+A01-01	eat	pantry	tilt	food	-	Signal
+A01-02	eat	pantry	tilt	food	-	Forage
+A01-03	any	water	bob	leaf	-	Tidy
+A01-04	water	path	still	water	-	Rest
+A01-05	treat	mat	bob	food	-	Forage
+A01-06	fish	pond	tilt	food	-	Forage
+A01-07	sleep	path	still	paw	-	Rest
+A01-08	nap	mat	nap	star	-	Rest
+A01-09	any	path	still	spark	-	Rest
+A01-10	night	porch	still	spark	-	Rest
+A01-11	night	path	still	spark	-	Rest
+A01-12	fish	pond	still	spark	-	Bond
+A01-13	any	path	bob	food	-	Trail
+A01-14	any	path	patrol	spark	-	Trail
+A01-15	any	porch	still	spark	-	Trail
+A01-16	any	fence	tilt	spark	-	Survey
+A01-17	any	path	bob	stone	-	MoveObject
+A01-18	expanded	path	still	spark	-	Trail
+A01-19	any	build	patrol	wood	-	Survey
+A01-20	finished	build	hop	spark	-	Survey
+A01-21	finished	path	still	spark	-	Rest
+A01-22	any	build	still	wood	-	MoveObject
+A01-23	damage	damage	tilt	wood	-	Survey
+A01-24	finished	build	bob	spark	-	Rest
+A01-25	mature	flower	tilt	flower	-	Survey
+A01-26	any	path	hop	star	A17	Forage
+A01-27	any	flower	hop	flower	-	MoveObject
+A01-28	day	path	tilt	spark	-	Trail
+A01-29	any	tree	still	spark	A04	Survey
+A01-30	mature	tree	still	spark	-	Rest
+A01-31	any	crop	still	spark	-	Survey
+A01-32	any	crop	still	spark	-	Rest
+A01-33	any	crop	patrol	food	-	Trail
+A01-34	any	path	bob	spark	-	MoveObject
+A01-35	any	garden	patrol	paw	-	Trail
+A01-36	harvest	path	tilt	spark	-	Survey
+A01-37	any	path	bob	spark	-	Bond
+A01-38	any	pantry	still	heart	-	Bond
+A01-39	rain	path	patrol	rain	-	Trail
+A01-40	any	mat	still	spark	-	Rest
+A01-41	any	path	patrol	book	H09	Survey
+A01-42	any	mailbox	tilt	note	-	Survey
+A01-43	any	path	still	heart	A02	Bond
+A01-44	dusk	mat	bob	spark	A03	Bond
+A01-45	any	path	still	spark	A05	Survey
+A01-46	any	path	still	heart	A06	Bond
+A01-47	any	path	hop	spark	A07	Trail
+A01-48	wet	path	still	puddle	A08	Signal
+A01-49	snow	path	bob	spark	-	Trail
+A01-50	rain	porch	still	rain	-	Shelter
+A01-51	wet	lamp	still	lamp	-	Tidy
+A01-52	any	garden	tilt	spark	-	Survey
+A01-53	flood	damage	still	spark	-	Survey
+A01-54	any	porch	bob	spark	-	MoveObject
+A01-55	knock	path	tilt	spark	-	Signal
+A01-56	water	water	still	water	-	Survey
+A01-57	lamp	path	still	spark	-	Signal
+A01-58	any	path	still	spark	-	Rest
+A01-59	any	path	bob	heart	-	Bond
+A01-60	expanded	path	patrol	spark	-	Survey
+H02-01	any	path	tilt	spark	-	Survey
+H02-02	growing	garden	still	spark	-	TendPlant
+H02-03	day	tree	bob	leaf	-	TendPlant
+H02-04	harvest	flower	still	spark	-	TendPlant
+H02-05	any	garden	still	mist	-	Shelter
+H02-06	harvest	flower	still	seed	-	Sow
+H02-07	mature	path	bob	seed	-	SeedTrade
+H02-08	autumn	tree	bob	leaf	-	TendPlant
+H02-09	budding	tree	still	seed	-	Sow
+H02-10	frost	damage	bob	spark	-	Shelter
+H03-01	any	build	still	tool	-	Build
+H03-02	frame	path	still	crumb	-	Build
+H03-03	any	path	bob	wood	-	Build
+H03-04	rain	path	still	wood	-	Build
+H03-05	finished	build	bob	spark	-	Build
+H03-06	frame	path	bob	spark	-	Repair
+H03-07	storm	damage	still	spark	-	Repair
+H03-08	any	path	bob	spark	-	Repair
+H03-09	any	path	bob	tool	-	Repair
+H03-10	finished	path	still	spark	-	Tidy
+H04-01	any	path	patrol	spark	-	Lamp
+H04-02	lamp	lamp	bob	lamp	-	Lamp
+H04-03	any	path	bob	spark	-	Tidy
+H04-04	any	path	still	spark	-	Shelter
+H04-05	night	path	bob	book	-	Survey
+H04-06	wet	path	patrol	stone	-	Trail
+H04-07	any	path	bob	bell	-	Tidy
+H04-08	damage	damage	still	water	-	Tidy
+H04-09	any	path	patrol	note	-	Deliver
+H04-10	night	mat	still	spark	-	Shelter
+H05-01	rain	path	still	book	-	Forecast
+H05-02	any	path	tilt	book	-	Forecast
+H05-03	any	path	still	book	-	Forecast
+H05-04	any	path	still	book	-	Forecast
+H05-05	dawn	path	still	book	-	Forecast
+H05-06	day	path	still	spark	H02	Survey
+H05-07	rain	pond	still	book	-	Forecast
+H05-08	any	path	still	spark	-	Survey
+H05-09	flood	damage	bob	book	-	Forecast
+H05-10	any	path	still	book	-	Forecast
+H06-01	any	path	still	food	-	Food
+H06-02	dawn	path	still	crumb	-	Food
+H06-03	any	pantry	still	food	-	Food
+H06-04	harvest	crop	still	spark	-	Harvest
+H06-05	eat	pantry	bob	spark	-	Tidy
+H06-06	harvest	crop	still	food	-	Harvest
+H06-07	any	path	bob	spark	-	Food
+H06-08	wet	pantry	bob	food	-	Food
+H06-09	any	pantry	still	food	-	Survey
+H06-10	any	path	still	food	-	Tidy
+H07-01	dawn	mailbox	still	note	-	Deliver
+H07-02	any	flower	still	note	-	Deliver
+H07-03	any	path	still	note	-	Deliver
+H07-04	rain	path	bob	note	-	Deliver
+H07-05	any	path	still	note	-	Deliver
+H07-06	any	path	still	note	-	Deliver
+H07-07	any	path	still	note	-	Deliver
+H07-08	any	build	still	note	-	Deliver
+H07-09	any	path	bob	spark	-	Survey
+H07-10	any	path	bob	note	-	Deliver
+H08-01	any	path	still	puddle	-	Drain
+H08-02	any	path	still	wood	-	Water
+H08-03	rain	porch	still	puddle	-	Water
+H08-04	any	pond	still	puddle	-	Drain
+H08-05	any	path	still	spark	-	Drain
+H08-06	any	path	still	puddle	-	Drain
+H08-07	flood	damage	still	spark	-	Drain
+H08-08	frost	damage	still	spark	-	Drain
+H08-09	water	water	bob	water	-	Water
+H08-10	any	path	still	spark	-	Drain
+H09-01	mature	flower	bob	book	-	Art
+H09-02	rain	path	bob	book	-	Art
+H09-03	dusk	path	bob	book	-	Art
+H09-04	any	path	tilt	book	-	Art
+H09-05	day	path	still	book	-	Art
+H09-06	any	pond	still	book	-	Art
+H09-07	harvest	path	bob	book	-	Art
+H09-08	damage	damage	still	book	-	Art
+H09-09	seed	garden	still	book	-	Art
+H09-10	any	porch	still	book	-	Art
+H10-01	any	path	still	seed	-	SeedTrade
+H10-02	harvest	path	still	seed	-	SeedTrade
+H10-03	harvest	path	still	seed	H02	SeedTrade
+H10-04	any	garden	still	seed	-	SeedTrade
+H10-05	any	garden	still	seed	-	SeedTrade
+H10-06	expanded	mailbox	bob	seed	-	SeedTrade
+H10-07	any	path	still	seed	-	SeedTrade
+H10-08	any	path	still	seed	-	SeedTrade
+H10-09	any	path	still	seed	H02	SeedTrade
+H10-10	any	path	bob	seed	-	SeedTrade
+A02-01	expanded	path	still	paw	-	Trail
+A02-02	any	path	bob	paw	-	Trail
+A02-03	any	fence	still	stone	-	MoveObject
+A02-04	any	path	still	spark	-	Trail
+A02-05	wet	path	patrol	puddle	A01	Trail
+A02-06	harvest	path	patrol	food	A07	Bond
+A02-07	any	path	patrol	leaf	-	Tidy
+A02-08	any	path	patrol	spark	-	Bond
+A02-09	storm	damage	patrol	wood	-	Signal
+A02-10	autumn	path	still	leaf	-	MoveObject
+A03-01	night	lamp	patrol	lamp	-	Trail
+A03-02	lamp	lamp	patrol	lamp	-	Rest
+A03-03	lamp	lamp	still	lamp	-	MoveObject
+A03-04	lamp	path	still	spark	A06	Bond
+A03-05	night	lamp	nap	lamp	-	Rest
+A03-06	food	pantry	still	food	A05	Rest
+A03-07	damage	damage	bob	spark	-	MoveObject
+A03-08	any	porch	still	heart	A01	Bond
+A03-09	wet	path	bob	rain	A11	Trail
+A03-10	night	path	patrol	spark	-	MoveObject
+A04-01	seed	flower	bob	seed	-	Sow
+A04-02	any	tree	bob	wood	-	Tidy
+A04-03	day	water	hop	water	-	Water
+A04-04	any	porch	still	spark	-	Signal
+A04-05	any	porch	bob	feather	A09	Nest
+A04-06	mature	path	bob	spark	-	Forage
+A04-07	any	path	bob	spark	-	Forage
+A04-08	snow	path	hop	spark	-	Tidy
+A04-09	any	fence	hop	wood	A05	MoveObject
+A04-10	dawn	sky	patrol	note	-	Signal
+A05-01	mature	tree	still	seed	-	Sow
+A05-02	dawn	tree	bob	seed	-	Forage
+A05-03	any	tree	bob	seed	-	Survey
+A05-04	any	fence	still	seed	-	Forage
+A05-05	storm	damage	hop	wood	-	Signal
+A05-06	any	fence	bob	wood	A02	Bond
+A05-07	mature	tree	hop	spark	-	Trail
+A05-08	any	path	still	leaf	-	MoveObject
+A05-09	any	build	patrol	seed	-	MoveObject
+A05-10	any	tree	patrol	seed	-	Nest
+A06-01	night	fence	bob	wood	-	Forage
+A06-02	autumn	path	patrol	leaf	-	Nest
+A06-03	any	porch	nap	spark	-	Rest
+A06-04	night	path	still	spark	-	MoveObject
+A06-05	any	path	still	spark	-	Tidy
+A06-06	night	path	patrol	spark	A11	Trail
+A06-07	food	pantry	still	leaf	-	Tidy
+A06-08	any	tree	still	leaf	-	Tidy
+A06-09	night	path	still	spark	-	Nest
+A06-10	any	pond	still	spark	-	Water
+A07-01	sprout	crop	still	spark	-	Forage
+A07-02	harvest	crop	patrol	leaf	-	Forage
+A07-03	wet	path	still	spark	-	Drain
+A07-04	any	path	bob	leaf	-	Trail
+A07-05	any	path	patrol	spark	-	Nest
+A07-06	mature	tree	hop	food	-	Forage
+A07-07	mature	crop	still	crumb	-	TendPlant
+A07-08	any	path	hop	spark	-	Bond
+A07-09	rain	garden	hop	spark	-	Survey
+A07-10	harvest	crop	bob	food	-	MoveObject
+A08-01	wet	path	hop	puddle	-	Water
+A08-02	any	pond	hop	butterfly	-	Forage
+A08-03	night	path	still	note	-	Signal
+A08-04	any	path	still	spark	-	Nest
+A08-05	any	pond	hop	puddle	-	Trail
+A08-06	day	path	still	spark	-	MoveObject
+A08-07	any	pond	hop	puddle	-	Signal
+A08-08	frost	damage	hop	stone	-	Shelter
+A08-09	any	garden	still	seed	-	Sow
+A08-10	any	path	bob	spark	A10	Bond
+A09-01	wet	pond	hop	spark	-	Nest
+A09-02	storm	damage	patrol	spark	-	Nest
+A09-03	any	garden	still	butterfly	-	Forage
+A09-04	any	sky	hop	spark	A01	Trail
+A09-05	wet	porch	bob	wood	-	Nest
+A09-06	any	sky	hop	spark	-	Nest
+A09-07	autumn	path	still	spark	-	Bond
+A09-08	spring	path	patrol	spark	-	Survey
+A09-09	any	pond	hop	puddle	A10	Forage
+A09-10	any	sky	still	spark	-	Nest
+A10-01	wet	path	still	paw	-	Trail
+A10-02	growing	garden	bob	water	-	Water
+A10-03	any	path	still	spark	-	Water
+A10-04	any	path	bob	spark	-	Tidy
+A10-05	harvest	crop	bob	leaf	-	MoveObject
+A10-06	any	pond	patrol	spark	-	Trail
+A10-07	any	path	hop	spark	-	Survey
+A10-08	wet	path	patrol	wood	-	MoveObject
+A10-09	any	path	bob	feather	-	Rest
+A10-10	flood	damage	still	puddle	-	Signal
+A11-01	wet	path	still	mist	-	Trail
+A11-02	any	path	still	leaf	-	Forage
+A11-03	mature	garden	bob	spark	-	Forage
+A11-04	any	path	still	puddle	-	Shelter
+A11-05	drought	damage	still	mist	-	Shelter
+A11-06	finished	build	patrol	mist	-	Trail
+A11-07	wet	path	still	wood	-	Shelter
+A11-08	wet	flower	still	flower	-	Pollinate
+A11-09	any	path	still	spark	A06	Survey
+A11-10	growing	path	still	leaf	-	Trail
+A12-01	growing	crop	still	spark	-	TendPlant
+A12-02	any	path	still	spark	-	Nest
+A12-03	any	crop	still	leaf	-	TendPlant
+A12-04	any	path	still	spark	-	Nest
+A12-05	any	path	still	spark	-	Trail
+A12-06	any	path	bob	spark	-	Shelter
+A12-07	dawn	path	still	spark	-	Water
+A12-08	day	path	still	spark	-	Rest
+A12-09	snow	path	still	leaf	-	Shelter
+A12-10	any	flower	still	flower	-	Forage
+A13-01	any	path	bob	spark	-	Signal
+A13-02	any	path	still	spark	-	Signal
+A13-03	any	path	still	spark	-	Signal
+A13-04	any	porch	patrol	mist	-	Trail
+A13-05	rain	path	still	spark	-	Trail
+A13-06	any	path	still	spark	-	Nest
+A13-07	night	path	patrol	spark	A11	Forage
+A13-08	any	path	still	spark	-	Nest
+A13-09	any	path	still	spark	-	Signal
+A13-10	any	path	still	spark	-	Rest
+A14-01	mature	flower	bob	flower	-	Pollinate
+A14-02	any	flower	still	flower	-	Pollinate
+A14-03	any	path	patrol	spark	-	Signal
+A14-04	any	water	still	paw	-	Water
+A14-05	any	path	bob	butterfly	-	Nest
+A14-06	day	path	still	spark	-	Nest
+A14-07	any	path	still	butterfly	-	Survey
+A14-08	any	flower	hop	flower	-	Shelter
+A14-09	any	path	still	butterfly	-	Trail
+A14-10	any	tree	patrol	spark	-	Bond
+A15-01	any	tree	still	seed	-	Nest
+A15-02	any	path	still	food	-	Forage
+A15-03	any	path	bob	spark	-	Forage
+A15-04	any	path	still	spark	-	Forage
+A15-05	any	tree	still	spark	-	Signal
+A15-06	damage	damage	bob	paw	-	MoveObject
+A15-07	any	tree	still	spark	-	MoveObject
+A15-08	any	path	hop	food	-	Forage
+A15-09	dusk	path	still	spark	-	Signal
+A15-10	any	path	bob	spark	-	Signal
+A16-01	any	path	bob	spark	-	Forage
+A16-02	any	tree	bob	seed	-	Nest
+A16-03	spring	path	bob	spark	-	Nest
+A16-04	any	tree	still	spark	-	Signal
+A16-05	any	path	still	feather	-	Shelter
+A16-06	autumn	garden	bob	seed	-	Nest
+A16-07	any	sky	bob	spark	-	Forage
+A16-08	any	fence	patrol	wood	-	Tidy
+A16-09	any	tree	hop	spark	-	Bond
+A16-10	growing	path	hop	spark	-	Signal
+A17-01	any	path	still	butterfly	-	Rest
+A17-02	wet	path	still	butterfly	-	Water
+A17-03	any	path	nap	leaf	-	Shelter
+A17-04	any	flower	still	flower	-	Pollinate
+A17-05	any	flower	patrol	flower	-	Bond
+A17-06	any	path	still	butterfly	-	Nest
+A17-07	any	path	patrol	spark	-	Forage
+A17-08	any	path	still	spark	-	Nest
+A17-09	mature	path	still	spark	-	Trail
+A17-10	mature	flower	still	flower	-	Pollinate
+A18-01	day	path	bob	spark	-	Rest
+A18-02	any	path	still	star	-	Signal
+A18-03	any	path	still	spark	-	Forage
+A18-04	day	path	still	spark	-	Trail
+A18-05	any	path	bob	spark	-	Nest
+A18-06	any	path	still	spark	-	Tidy
+A18-07	water	path	still	water	-	Water
+A18-08	any	path	still	spark	-	Survey
+A18-09	any	path	still	spark	-	Tidy
+A18-10	any	path	still	spark	-	Shelter
+A19-01	any	path	still	paw	-	Trail
+A19-02	any	path	patrol	leaf	-	Nest
+A19-03	wet	path	bob	spark	-	Nest
+A19-04	any	path	bob	spark	-	Forage
+A19-05	any	path	bob	spark	-	Tidy
+A19-06	wet	path	still	spark	-	Water
+A19-07	any	path	patrol	spark	-	Trail
+A19-08	any	path	still	spark	-	Shelter
+A19-09	any	path	still	spark	-	Rest
+A19-10	any	path	patrol	spark	-	Nest
+A20-01	dawn	path	tilt	spark	-	Forage
+A20-02	any	path	still	spark	-	Forage
+A20-03	any	path	still	spark	-	Water
+A20-04	any	path	bob	spark	-	Bond
+A20-05	any	path	bob	food	-	Nest
+A20-06	any	path	still	spark	-	Nest
+A20-07	any	path	tilt	spark	-	Nest
+A20-08	any	porch	patrol	spark	-	Trail
+A20-09	any	path	still	spark	-	Shelter
+A20-10	dawn	sky	hop	spark	-	Bond
+S01	any	path	still	spark	-	Trail
+S02	any	path	still	spark	-	Rest
+S03	any	path	still	spark	-	Bond
+S04	rain	path	still	spark	-	Shelter
+S05	any	path	patrol	spark	-	Trail
+S06	lamp	path	still	star	-	Trail
+S07	any	path	still	leaf	-	Trail
+S08	wet	path	still	paw	-	Trail
+S09	any	path	bob	spark	-	Tidy
+S10	any	path	bob	spark	-	Trail
+S11	rain	path	still	water	-	Water
+S12	any	path	still	mist	-	Signal
+S13	any	path	patrol	spark	-	Survey
+S14	any	path	still	food	-	Trail
+S15	any	path	hop	spark	-	Trail
+S16	any	path	still	paw	-	Trail
+S17	any	path	still	spark	-	Bond
+S18	finished	path	bob	paw	-	Survey
+S19	any	path	patrol	spark	-	Trail
+S20	any	path	patrol	spark	-	Tidy
+S21	any	path	still	spark	-	Trail
+S22	any	path	still	bell	-	Signal
+S23	any	water	patrol	puddle	-	Trail
+S24	any	path	bob	spark	-	Bond

@@ -1,8 +1,9 @@
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::activities::{self, Activity, Motion, Prop};
-use crate::cast::{self, Role};
+use crate::cast::{self, EffectKind, Role};
 use crate::ecology::{self, Event, Kind, Plot, Stage};
+use crate::effects::Effects;
 use crate::fishing::{self, Moment, Phase};
 use crate::projects::{self, LOTS, Project};
 use crate::renderer::Damage;
@@ -169,12 +170,7 @@ pub fn status_line(state: &Snapshot) -> String {
         DayPart::Dusk => "黄昏",
         DayPart::Night => "夜晚",
     };
-    let weather = match state.weather {
-        Weather::Clear => "晴",
-        Weather::Clouds => "多云",
-        Weather::Rain => "小雨",
-        Weather::Snow => "小雪",
-    };
+    let weather = weather_label(state.weather);
     let activity = match state.caretaker {
         CareAction::Away => "管理员外出",
         CareAction::Feeding => "管理员准备猫粮",
@@ -210,14 +206,24 @@ pub fn status_line(state: &Snapshot) -> String {
     format!("{time} · {weather} · {cat} · {activity} · {progress}{guest}")
 }
 
+pub fn weather_label(weather: Weather) -> &'static str {
+    match weather {
+        Weather::Clear => "晴",
+        Weather::Clouds => "多云",
+        Weather::Rain => "小雨",
+        Weather::Snow => "小雪",
+    }
+}
+
 pub fn notebook(
     state: &Snapshot,
     size: (i32, i32),
     unlocks: &[u64; 16],
     projects: &[Project; LOTS],
+    effects: &Effects,
 ) -> String {
     let active = activities::current(state);
-    let garden = garden_at(state, size, unlocks);
+    let garden = garden_at(state, size, unlocks, effects);
     let job = plot_job(state, &garden);
     let fishing = fishing::moment(state);
     let mut status = *state;
@@ -290,6 +296,7 @@ pub fn notebook(
         &ManualActions::default(),
         unix_millis() / 1000,
         fishing.is_some(),
+        effects,
     );
     if let Some(role) = context.guest {
         text.push_str(&format!("\n访客 {}", role.label()));
@@ -297,8 +304,14 @@ pub fn notebook(
             text.push_str(&format!(" · {} ({})", action.label, action.id));
         }
     }
-    for sample in projects::visible(state.phase_seconds, seconds_of_day(state), size, projects)
-        .filter(|sample| sample.kind != projects::Kind::Empty)
+    for sample in projects::visible_with_help(
+        state.phase_seconds,
+        seconds_of_day(state),
+        size,
+        projects,
+        &effects.work,
+    )
+    .filter(|sample| sample.kind != projects::Kind::Empty)
     {
         text.push_str(&format!(
             "\n{} · {} {}%",
@@ -317,6 +330,7 @@ pub fn notebook(
             ));
         }
     }
+    effects.append_notebook(&mut text);
     text
 }
 
@@ -391,8 +405,13 @@ struct Structure {
     stage: projects::Stage,
 }
 
-fn garden_at(state: &Snapshot, size: (i32, i32), unlocks: &[u64; 16]) -> ecology::Garden {
-    ecology::plots_with_unlocks(
+fn garden_at(
+    state: &Snapshot,
+    size: (i32, i32),
+    unlocks: &[u64; 16],
+    effects: &Effects,
+) -> ecology::Garden {
+    ecology::plots_with_care(
         state.world_start.saturating_add(state.phase_seconds),
         state.world_start,
         size.0 as usize,
@@ -400,6 +419,7 @@ fn garden_at(state: &Snapshot, size: (i32, i32), unlocks: &[u64; 16]) -> ecology
         state.season,
         state.weather,
         unlocks,
+        &effects.plots,
     )
 }
 
@@ -416,18 +436,69 @@ fn cast_context<'a>(
     actions: &ManualActions,
     now: u64,
     fish: bool,
+    effects: &Effects,
 ) -> cast::Context<'a> {
     let mut context = cast::Context::new(state, garden);
-    context.water = actions.water_bowl;
-    context.lamp = actions
-        .lantern
-        .unwrap_or(matches!(state.day_part, DayPart::Dusk | DayPart::Night));
-    context.food = recent(actions.visitor_snack_at, now, 180);
+    context.water = actions.water_bowl && effects.has_water();
+    context.lamp = actions.lantern.unwrap_or(
+        matches!(state.day_part, DayPart::Dusk | DayPart::Night)
+            || effects
+                .active(EffectKind::Lamp, state.phase_seconds)
+                .is_some(),
+    );
+    context.food = snack_available(effects, actions, now);
     context.knock = recent(actions.window_tapped_at, now, 5);
     context.fish = fish;
     context.guest =
         selected_guest(state, actions, now).or_else(|| Role::from_visitor(state.visitor));
     context
+}
+
+fn snack_available(effects: &Effects, actions: &ManualActions, now: u64) -> bool {
+    effects.has_food()
+        || (recent(actions.visitor_snack_at, now, 180)
+            && effects.mark(EffectKind::Forage).is_none())
+}
+
+pub fn apply_results(
+    state: &Snapshot,
+    size: (i32, i32),
+    unlocks: &[u64; 16],
+    projects: &[Project; LOTS],
+    effects: &mut Effects,
+    results: [Option<cast::Action>; 4],
+) -> bool {
+    if results.iter().all(Option::is_none) {
+        return false;
+    }
+    let mut changed = false;
+    for action in results.into_iter().flatten() {
+        if !effects.accepts(action) {
+            continue;
+        }
+        let garden = garden_at(state, size, unlocks, effects);
+        let project = if matches!(
+            action.effect_kind,
+            EffectKind::Build | EffectKind::Repair | EffectKind::Survey
+        ) {
+            projects::visible_with_help(
+                state.phase_seconds,
+                seconds_of_day(state),
+                size,
+                projects,
+                &effects.work,
+            )
+            .filter(|sample| {
+                sample.kind != projects::Kind::Empty && sample.stage != projects::Stage::Complete
+            })
+            .min_by_key(|sample| sample.x.abs_diff(action.x) + sample.y.abs_diff(action.y))
+            .map(|sample| sample.lot)
+        } else {
+            None
+        };
+        changed |= effects.apply(action, state.phase_seconds, &garden, project);
+    }
+    changed
 }
 
 fn plot_job<'a>(state: &Snapshot, garden: &'a ecology::Garden) -> Option<&'a Plot> {
@@ -573,15 +644,7 @@ pub struct Scene {
     wardrobe: Wardrobe,
     cat_last: Option<(i32, i32)>,
     cat_entry: Option<u64>,
-    traces: [Option<Trace>; 8],
-}
-
-#[derive(Clone, Copy)]
-struct Trace {
-    prop: Prop,
-    x: i32,
-    y: i32,
-    until_ms: u64,
+    results: [Option<cast::Action>; 4],
 }
 
 impl Scene {
@@ -595,12 +658,16 @@ impl Scene {
             wardrobe: Wardrobe::default(),
             cat_last: None,
             cat_entry: None,
-            traces: [None; 8],
+            results: [None; 4],
         }
     }
 
     pub fn in_transition(&self) -> bool {
         self.wardrobe.changing || (self.cat_entry.is_some() && self.cat_last.is_some())
+    }
+
+    pub fn take_results(&mut self) -> [Option<cast::Action>; 4] {
+        std::mem::take(&mut self.results)
     }
 
     pub fn render_view(
@@ -611,10 +678,12 @@ impl Scene {
         size: (i32, i32),
         unlocks: &[u64; 16],
         projects: &[Project; LOTS],
+        effects: &Effects,
     ) -> (&[u8], Option<Damage>) {
         let view = View::new(size);
         let previous = self.painted.take();
-        let garden = garden_at(state, size, unlocks);
+        self.results.fill(None);
+        let garden = garden_at(state, size, unlocks, effects);
         let mut plots = [None; 16];
         for plot in garden.plots() {
             plots[usize::from(plot.id)] = Some(PlotVisual {
@@ -627,8 +696,14 @@ impl Scene {
         }
         let mut buildings = [None; LOTS];
         let mut working = None;
-        for site in projects::visible(state.phase_seconds, seconds_of_day(state), size, projects)
-            .filter(|site| site.kind != projects::Kind::Empty)
+        for site in projects::visible_with_help(
+            state.phase_seconds,
+            seconds_of_day(state),
+            size,
+            projects,
+            &effects.work,
+        )
+        .filter(|site| site.kind != projects::Kind::Empty)
         {
             buildings[site.lot] = Some(Structure {
                 x: site.x,
@@ -654,15 +729,16 @@ impl Scene {
                 usize::from(state.build_stage) * 3
                     + usize::from(state.build_percent.min(99)) * 3 / 100
             }),
-            lantern: actions.lantern,
-            water: actions.water_bowl,
+            lantern: actions.lantern.or_else(|| {
+                effects
+                    .active(EffectKind::Lamp, state.phase_seconds)
+                    .map(|_| true)
+            }),
+            water: actions.water_bowl && effects.has_water(),
             plots,
             buildings,
         };
         let dirty = if self.backdrop != Some(backdrop) {
-            if self.view != view {
-                self.traces.fill(None);
-            }
             self.view = view;
             self.rebuild(backdrop);
             self.backdrop = Some(backdrop);
@@ -679,14 +755,7 @@ impl Scene {
             previous
         };
         self.weather(state.weather, state.day_part, now_ms);
-        for trace in self
-            .traces
-            .into_iter()
-            .flatten()
-            .filter(|trace| trace.until_ms > now_ms)
-        {
-            self.prop(trace.prop, trace.x, trace.y, now_ms);
-        }
+        self.world_marks(effects, &garden, state, now_ms);
         let now = now_ms / 1000;
         let active = activities::current(state);
         if let Some(activity) = active.yard {
@@ -694,7 +763,7 @@ impl Scene {
             let (x, y) = view.roaming(x, y);
             self.prop(activity.prop, x, y, now_ms);
         }
-        if recent(actions.visitor_snack_at, now, 180) {
+        if snack_available(effects, actions, now) {
             let (x, y) = view.roaming(140, 80);
             self.prop(Prop::Food, x, y, now_ms);
         }
@@ -707,7 +776,7 @@ impl Scene {
                 |plot| (plot.x as i32, plot.y as i32 - 2),
             );
         let fishing = working.is_none().then(|| fishing::moment(state)).flatten();
-        let context = cast_context(state, &garden, actions, now, fishing.is_some());
+        let context = cast_context(state, &garden, actions, now, fishing.is_some(), effects);
         let keeper_act = cast::action(Role(0), &context);
         let cat_act = cast::action(Role(10), &context);
         let visitor_act =
@@ -1577,16 +1646,41 @@ impl Scene {
         } else {
             self.view.roaming(action.x, action.y)
         };
+        let (x, y, approaching_left) = if action.phase == cast::Phase::Approach {
+            let entry = match action.role.0 {
+                0 => self.view.fixed(50, 69),
+                10 => self.view.fixed(110, 78),
+                _ => (self.view.width - 10, (self.view.height - 19).min(y + 7)),
+            };
+            let progress = i32::from(action.phase_progress);
+            (
+                entry.0 + (x - entry.0) * progress / 100,
+                entry.1 + (y - entry.1) * progress / 100,
+                x < entry.0,
+            )
+        } else {
+            (x, y, action.role.0 >= 10)
+        };
         let (dx, dy, patrol_flip) = motion_offset(action.motion, ms);
         (
             (x + dx).clamp(9, self.view.width - 10),
             (y + dy).clamp(12, self.view.height - 10),
-            (action.role.0 >= 10) ^ patrol_flip,
+            approaching_left ^ (action.phase != cast::Phase::Approach && patrol_flip),
         )
     }
 
     fn cast_result(&mut self, action: &cast::Action, x: i32, y: i32, ms: u64) {
-        if action.phase != cast::Phase::Result || action.prop == Prop::None {
+        if action.phase != cast::Phase::Result && !action.completes_now {
+            return;
+        }
+        if let Some(slot) = self
+            .results
+            .iter_mut()
+            .find(|slot| slot.is_none_or(|earlier| earlier.role == action.role))
+        {
+            *slot = Some(*action);
+        }
+        if action.prop == Prop::None {
             return;
         }
         let (dx, dy) = match action.target {
@@ -1598,13 +1692,80 @@ impl Scene {
             | cast::Target::Garden => (-6, 3),
             _ => (7, 1),
         };
-        self.traces[usize::from(action.role.0) % self.traces.len()] = Some(Trace {
-            prop: action.prop,
-            x: x + dx,
-            y: y + dy,
-            until_ms: ms.saturating_add(12_000),
-        });
         self.prop(action.prop, x + dx, y + dy, ms);
+    }
+
+    fn world_marks(
+        &mut self,
+        effects: &Effects,
+        garden: &ecology::Garden,
+        state: &Snapshot,
+        ms: u64,
+    ) {
+        use EffectKind::*;
+        for (kind, prop, anchor) in [
+            (Trail, Prop::Paw, (74, 86)),
+            (Signal, Prop::Note, (127, 63)),
+            (Rest, Prop::Star, (116, 73)),
+            (Bond, Prop::Heart, (103, 74)),
+            (MoveObject, Prop::Leaf, (58, 89)),
+            (Forage, Prop::Crumb, (67, 87)),
+            (Tidy, Prop::Spark, (47, 81)),
+            (Water, Prop::Water, (40, 90)),
+            (Drain, Prop::Puddle, (31, 88)),
+            (Sow, Prop::Seed, (85, 87)),
+            (TendPlant, Prop::Leaf, (86, 85)),
+            (Pollinate, Prop::Flower, (119, 86)),
+            (Harvest, Prop::Food, (94, 88)),
+            (Build, Prop::Wood, (119, 63)),
+            (Repair, Prop::Stone, (125, 66)),
+            (Shelter, Prop::Wood, (16, 74)),
+            (Nest, Prop::Feather, (136, 66)),
+            (Deliver, Prop::Note, (34, 73)),
+            (Forecast, Prop::Cloud, (71, 66)),
+            (Art, Prop::Book, (56, 74)),
+            (SeedTrade, Prop::Seed, (65, 76)),
+            (Food, Prop::Food, (140, 80)),
+            (Lamp, Prop::Lamp, (44, 65)),
+            (Survey, Prop::Stone, (111, 66)),
+        ] {
+            let Some(mark) = effects.active(kind, state.phase_seconds) else {
+                continue;
+            };
+            if kind == Food && !effects.has_food()
+                || kind == Trail && state.weather == Weather::Rain
+            {
+                continue;
+            }
+            let (x, y) = if mark.site < 16
+                && matches!(
+                    kind,
+                    Water | Drain | Sow | TendPlant | Pollinate | Harvest | Build | Repair | Art
+                ) {
+                let Some(plot) = garden.plots().iter().find(|plot| plot.id == mark.site) else {
+                    continue;
+                };
+                (plot.x as i32 + 4, plot.y as i32 - 3)
+            } else {
+                self.view.roaming(anchor.0, anchor.1)
+            };
+            if kind == Art {
+                for yy in -6..0 {
+                    for xx in -3..=3 {
+                        let color = if xx == -3 || xx == 3 || yy == -6 {
+                            [154, 116, 81]
+                        } else if yy < -3 {
+                            [222, 192, 177]
+                        } else {
+                            [122, 161, 113]
+                        };
+                        self.point(x + xx, y + yy, color, 255);
+                    }
+                }
+            } else {
+                self.prop(prop, x, y, ms);
+            }
+        }
     }
 
     fn cat(
@@ -1672,6 +1833,11 @@ impl Scene {
             } else {
                 action.prop
             };
+            self.cast_result(action, x, y, ms);
+        }
+        if let Some(action) =
+            role_action.filter(|action| state.cat == CatAction::Treat && action.completes_now)
+        {
             self.cast_result(action, x, y, ms);
         }
         if state.cat == CatAction::Sleep && (780..815).contains(&state.minutes_of_day) {
@@ -1930,6 +2096,7 @@ mod tests {
             (160, 100),
             &UNLOCKS,
             &NO_PROJECTS,
+            &Effects::default(),
         );
         assert_eq!(scene.cat_last, Some((110, 78)));
         state.day_part = DayPart::Night;
@@ -1940,6 +2107,7 @@ mod tests {
             (160, 100),
             &UNLOCKS,
             &NO_PROJECTS,
+            &Effects::default(),
         );
         assert!(scene.in_transition());
         scene.render_view(
@@ -1949,6 +2117,7 @@ mod tests {
             (160, 100),
             &UNLOCKS,
             &NO_PROJECTS,
+            &Effects::default(),
         );
         assert_eq!(scene.cat_last, None);
         assert!(!scene.in_transition());
@@ -1994,6 +2163,7 @@ mod tests {
                 (WIDTH, HEIGHT),
                 &UNLOCKS,
                 &NO_PROJECTS,
+                &Effects::default(),
             )
             .0
             .to_vec();
@@ -2024,7 +2194,8 @@ mod tests {
                         &actions,
                         (WIDTH, HEIGHT),
                         &UNLOCKS,
-                        &NO_PROJECTS
+                        &NO_PROJECTS,
+                        &Effects::default(),
                     )
                     .0
             );
@@ -2049,6 +2220,7 @@ mod tests {
                     (WIDTH, HEIGHT),
                     &UNLOCKS,
                     &NO_PROJECTS,
+                    &Effects::default(),
                 );
                 assert!(
                     image
@@ -2082,6 +2254,7 @@ mod tests {
                     (160, 100),
                     &UNLOCKS,
                     &NO_PROJECTS,
+                    &Effects::default(),
                 )
                 .0;
             assert!(
@@ -2103,6 +2276,7 @@ mod tests {
                     (160, 100),
                     &UNLOCKS,
                     &plan,
+                    &Effects::default(),
                 )
                 .0;
             assert!(
@@ -2112,6 +2286,82 @@ mod tests {
             );
             frames.push(image.to_vec());
         }
+    }
+
+    #[test]
+    fn completed_sparrow_scene_replants_a_bed_and_survives_reload() {
+        let mut state = sample();
+        state.phase_seconds = 120;
+        let size = (160, 100);
+        let mut effects = Effects::default();
+        let original = garden_at(&state, size, &UNLOCKS, &effects).plots()[0];
+        assert_eq!(original.kind, Kind::Daisy);
+        let mut scene = Scene::new();
+        scene.render_view(
+            &state,
+            1000,
+            &ManualActions::default(),
+            size,
+            &UNLOCKS,
+            &NO_PROJECTS,
+            &effects,
+        );
+        scene.take_results();
+        let mut action = cast::Action {
+            role: Role(13),
+            id: "A04-01",
+            label: "播种",
+            detail: "",
+            effect: "",
+            effect_kind: EffectKind::Sow,
+            motion: Motion::Bob,
+            prop: Prop::Seed,
+            target: cast::Target::Flower,
+            x: 24,
+            y: 87,
+            phase: cast::Phase::Work,
+            phase_progress: 50,
+            completes_now: false,
+            window: 1,
+            plot: Some(original.id),
+        };
+        scene.cast_result(&action, 24, 87, 1000);
+        assert_eq!(scene.take_results(), [None; 4]);
+        action.phase = cast::Phase::Result;
+        scene.cast_result(&action, 24, 87, 1100);
+        assert!(apply_results(
+            &state,
+            size,
+            &UNLOCKS,
+            &NO_PROJECTS,
+            &mut effects,
+            scene.take_results()
+        ));
+        let planted = garden_at(&state, size, &UNLOCKS, &effects).plots()[0];
+        assert_eq!((planted.kind, planted.stage), (Kind::Tulip, Stage::Seed));
+
+        let mut encoded = String::new();
+        effects.encode(&mut encoded);
+        let mut loaded = Effects::default();
+        for line in encoded.lines() {
+            let (key, value) = line.split_once('=').unwrap();
+            loaded.decode_field(key, value);
+        }
+        assert_eq!(
+            garden_at(&state, size, &UNLOCKS, &loaded).plots()[0].kind,
+            planted.kind
+        );
+        assert!(!apply_results(
+            &state,
+            size,
+            &UNLOCKS,
+            &NO_PROJECTS,
+            &mut loaded,
+            [Some(action), None, None, None]
+        ));
+        action.role = Role(10);
+        action.effect_kind = EffectKind::Build;
+        assert!(!loaded.accepts(action));
     }
 
     #[test]
@@ -2128,6 +2378,7 @@ mod tests {
                 (160, 100),
                 &UNLOCKS,
                 &NO_PROJECTS,
+                &Effects::default(),
             )
             .0
             .to_vec();
@@ -2138,6 +2389,7 @@ mod tests {
             (240, 145),
             &UNLOCKS,
             &NO_PROJECTS,
+            &Effects::default(),
         );
         assert_eq!(image.len(), 240 * 145 * 4);
         assert_eq!(first_damage, Some(Damage::full((240, 145))));
@@ -2157,10 +2409,18 @@ mod tests {
             (240, 145),
             &UNLOCKS,
             &NO_PROJECTS,
+            &Effects::default(),
         );
         assert_ne!(damage, Some(Damage::full((240, 145))));
-        let (small, _) =
-            scene.render_view(&state, 1_001_000, &manual, (80, 60), &UNLOCKS, &NO_PROJECTS);
+        let (small, _) = scene.render_view(
+            &state,
+            1_001_000,
+            &manual,
+            (80, 60),
+            &UNLOCKS,
+            &NO_PROJECTS,
+            &Effects::default(),
+        );
         assert_eq!(small.len(), 80 * 60 * 4);
     }
 }

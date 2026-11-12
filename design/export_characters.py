@@ -7,6 +7,19 @@ import sys
 
 
 HERE = Path(__file__).resolve().parent
+EFFECTS = {
+    "Trail": "留下短时足迹", "Signal": "留下招呼或提醒", "Rest": "留下落脚与休息记录",
+    "Bond": "增加熟悉度", "MoveObject": "增加拾物记录", "Forage": "取走食物或找到小物件",
+    "Tidy": "清掉足迹和散落物", "Water": "补水、饮水或推进目标作物生长",
+    "Drain": "修复积涝或调整水位", "Sow": "在合适的地里重新播种，或把种子留下",
+    "TendPlant": "推进适合地块的生长", "Pollinate": "推进花期或成熟进度并增加种子",
+    "Harvest": "推进成熟地块进入采收并留下食物和种子", "Build": "为进行中的工程增加工时",
+    "Repair": "加快灾后修复或补充在建工程工时", "Shelter": "留下遮护标记",
+    "Nest": "留下窝点或藏点", "Deliver": "在院里留下一份投递记录",
+    "Forecast": "在观察手记中显示小屋天气预报", "Art": "留下小画和作画记录",
+    "SeedTrade": "用拾物或食物交换种子", "Food": "准备一份可被取走的食物",
+    "Lamp": "自动照明时临时亮灯", "Survey": "留下观察记录",
+}
 PROFILES = """
 H01|小园丁（管理员）|human ground plant build social wet|常住。戴草帽的小女孩，照料橘猫、种植、修建和记手记
 H02|园艺师|human visitor ground plant social|病苗、新地块或换季时到访，负责育苗和诊断
@@ -78,6 +91,14 @@ def main():
     assert all(counts[role] == (60 if role in {"H01", "A01"} else 10) for role in profiles), counts
     assert len(exclusive) == 400 and len(shared) == 24
     assert len({row[0] for row in exclusive + shared}) == 424
+    live = {
+        code: EFFECTS[effect]
+        for code, _, _, _, _, _, effect in (
+            line.split("\t") for line in (HERE / "cast-rules.tsv").read_text(encoding="utf-8").splitlines()
+            if line and not line.startswith("@")
+        )
+    }
+    assert set(live) == {row[0] for row in exclusive + shared}
     tags = {tag for _, role_tags, _ in profiles.values() for tag in role_tags}
     applies = {}
     for code, eligibility, *_ in shared:
@@ -96,11 +117,11 @@ def main():
                       f"<td>{category}</td><td>{e(timing)}</td><td>{counts[role]}</td><td>{common}</td></tr>")
     rows = []
     for code, role, _, _, action, when, visible, effect in sorted(exclusive):
-        rows.append(row_html([code, profiles[role][0], "专属", action, when, visible, effect], role, "exclusive"))
+        rows.append(row_html([code, profiles[role][0], "专属", action, when, visible, live[code], effect], role, "exclusive"))
     for code, _, action, when, visible, effect in shared:
         eligible = applies[code]
         names = "全部角色" if len(eligible) == 30 else "、".join(profiles[role][0] for role in eligible)
-        rows.append(row_html([code, names, "共享", action, when, visible, effect], ",".join(eligible), "shared"))
+        rows.append(row_html([code, names, "共享", action, when, visible, live[code], effect], ",".join(eligible), "shared"))
     html = """<!doctype html><html lang="zh-CN"><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>猫咪小屋 · 角色与行为设计</title>
@@ -118,7 +139,7 @@ input{width:min(100%,23rem)}button{cursor:pointer}button:hover{background:#4a385
 </style><main>
 <h1>猫咪小屋 · 角色与行为设计</h1>
 <p><strong>30 位角色，400 项专属行为，24 项共享行为。</strong> 10 位人类和 20 位动物。小园丁和橘猫各 60 项，其余角色各 10 项。</p>
-<p>桌面版按当前条件挑选这些角色短场景，复用像素素材、轨迹和道具。表中「留下的效果」记录完整设计，持久状态目前覆盖种植、灾害和施工等已有系统。原有 1,025 项见 <a href="小世界行为表.html">小世界行为表</a>。</p>
+<p>桌面版按当前条件挑选角色短场景，复用像素素材、轨迹和道具。「运行效果」列对应当前代码，生长、播种、施工等效果需要合适的目标地块。「设计细节」记录各场景更细的设想。原有 1,025 项见 <a href="小世界行为表.html">小世界行为表</a>。</p>
 <p class="hint">居民是小园丁和橘猫，同一时段最多接待两位访客。浇水、采收、修补等操作更新有限个地块或道具；便笺、手记和客人记录覆盖旧槽位。小园丁每段工作换装一次，先进屋再出来。橘猫午睡在院里，夜里回屋。夜间时钟按白天流速的两倍走。</p>
 <h2>角色名册</h2>
 <div class="scroll"><table><thead><tr><th>角色</th><th>类型</th><th>出没与职责</th><th>专属行为</th><th>可共享行为</th></tr></thead><tbody>ROSTER</tbody></table></div>
@@ -127,7 +148,7 @@ input{width:min(100%,23rem)}button{cursor:pointer}button:hover{background:#4a385
 <select id="role" aria-label="按角色筛选"><option value="">所有角色</option>OPTIONS</select>
 <select id="kind" aria-label="行为类型"><option value="">专属和共享</option><option value="exclusive">专属</option><option value="shared">共享</option></select>
 <button id="prev">上一页</button><button id="next">下一页</button><span id="count" aria-live="polite"></span></div>
-<div class="scroll"><table id="details"><thead><tr><th>编号</th><th>角色</th><th>类型</th><th>行为</th><th>触发条件</th><th>可见变化</th><th>留下的效果</th></tr></thead><tbody id="rows">ROWS</tbody></table></div>
+<div class="scroll"><table id="details"><thead><tr><th>编号</th><th>角色</th><th>类型</th><th>行为</th><th>设计条件</th><th>设计画面</th><th>运行效果</th><th>设计细节</th></tr></thead><tbody id="rows">ROWS</tbody></table></div>
 <script>
 const query=document.querySelector('#query'),role=document.querySelector('#role'),kind=document.querySelector('#kind');
 const prev=document.querySelector('#prev'),next=document.querySelector('#next'),count=document.querySelector('#count');

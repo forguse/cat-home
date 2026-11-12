@@ -26,6 +26,7 @@ FILES = (
     "src/cast.rs",
     "src/clock.rs",
     "src/ecology.rs",
+    "src/effects.rs",
     "src/fishing.rs",
     "src/projects.rs",
     "src/renderer.rs",

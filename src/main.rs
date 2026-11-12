@@ -6,6 +6,7 @@ mod activities;
 mod cast;
 mod clock;
 mod ecology;
+mod effects;
 mod fishing;
 mod projects;
 mod renderer;
@@ -24,6 +25,7 @@ use std::{
 };
 
 use clock::{Anchor, Clock, Speed, WorldTime};
+use effects::Effects;
 use projects::{BLUEPRINTS, Kind as ProjectKind, LOTS, Project};
 use renderer::{DEFAULT_HEIGHT, DEFAULT_WIDTH, Renderer, dimensions};
 use simulation::{Season, Snapshot, Visitor, WeatherMode};
@@ -64,6 +66,7 @@ const MENU_SNACK: usize = 41;
 const MENU_KEEPER: usize = 42;
 const MENU_TAP: usize = 43;
 const MENU_NOTEBOOK: usize = 44;
+const MENU_UNINSTALL_HELP: usize = 45;
 const MENU_LANTERN: usize = 50;
 const MENU_INVITE: usize = 60;
 const MENU_SPEED: usize = 70;
@@ -118,6 +121,7 @@ struct Settings {
     manual: ManualActions,
     plot_unlocks: [u64; 16],
     projects: [Project; LOTS],
+    effects: Effects,
 }
 
 impl Settings {
@@ -133,6 +137,7 @@ impl Settings {
             manual: ManualActions::default(),
             plot_unlocks: [0; 16],
             projects: [Project::default(); LOTS],
+            effects: Effects::default(),
         };
         let Some(raw) = read_sidecar("cat-home-settings.txt") else {
             return settings;
@@ -220,7 +225,7 @@ impl Settings {
                         }
                     }
                 }
-                _ => {}
+                _ => settings.effects.decode_field(key.trim(), value),
             }
         }
         (settings.width, settings.height) = dimensions(
@@ -295,6 +300,7 @@ impl Settings {
             let _ = write!(contents, "{}:{}", project.kind.style(), project.start_age);
         }
         contents.push('\n');
+        self.effects.encode(&mut contents);
         write_sidecar("cat-home-settings.txt", contents);
     }
 }
@@ -415,15 +421,28 @@ impl App {
     fn render(&mut self, hwnd: HWND) -> io::Result<u32> {
         let now = world::unix_millis();
         let snapshot = self.snapshot(now / 1_000, self.settings.clock.time());
+        let size = self.renderer.logical_size();
         let (image, dirty) = self.scene.render_view(
             &snapshot,
             now,
             &self.settings.manual,
-            self.renderer.logical_size(),
+            size,
             &self.settings.plot_unlocks,
             &self.settings.projects,
+            &self.settings.effects,
         );
         self.renderer.draw(hwnd, self.position, image, dirty)?;
+        let results = self.scene.take_results();
+        if world::apply_results(
+            &snapshot,
+            size,
+            &self.settings.plot_unlocks,
+            &self.settings.projects,
+            &mut self.settings.effects,
+            results,
+        ) {
+            self.save_settings();
+        }
         Ok(if self.scene.in_transition() {
             180
         } else {
@@ -494,8 +513,16 @@ impl App {
         let now = world::unix_millis() / 1_000;
         let manual = &mut self.settings.manual;
         match action {
-            YardAction::ToggleWater => manual.water_bowl = !manual.water_bowl,
-            YardAction::LeaveSnack => manual.visitor_snack_at = Some(now),
+            YardAction::ToggleWater => {
+                manual.water_bowl = !manual.water_bowl;
+                if manual.water_bowl {
+                    self.settings.effects.refill();
+                }
+            }
+            YardAction::LeaveSnack => {
+                manual.visitor_snack_at = Some(now);
+                self.settings.effects.leave_food();
+            }
             YardAction::CallKeeper => manual.keeper_called_at = Some(now),
             YardAction::TapWindow => manual.window_tapped_at = Some(now),
             YardAction::SetLantern(lantern) => manual.lantern = lantern,
@@ -830,8 +857,28 @@ fn show_notebook(hwnd: HWND) {
                 app.renderer.logical_size(),
                 &app.settings.plot_unlocks,
                 &app.settings.projects,
+                &app.settings.effects,
             ),
         );
+        if app
+            .settings
+            .effects
+            .active(cast::EffectKind::Forecast, snapshot.phase_seconds)
+            .is_some()
+        {
+            let future = WorldTime {
+                seconds: time.seconds.saturating_add(3_600),
+                seconds_of_day: (time.seconds_of_day + 3_600) % 86_400,
+            };
+            let forecast = app.snapshot(now, future);
+            let _ = write!(
+                notebook,
+                "\n气象观察员预报  {:02}:{:02} {}",
+                future.minutes() / 60,
+                future.minutes() % 60,
+                world::weather_label(forecast.weather)
+            );
+        }
         let manual = &app.settings.manual;
         if let Some(role) = manual.invited_role.filter(|_| {
             manual
@@ -1010,6 +1057,7 @@ fn show_menu(hwnd: HWND) {
                 w!("隐藏小屋")
             },
         );
+        AppendMenuW(menu, MF_STRING, MENU_UNINSTALL_HELP, w!("卸载说明"));
         AppendMenuW(menu, MF_STRING, MENU_QUIT, w!("退出"));
         let previous_foreground = GetForegroundWindow();
         SetForegroundWindow(hwnd);
@@ -1038,6 +1086,16 @@ fn show_menu(hwnd: HWND) {
             MENU_KEEPER => with_app(|app| app.interact(hwnd, YardAction::CallKeeper)),
             MENU_TAP => with_app(|app| app.interact(hwnd, YardAction::TapWindow)),
             MENU_NOTEBOOK => show_notebook(hwnd),
+            MENU_UNINSTALL_HELP => {
+                MessageBoxW(
+                    hwnd,
+                    w!(
+                        "猫咪小屋是便携版。先在此菜单点「退出」，再删除「猫咪小屋.exe」。\n\n同目录的 cat-home-settings.txt 和 cat-home-position.txt 是庭院存档和窗口位置。可保留它们，日后继续使用。"
+                    ),
+                    w!("卸载猫咪小屋"),
+                    MB_OK | MB_ICONINFORMATION,
+                );
+            }
             MENU_QUIT => {
                 DestroyWindow(hwnd);
             }

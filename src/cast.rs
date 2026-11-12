@@ -108,12 +108,155 @@ pub enum Phase {
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[repr(u8)]
+pub enum EffectKind {
+    Trail,
+    Signal,
+    Rest,
+    Bond,
+    MoveObject,
+    Forage,
+    Tidy,
+    Water,
+    Drain,
+    Sow,
+    TendPlant,
+    Pollinate,
+    Harvest,
+    Build,
+    Repair,
+    Shelter,
+    Nest,
+    Deliver,
+    Forecast,
+    Art,
+    SeedTrade,
+    Food,
+    Lamp,
+    Survey,
+}
+
+impl EffectKind {
+    pub const ALL: [Self; 24] = [
+        Self::Trail,
+        Self::Signal,
+        Self::Rest,
+        Self::Bond,
+        Self::MoveObject,
+        Self::Forage,
+        Self::Tidy,
+        Self::Water,
+        Self::Drain,
+        Self::Sow,
+        Self::TendPlant,
+        Self::Pollinate,
+        Self::Harvest,
+        Self::Build,
+        Self::Repair,
+        Self::Shelter,
+        Self::Nest,
+        Self::Deliver,
+        Self::Forecast,
+        Self::Art,
+        Self::SeedTrade,
+        Self::Food,
+        Self::Lamp,
+        Self::Survey,
+    ];
+
+    #[cfg(test)]
+    pub fn from_u8(value: u8) -> Option<Self> {
+        Self::ALL.get(usize::from(value)).copied()
+    }
+
+    pub fn label(self) -> &'static str {
+        match self {
+            Self::Trail => "足迹与路径",
+            Self::Signal => "招呼与提醒",
+            Self::Rest => "休息与落脚",
+            Self::Bond => "熟悉与互动",
+            Self::MoveObject => "移动小物件",
+            Self::Forage => "取食",
+            Self::Tidy => "清理",
+            Self::Water => "补水与水面变化",
+            Self::Drain => "排水",
+            Self::Sow => "落种",
+            Self::TendPlant => "养护",
+            Self::Pollinate => "授粉",
+            Self::Harvest => "采收与备菜",
+            Self::Build => "施工",
+            Self::Repair => "修复",
+            Self::Shelter => "遮护",
+            Self::Nest => "巢窝与藏点",
+            Self::Deliver => "投递",
+            Self::Forecast => "气象记录",
+            Self::Art => "图画与标记",
+            Self::SeedTrade => "留种与交换",
+            Self::Food => "备餐",
+            Self::Lamp => "灯光",
+            Self::Survey => "观察记录",
+        }
+    }
+
+    fn from_rule(value: &str) -> Self {
+        match value {
+            "Trail" => Self::Trail,
+            "Signal" => Self::Signal,
+            "Rest" => Self::Rest,
+            "Bond" => Self::Bond,
+            "MoveObject" => Self::MoveObject,
+            "Forage" => Self::Forage,
+            "Tidy" => Self::Tidy,
+            "Water" => Self::Water,
+            "Drain" => Self::Drain,
+            "Sow" => Self::Sow,
+            "TendPlant" => Self::TendPlant,
+            "Pollinate" => Self::Pollinate,
+            "Harvest" => Self::Harvest,
+            "Build" => Self::Build,
+            "Repair" => Self::Repair,
+            "Shelter" => Self::Shelter,
+            "Nest" => Self::Nest,
+            "Deliver" => Self::Deliver,
+            "Forecast" => Self::Forecast,
+            "Art" => Self::Art,
+            "SeedTrade" => Self::SeedTrade,
+            "Food" => Self::Food,
+            "Lamp" => Self::Lamp,
+            "Survey" => Self::Survey,
+            _ => panic!("invalid cast effect {value}"),
+        }
+    }
+
+    pub fn allows(self, role: Role) -> bool {
+        match self {
+            Self::Drain => matches!(role.0, 0 | 7 | 16),
+            // People plant deliberately. Birds, squirrels and frogs can disperse seeds.
+            Self::Sow => matches!(role.0, 0 | 1 | 13 | 14 | 17),
+            // Rabbits contribute compost, and ladybirds protect new leaves.
+            Self::TendPlant => matches!(role.0, 0 | 1 | 16 | 21),
+            Self::Pollinate => matches!(role.0, 20 | 23 | 26),
+            Self::Harvest | Self::Food => matches!(role.0, 0 | 5),
+            Self::Build | Self::Repair => matches!(role.0, 0 | 2),
+            Self::Nest => matches!(role.0, 13..=29),
+            Self::Deliver => matches!(role.0, 0 | 3 | 6),
+            Self::Forecast => role.0 == 4,
+            Self::Art => role.0 == 8,
+            Self::SeedTrade => matches!(role.0, 0 | 1 | 9),
+            Self::Lamp => matches!(role.0, 0 | 3),
+            _ => true,
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Action {
     pub role: Role,
     pub id: &'static str,
     pub label: &'static str,
     pub detail: &'static str,
     pub effect: &'static str,
+    pub effect_kind: EffectKind,
     pub motion: Motion,
     pub prop: Prop,
     pub target: Target,
@@ -121,6 +264,7 @@ pub struct Action {
     pub y: i32,
     pub phase: Phase,
     pub phase_progress: u8,
+    pub completes_now: bool,
     pub window: u64,
     pub plot: Option<u8>,
 }
@@ -171,6 +315,7 @@ struct Rule {
     label: &'static str,
     detail: &'static str,
     effect: &'static str,
+    effect_kind: EffectKind,
     target: Target,
     gate: Gate,
     motion: Motion,
@@ -290,12 +435,13 @@ impl Rule {
         effect: &'static str,
         tags: u16,
     ) -> Self {
-        let [id, gate, target, motion, prop, partner] = fields(data, '\t');
+        let [id, gate, target, motion, prop, partner, effect_kind] = fields(data, '\t');
         Self {
             id,
             label,
             detail,
             effect,
+            effect_kind: EffectKind::from_rule(effect_kind),
             tags,
             partner: (partner != "-").then(|| parse_role(partner)),
             gate: match gate {
@@ -632,6 +778,9 @@ pub fn action(role: Role, context: &Context<'_>) -> Option<Action> {
     let resident_sleep = role.0 == 10 && context.state.cat == CatAction::Sleep;
     let resident_eat = role.0 == 10 && context.state.cat == CatAction::Eat;
     let allowed = |rule: &Rule| {
+        if !rule.effect_kind.allows(role) {
+            return false;
+        }
         if resident_sleep {
             return matches!(rule.gate, Gate::Sleep | Gate::Nap);
         }
@@ -673,10 +822,9 @@ pub fn action(role: Role, context: &Context<'_>) -> Option<Action> {
         (tx + variant % 5 - 2).max(10),
         (ty + variant % 3 - 1).max(25),
     );
+    let completes_now = forced.is_some() && matches!(rule.gate, Gate::Knock | Gate::Treat);
     let (phase, phase_progress) = match seconds {
-        _ if forced.is_some() && (context.knock || context.state.cat == CatAction::Treat) => {
-            (Phase::Work, 50)
-        }
+        _ if completes_now => (Phase::Work, 50),
         0..30 => (Phase::Approach, seconds * 100 / 30),
         30..96 => (Phase::Work, (seconds - 30) * 100 / 66),
         _ => (Phase::Result, (seconds - 96) * 100 / 24),
@@ -702,6 +850,7 @@ pub fn action(role: Role, context: &Context<'_>) -> Option<Action> {
         label: rule.label,
         detail: rule.detail,
         effect: rule.effect,
+        effect_kind: rule.effect_kind,
         motion,
         prop,
         target: rule.target,
@@ -709,6 +858,7 @@ pub fn action(role: Role, context: &Context<'_>) -> Option<Action> {
         y: ty,
         phase,
         phase_progress: phase_progress as u8,
+        completes_now,
         window,
         plot: plot.map(|p| p.id),
     })
@@ -750,6 +900,65 @@ mod tests {
         }
         assert_eq!(catalog.shared.len(), 24);
         assert_eq!(ids.len(), 424);
+    }
+
+    #[test]
+    fn effects_cover_the_catalog_and_match_each_roles_capabilities() {
+        let catalog = catalog();
+        let mut used = [false; EffectKind::ALL.len()];
+        for (index, rules) in catalog.roles.iter().enumerate() {
+            let role = Role(index as u8);
+            for rule in rules {
+                assert!(rule.effect_kind.allows(role), "{}", rule.id);
+                if index >= 10 {
+                    assert_ne!(rule.prop, Prop::Tool, "{}", rule.id);
+                }
+                used[rule.effect_kind as usize] = true;
+            }
+        }
+        for rule in &catalog.shared {
+            for (index, &tags) in catalog.tags.iter().enumerate() {
+                if tags & rule.tags != 0 {
+                    assert!(rule.effect_kind.allows(Role(index as u8)), "{}", rule.id);
+                }
+            }
+            used[rule.effect_kind as usize] = true;
+        }
+        assert!(used.into_iter().all(|effect| effect));
+        for (index, kind) in EffectKind::ALL.into_iter().enumerate() {
+            assert_eq!(EffectKind::from_u8(index as u8), Some(kind));
+            assert_eq!(kind as usize, index);
+            assert!(!kind.label().is_empty());
+        }
+        assert_eq!(EffectKind::from_u8(EffectKind::ALL.len() as u8), None);
+    }
+
+    #[test]
+    fn expert_roles_and_seed_dispersers_use_their_own_effects() {
+        let catalog = catalog();
+        let rule = |role: u8, id: &str| {
+            catalog.roles[usize::from(role)]
+                .iter()
+                .find(|rule| rule.id == id)
+                .expect("expected example action")
+        };
+        let artist = rule(8, "H09-01");
+        assert_eq!(
+            (artist.effect_kind, artist.prop),
+            (EffectKind::Art, Prop::Book)
+        );
+        let sparrow = rule(13, "A04-01");
+        assert_eq!(
+            (sparrow.effect_kind, sparrow.target, sparrow.prop),
+            (EffectKind::Sow, Target::Flower, Prop::Seed)
+        );
+        let plumber = rule(7, "H08-04");
+        assert_eq!(
+            (plumber.effect_kind, plumber.target),
+            (EffectKind::Drain, Target::Pond)
+        );
+        let bee = rule(23, "A14-01");
+        assert_eq!(bee.effect_kind, EffectKind::Pollinate);
     }
 
     #[test]

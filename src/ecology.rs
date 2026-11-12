@@ -1,4 +1,4 @@
-//! Small, time-derived garden. The only saved values are one reveal age per site.
+//! Small, time-derived garden with a bounded care record per site.
 
 use crate::simulation::{Season, Weather};
 
@@ -7,6 +7,18 @@ const DAY: u64 = 24 * HOUR;
 const STORM_CYCLE: u64 = 24 * DAY;
 const GROWING_SITES: usize = 12;
 pub const SITE_COUNT: usize = 16;
+pub const MAX_GROWTH_MINUTES: u16 = 7 * 24 * 60;
+
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub struct PlotCare {
+    /// World age plus one. Zero means no explicit sowing.
+    pub sowed: u64,
+    /// One-based planting species, with zero meaning natural rotation.
+    pub species: u8,
+    pub growth_minutes: u16,
+    /// World age plus one. Zero means no disaster repair.
+    pub repaired: u64,
+}
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[repr(u8)]
@@ -304,16 +316,29 @@ fn percent(age: u64, total: u64) -> u8 {
     (age.min(total) * 100 / total) as u8
 }
 
+fn growth_spans(species: usize) -> [u64; 6] {
+    match species / 4 {
+        0 => FLOWER,
+        1 => TREE,
+        _ => CROP,
+    }
+}
+
+pub fn remaining_growth_minutes(plot: &Plot) -> u16 {
+    let (Some(species), Some(stage)) = (plot.kind.species_index(), plot.stage.growth_index())
+    else {
+        return 0;
+    };
+    // Progress is rounded down for display, so this is a safe upper bound.
+    let minutes = growth_spans(species)[stage] * 60;
+    (minutes * u64::from(100 - plot.progress.min(100))).div_ceil(100) as u16
+}
+
 fn growth(mut age: u64, first: usize) -> (Kind, Stage, u8) {
     age %= ROTATION_HOURS * HOUR;
     for number in 0..GROWING_SITES {
         let species = (first + number) % GROWING_SITES;
-        let spans = match species / 4 {
-            0 => FLOWER,
-            1 => TREE,
-            _ => CROP,
-        };
-        for (stage, hours) in GROWTH_STAGES.into_iter().zip(spans) {
+        for (stage, hours) in GROWTH_STAGES.into_iter().zip(growth_spans(species)) {
             let span = hours * HOUR;
             if age < span {
                 return (KINDS[species], stage, percent(age, span));
@@ -335,6 +360,13 @@ impl Disaster {
     fn ends(self) -> u64 {
         self.at
             .saturating_add(self.event.response_hours().into_iter().sum::<u64>() * HOUR)
+    }
+
+    fn repair_credit(self, age: u64, repaired: u64) -> u64 {
+        repaired
+            .checked_sub(1)
+            .filter(|&when| self.at <= when && when <= age)
+            .map_or(0, |when| self.ends().saturating_sub(when).min(2 * HOUR))
     }
 
     fn response(self, age: u64) -> Option<(Stage, u8)> {
@@ -394,17 +426,40 @@ fn last_disaster(id: usize, age: u64, revealed: u64, seed: u64) -> Option<Disast
     (disaster.at > revealed).then_some(disaster)
 }
 
-fn normal_plant(id: usize, age: u64, revealed: u64, seed: u64) -> (Kind, Stage, u8) {
-    if let Some(event) = last_disaster(id, age, revealed, seed) {
-        return growth(
-            age.saturating_sub(event.ends()),
-            event.replacement(id, seed),
-        );
+fn normal_plant(
+    id: usize,
+    age: u64,
+    revealed: u64,
+    seed: u64,
+    care: PlotCare,
+) -> (Kind, Stage, u8) {
+    let (mut start, mut species, mut initial) =
+        if let Some(event) = last_disaster(id, age, revealed, seed) {
+            (
+                event.ends() - event.repair_credit(age, care.repaired),
+                event.replacement(id, seed),
+                0,
+            )
+        } else {
+            (
+                revealed,
+                FIRST_SPECIES[id],
+                FIRST_SITE_AGE.get(id).copied().unwrap_or(0),
+            )
+        };
+    if let (Some(sowed), Some(plant)) = (care.sowed.checked_sub(1), care.species.checked_sub(1)) {
+        if (start..=age).contains(&sowed) && usize::from(plant) < GROWING_SITES {
+            start = sowed;
+            species = usize::from(plant);
+            initial = 0;
+        }
     }
-    let initial = FIRST_SITE_AGE.get(id).copied().unwrap_or(0);
+    let credit = u64::from(care.growth_minutes.min(MAX_GROWTH_MINUTES)) * 60;
     growth(
-        age.saturating_sub(revealed).saturating_add(initial),
-        FIRST_SPECIES[id],
+        age.saturating_sub(start)
+            .saturating_add(initial)
+            .saturating_add(credit),
+        species,
     )
 }
 
@@ -419,23 +474,34 @@ fn construction_clock(age: u64) -> (u64, bool) {
     (total, into_shift < WORK_PER_SHIFT)
 }
 
-fn building(id: usize, age: u64, revealed: u64, disaster: Option<Disaster>) -> (Stage, u8, bool) {
+fn building(
+    id: usize,
+    age: u64,
+    revealed: u64,
+    disaster: Option<(Disaster, u64)>,
+    help_minutes: u16,
+) -> (Stage, u8, bool) {
     let index = id - GROWING_SITES;
     let budget = WORK_BUDGET[index];
     let starts = revealed.saturating_add(WORK_DELAY[index]);
-    let (time, working) = if let Some(disaster) = disaster {
+    let (time, working) = if let Some((disaster, recovery_end)) = disaster {
         let done = construction_clock(disaster.at.saturating_sub(starts))
             .0
             .min(budget);
         let lost = done / 4;
-        let resume = disaster.ends().max(starts);
+        let resume = recovery_end.max(starts);
         let (repair, working) = construction_clock(age.saturating_sub(resume));
         (done - lost + repair, age >= resume && working)
     } else {
         let (done, working) = construction_clock(age.saturating_sub(starts));
         (done, age >= starts && working)
     };
-    let progress = percent(time, budget);
+    let help = if age >= starts {
+        u64::from(help_minutes) * 60
+    } else {
+        0
+    };
+    let progress = percent(time.saturating_add(help), budget);
     let stage = match progress {
         0..=33 => Stage::Groundwork,
         34..=99 => Stage::Framing,
@@ -444,19 +510,27 @@ fn building(id: usize, age: u64, revealed: u64, disaster: Option<Disaster>) -> (
     (stage, progress, working && stage != Stage::Complete)
 }
 
-fn update_plot(plot: &mut Plot, age: u64, revealed: u64, seed: u64, open_air: bool) {
+fn update_plot(
+    plot: &mut Plot,
+    age: u64,
+    revealed: u64,
+    seed: u64,
+    open_air: bool,
+    care: PlotCare,
+) {
     let id = plot.id as usize;
     let planting = id < GROWING_SITES;
-    let disaster = last_disaster(id, age, revealed, seed);
+    let disaster = last_disaster(id, age, revealed, seed)
+        .map(|event| (event, event.repair_credit(age, care.repaired)));
     let maintenance =
         (age.saturating_sub(revealed) % (2 * HOUR) + id as u64 * 97) % (2 * HOUR) < 34;
-    if let Some(disaster) = disaster {
-        if let Some((response, progress)) = disaster.response(age) {
+    if let Some((disaster, credit)) = disaster {
+        if let Some((response, progress)) = disaster.response(age.saturating_add(credit)) {
             if planting {
                 plot.kind = if response == Stage::Recovering {
                     KINDS[disaster.replacement(id, seed)]
                 } else {
-                    normal_plant(id, disaster.at.saturating_sub(1), revealed, seed).0
+                    normal_plant(id, disaster.at.saturating_sub(1), revealed, seed, care).0
                 };
             } else {
                 plot.kind = KINDS[id];
@@ -469,11 +543,13 @@ fn update_plot(plot: &mut Plot, age: u64, revealed: u64, seed: u64, open_air: bo
         }
     }
     if planting {
-        (plot.kind, plot.stage, plot.progress) = normal_plant(id, age, revealed, seed);
+        (plot.kind, plot.stage, plot.progress) = normal_plant(id, age, revealed, seed, care);
         plot.working = maintenance && open_air;
     } else {
         plot.kind = KINDS[id];
-        (plot.stage, plot.progress, plot.working) = building(id, age, revealed, disaster);
+        let recovery = disaster.map(|(event, credit)| (event, event.ends() - credit));
+        (plot.stage, plot.progress, plot.working) =
+            building(id, age, revealed, recovery, care.growth_minutes.min(120));
         plot.working &= open_air;
     }
 }
@@ -498,6 +574,7 @@ pub fn plots(
     )
 }
 
+#[cfg(test)]
 pub fn plots_with_unlocks(
     now_secs: u64,
     started: u64,
@@ -507,6 +584,28 @@ pub fn plots_with_unlocks(
     weather: Weather,
     unlocked_at: &[u64; SITE_COUNT],
 ) -> Garden {
+    plots_with_care(
+        now_secs,
+        started,
+        width,
+        height,
+        season,
+        weather,
+        unlocked_at,
+        &[PlotCare::default(); SITE_COUNT],
+    )
+}
+
+pub fn plots_with_care(
+    now_secs: u64,
+    started: u64,
+    width: usize,
+    height: usize,
+    season: Season,
+    weather: Weather,
+    unlocked_at: &[u64; SITE_COUNT],
+    care: &[PlotCare; SITE_COUNT],
+) -> Garden {
     let age = now_secs.saturating_sub(started);
     let seed = mix(started ^ 0xd6e8feb86659fd93);
     let open_air =
@@ -515,7 +614,7 @@ pub fn plots_with_unlocks(
         plots: [EMPTY_PLOT; SITE_COUNT],
         count: 0,
     };
-    for (id, saved) in unlocked_at.iter().enumerate() {
+    for (id, (&saved, &plot_care)) in unlocked_at.iter().zip(care).enumerate() {
         let Some((x, y)) = position(id, width, height) else {
             continue;
         };
@@ -526,7 +625,7 @@ pub fn plots_with_unlocks(
             y,
             ..EMPTY_PLOT
         };
-        update_plot(&mut plot, age, revealed, seed, open_air);
+        update_plot(&mut plot, age, revealed, seed, open_air, plot_care);
         garden.plots[garden.count] = plot;
         garden.count += 1;
     }
@@ -536,6 +635,19 @@ pub fn plots_with_unlocks(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn cared_garden(age: u64, care: &[PlotCare; SITE_COUNT]) -> Garden {
+        plots_with_care(
+            age,
+            0,
+            160,
+            100,
+            Season::Spring,
+            Weather::Clear,
+            &[1; SITE_COUNT],
+            care,
+        )
+    }
 
     #[test]
     fn two_axes_reveal_different_sites_without_moving_original_plot_identity() {
@@ -601,12 +713,86 @@ mod tests {
     #[test]
     fn construction_advances_only_in_short_site_shifts() {
         let starts = WORK_DELAY[0];
-        let in_shift = building(12, starts + 600, 0, None);
-        let after_shift = building(12, starts + WORK_PER_SHIFT, 0, None);
-        let overnight = building(12, starts + 10 * HOUR, 0, None);
+        let in_shift = building(12, starts + 600, 0, None, 0);
+        let after_shift = building(12, starts + WORK_PER_SHIFT, 0, None, 0);
+        let overnight = building(12, starts + 10 * HOUR, 0, None, 0);
         assert!(in_shift.2);
         assert!(in_shift.1 < after_shift.1);
         assert_eq!(after_shift, overnight);
-        assert!(building(12, starts + SHIFT + 600, 0, None).1 > overnight.1);
+        assert!(building(12, starts + SHIFT + 600, 0, None, 0).1 > overnight.1);
+    }
+
+    #[test]
+    fn sowing_changes_the_species_and_starts_its_own_growth_clock() {
+        let mut care = [PlotCare::default(); SITE_COUNT];
+        let age = 3 * HOUR;
+        care[0] = PlotCare {
+            sowed: age + 1,
+            species: 8,
+            ..PlotCare::default()
+        };
+        let sowed = cared_garden(age, &care);
+        let original = plots(age, 0, 160, 100, Season::Spring, Weather::Clear);
+        assert_eq!(
+            (sowed.plots()[0].kind, sowed.plots()[0].stage),
+            (Kind::Apple, Stage::Seed)
+        );
+        assert_eq!(original.plots()[0].kind, Kind::Daisy);
+        assert_eq!(sowed.plots()[1].progress, original.plots()[1].progress);
+        let sprouted = cared_garden(age + 8 * HOUR, &care);
+        assert_eq!(
+            (sprouted.plots()[0].kind, sprouted.plots()[0].stage),
+            (Kind::Apple, Stage::Sprout)
+        );
+        assert_eq!(cared_garden(age - 1, &care).plots()[0].kind, Kind::Daisy);
+    }
+
+    #[test]
+    fn tending_advances_growth_and_harvesting_reaches_the_next_stage() {
+        let mut care = [PlotCare::default(); SITE_COUNT];
+        let age = HOUR - 20 * 60;
+        assert_eq!(cared_garden(age, &care).plots()[0].stage, Stage::Seed);
+        care[0].growth_minutes = 30;
+        assert_eq!(cared_garden(age, &care).plots()[0].stage, Stage::Sprout);
+
+        let mature_age = 50 * HOUR + 13;
+        let before = cared_garden(mature_age, &care);
+        let plant = &before.plots()[0];
+        assert_eq!(plant.stage, Stage::Mature);
+        care[0].growth_minutes += remaining_growth_minutes(plant);
+        assert_eq!(
+            cared_garden(mature_age, &care).plots()[0].stage,
+            Stage::Harvest
+        );
+    }
+
+    #[test]
+    fn disaster_repair_advances_recovery_only_for_the_matching_disaster() {
+        let mut care = [PlotCare::default(); SITE_COUNT];
+        let seed = mix(0xd6e8feb86659fd93);
+        let disaster = disaster_at(0, seed);
+        let id = (3 - seed % 3) as usize % 3;
+        let repaired = disaster.at + (disaster.event.response_hours()[0] - 1) * HOUR;
+        assert_eq!(
+            cared_garden(repaired, &care).plots()[id].stage,
+            Stage::Damaged
+        );
+        care[id].repaired = repaired + 1;
+        assert_eq!(
+            cared_garden(repaired, &care).plots()[id].stage,
+            Stage::Repairing
+        );
+        let recovered = &cared_garden(disaster.ends() - 2 * HOUR, &care).plots[id];
+        assert_eq!(
+            (recovered.event, recovered.stage),
+            (Event::None, Stage::Seed)
+        );
+
+        let next = disaster_at(3, seed);
+        let next_plot = &cared_garden(next.at, &care).plots[id];
+        assert_eq!(
+            (next_plot.event, next_plot.stage),
+            (next.event, Stage::Damaged)
+        );
     }
 }

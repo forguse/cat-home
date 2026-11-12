@@ -1,5 +1,6 @@
 const DAY: u64 = 24 * 60 * 60;
 pub const LOTS: usize = 8;
+pub const MAX_HELP_MINUTES: u16 = 120;
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 #[repr(u8)]
@@ -161,19 +162,31 @@ pub fn first_available(size: (i32, i32), projects: &[Project; LOTS]) -> Option<u
     })
 }
 
+#[cfg(test)]
 pub fn visible(
     age: u64,
     local_seconds: u64,
     size: (i32, i32),
     projects: &[Project; LOTS],
 ) -> impl Iterator<Item = Sample> + '_ {
+    visible_with_help(age, local_seconds, size, projects, &[0; LOTS])
+}
+
+pub fn visible_with_help<'a>(
+    age: u64,
+    local_seconds: u64,
+    size: (i32, i32),
+    projects: &'a [Project; LOTS],
+    work_minutes: &'a [u16; LOTS],
+) -> impl Iterator<Item = Sample> + 'a {
     projects
         .iter()
         .copied()
         .enumerate()
         .filter_map(move |(lot, project)| {
             let (x, y) = position(lot, size)?;
-            let (stage, percent, working) = progress(project, age, local_seconds % DAY);
+            let (stage, percent, working) =
+                progress(project, age, local_seconds % DAY, work_minutes[lot]);
             Some(Sample {
                 lot,
                 x,
@@ -186,7 +199,12 @@ pub fn visible(
         })
 }
 
-fn progress(project: Project, age: u64, local_seconds: u64) -> (Stage, u8, bool) {
+fn progress(
+    project: Project,
+    age: u64,
+    local_seconds: u64,
+    help_minutes: u16,
+) -> (Stage, u8, bool) {
     if project.kind == Kind::Empty || age < project.start_age {
         return (Stage::Planned, 0, false);
     }
@@ -198,8 +216,9 @@ fn progress(project: Project, age: u64, local_seconds: u64) -> (Stage, u8, bool)
     let shift_start = u64::from(plan.shift_start) * 60;
     let shift_length = u64::from(plan.shift_minutes) * 60;
     let local_start = (local_seconds + DAY - elapsed % DAY) % DAY;
-    let worked = work_until(local_start + elapsed, shift_start, shift_length)
+    let scheduled = work_until(local_start + elapsed, shift_start, shift_length)
         - work_until(local_start, shift_start, shift_length);
+    let worked = scheduled + u64::from(help_minutes.min(MAX_HELP_MINUTES)) * 60;
     let goal = u64::from(plan.days) * shift_length;
     let percent = (worked * 100 / goal).min(99) as u8;
     let [foundation, frame, roof] = plan.milestones;
@@ -235,12 +254,15 @@ mod tests {
             start_age: 0,
         };
         let morning = (9 * 60 + 10) * 60;
-        assert_eq!(progress(cabin, 0, morning), (Stage::Planned, 0, true));
-        let at_noon = progress(cabin, 12 * 3600 - morning, 12 * 3600);
-        let at_night = progress(cabin, 23 * 3600 - morning, 23 * 3600);
+        assert_eq!(progress(cabin, 0, morning, 0), (Stage::Planned, 0, true));
+        let at_noon = progress(cabin, 12 * 3600 - morning, 12 * 3600, 0);
+        let at_night = progress(cabin, 23 * 3600 - morning, 23 * 3600, 0);
         assert_eq!(at_noon, (Stage::Foundation, 5, false));
         assert_eq!(at_night, at_noon);
-        assert_eq!(progress(cabin, DAY, morning), (Stage::Foundation, 5, true));
+        assert_eq!(
+            progress(cabin, DAY, morning, 0),
+            (Stage::Foundation, 5, true)
+        );
     }
 
     #[test]
@@ -251,14 +273,14 @@ mod tests {
             start_age: 0,
         };
         assert_ne!(
-            progress(cabin, 20 * DAY - 1, 15 * 3600 - 1).0,
+            progress(cabin, 20 * DAY - 1, 15 * 3600 - 1, 0).0,
             Stage::Complete
         );
         let reopened = Clock::load(anchor.real + 5 * DAY, 0, Some(anchor)).time();
         let elapsed = reopened.seconds - anchor.world.seconds;
         assert!(elapsed >= 20 * DAY);
         assert_eq!(
-            progress(cabin, elapsed, reopened.seconds_of_day),
+            progress(cabin, elapsed, reopened.seconds_of_day, 0),
             (Stage::Complete, 100, false)
         );
     }
@@ -286,5 +308,25 @@ mod tests {
             visible(13, 37_000, compact, &projects).next(),
             visible(13, 37_000, large, &projects).next()
         );
+    }
+
+    #[test]
+    fn visitors_advance_construction_without_skipping_its_calendar_deadline() {
+        let mut projects = [Project::default(); LOTS];
+        projects[0] = Project {
+            kind: Kind::RainShelter,
+            start_age: 0,
+        };
+        let work = [u16::MAX; LOTS];
+        let sample = |age| {
+            visible_with_help(age, age % DAY, (160, 100), &projects, &work)
+                .next()
+                .unwrap()
+        };
+        let unhelped = visible(DAY, 0, (160, 100), &projects).next().unwrap();
+        assert!(sample(DAY).percent > unhelped.percent);
+        assert_eq!(sample(7 * DAY - 1).percent, 99);
+        assert_ne!(sample(7 * DAY - 1).stage, Stage::Complete);
+        assert_eq!(sample(7 * DAY).stage, Stage::Complete);
     }
 }

@@ -298,22 +298,81 @@ def cat_frames(cat, sequence):
         yield sprite
 
 
-def visitor_cat(cat, coat):
-    palette = {
-        "grey": ("#3c414f", "#4f5569", "#727e96", "#9ba7bb", "#d7dce1"),
-        "black": ("#272332", "#3b3648", "#514b61", "#706980", "#b1a6b5"),
-    }[coat]
-    colors = [tuple(bytes.fromhex(color[1:])) for color in palette]
-    for sprite in cat_frames(cat, (("idle", 0), ("blink", 0), ("sit", 1))):
-        recolor = []
-        for red, green, blue, alpha in sprite.getdata():
-            luminance = (red * 3 + green * 5 + blue * 2) // 10
-            ramp = sum(luminance > limit for limit in (62, 108, 151, 190))
-            recolor.append((*colors[ramp], alpha) if alpha else (0, 0, 0, 0))
-        sprite.putdata(recolor)
-        small = Image.new("RGBA", SPRITE_SIZE)
-        small.alpha_composite(sprite.resize((36, 24), NEAREST), (6, 7))
-        yield small
+def grey_visitor(art, pose):
+    edge = "#485363"
+    fur = "#91a2b0"
+    stripe = "#62778b"
+    light = "#c8d6d7"
+    tail = 15 + (pose == 1)
+    art.line([(20, 27), (16, 27), (13, 24), (13, 18), (tail, 15), (tail + 1, 16)],
+             fill=edge, width=5)
+    art.line([(20, 27), (16, 26), (14, 23), (14, 18), (tail, 16)],
+             fill=fur, width=2)
+    art.point((14, 21), fill=stripe)
+    art.ellipse((17, 16, 32, 29), fill=fur, outline=edge)
+    art.ellipse((22, 19, 31, 28), fill=light)
+    art.line((18, 21, 21, 22), fill=stripe)
+    art.line((18, 24, 21, 25), fill=stripe)
+    art.rounded_rectangle((20, 25, 25, 29), radius=1, fill=light, outline=edge)
+    art.rounded_rectangle((26, 25, 31, 29), radius=1, fill=light, outline=edge)
+    head_y = 12 + (pose == 2)
+    art.polygon([(18, head_y + 3), (18, head_y - 3), (23, head_y - 1),
+                 (26, head_y - 1), (31, head_y - 3), (32, head_y + 4),
+                 (32, head_y + 8), (28, head_y + 11), (22, head_y + 11),
+                 (17, head_y + 8)], fill=fur, outline=edge)
+    art.point((20, head_y), fill="#be8e9b")
+    art.point((30, head_y), fill="#be8e9b")
+    art.line((24, head_y, 26, head_y), fill=stripe)
+    art.point((25, head_y + 1), fill=stripe)
+    art.ellipse((20, head_y + 5, 29, head_y + 9), fill=light)
+    if pose == 1:
+        art.line((21, head_y + 4, 23, head_y + 4), fill=edge)
+        art.line((27, head_y + 4, 29, head_y + 4), fill=edge)
+    else:
+        art.point((22, head_y + 4), fill="#45685c")
+        art.point((28, head_y + 4), fill="#45685c")
+    art.point((25, head_y + 6), fill="#ad7888")
+    art.point((25, head_y + 7), fill=edge)
+
+
+def black_visitor(art, pose):
+    edge = "#322d40"
+    fur = "#4d465d"
+    shine = "#77708b"
+    tail_tip = 16 if pose == 2 else 13
+    art.line([(19, 25), (13, 26), (10, 24), (8, 21), (8, tail_tip)],
+             fill=edge, width=4)
+    art.line([(18, 25), (13, 25), (10, 23), (9, 20), (9, tail_tip)],
+             fill=shine, width=1)
+    head = 29 + (pose == 2)
+    art.polygon([(14, 24), (16, 20), (21, 18), (27, 19), (30, 21),
+                 (33, 24), (32, 27), (17, 27)], fill=fur, outline=edge)
+    art.line([(17, 21), (21, 19), (27, 20)], fill=shine, width=2)
+    art.polygon([(17, 25), (21, 25), (20, 28), (24, 28), (24, 29),
+                 (17, 29), (16, 28)], fill=fur, outline=edge)
+    art.polygon([(29, 25), (32, 25), (34, 28), (38, 28), (38, 29),
+                 (30, 29)], fill=fur, outline=edge)
+    art.polygon([(head, 20), (head - 1, 15), (head + 3, 17), (head + 5, 17),
+                 (head + 6, 14), (head + 8, 18), (head + 10, 21),
+                 (head + 12, 22), (head + 11, 24), (head + 6, 25),
+                 (head + 2, 24)], fill=fur, outline=edge)
+    art.point((head + 6, 17), fill="#ab7c95")
+    art.line((head + 2, 19, head + 7, 19), fill=shine)
+    art.point((head + 10, 22), fill="#b8929c")
+    if pose == 1:
+        art.line((head + 6, 21, head + 8, 21), fill="#b08760")
+    else:
+        art.point((head + 7, 21), fill="#f6d083")
+
+
+def visitor_cat(coat):
+    draw_cat = {"grey": grey_visitor, "black": black_visitor}[coat]
+    for pose in range(3):
+        frame = Image.new("RGBA", SPRITE_SIZE)
+        art = ImageDraw.Draw(frame)
+        art.ellipse((12, 27, 36, 30), fill=(58, 47, 56, 55))
+        draw_cat(art, pose)
+        yield frame
 
 
 def gardener_frames():
@@ -538,8 +597,8 @@ def main():
         "cat_treat": list(cat_frames(cat, (("eat", 0), ("eat", 1), ("eat", 2), ("sit", 1)))),
         "keeper": list(gardener_frames()),
         "sparrow": list(sparrow_frames()),
-        "grey_cat": list(visitor_cat(cat, "grey")),
-        "black_cat": list(visitor_cat(cat, "black")),
+        "grey_cat": list(visitor_cat("grey")),
+        "black_cat": list(visitor_cat("black")),
     }
     sprites.update((name, list(wildlife_frames(name))) for name in WILDLIFE)
     atlases = {
