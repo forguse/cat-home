@@ -795,6 +795,7 @@ impl Scene {
             previous
         };
         self.weather(state.weather, state.day_part, now_ms);
+        self.pond_glint(state.day_part, now_ms);
         self.world_marks(effects, &garden, state, now_ms);
         let now = now_ms / 1000;
         let active = activities::current(state);
@@ -888,6 +889,12 @@ impl Scene {
             .scaffolding
             .map(|index| frame(CONSTRUCTION, FRAME_BYTES, index));
         let (wide, tall) = (view.x_growth(), view.y_growth());
+        let building_light = match backdrop.daylight {
+            0 => [95, 92, 100],
+            2 => [83, 84, 97],
+            3 => [78, 66, 62],
+            _ => [100; 3],
+        };
         for y in 0..view.height {
             let line = y + view.top();
             let extra_y = (TALL_AT..TALL_AT + tall).contains(&line);
@@ -915,9 +922,9 @@ impl Scene {
                     let source = ((source_y * WIDTH + source_x) * 4) as usize;
                     target.copy_from_slice(&base[source..source + 4]);
                     if !extra_x {
-                        over(target, &builds[source..source + 4]);
+                        over_building(target, &builds[source..source + 4], building_light);
                         if let Some(layer) = construction {
-                            over(target, &layer[source..source + 4]);
+                            over_building(target, &layer[source..source + 4], building_light);
                         }
                     }
                 }
@@ -935,11 +942,10 @@ impl Scene {
             self.prop(Prop::Water, x.min(view.width - 10), y, 0);
         }
         for plot in backdrop.plots.into_iter().flatten() {
-            self.plot_border(plot, backdrop.daylight == 3);
-            self.plot(plot);
+            self.plot(plot, backdrop.daylight == 3);
         }
         for building in backdrop.buildings.into_iter().flatten() {
-            self.structure(building);
+            self.structure(building, building_light);
         }
         // This solid handle is visible and receives mouse input even over empty sky.
         for y in view.height - 14..view.height {
@@ -968,96 +974,116 @@ impl Scene {
 
     fn yard_paths(&mut self, night: bool) {
         let view = self.view;
-        let path_y = 81 - view.top();
-        let edge = if night { [72, 79, 77] } else { [150, 137, 103] };
-        let gravel = if night { [90, 97, 96] } else { [194, 179, 140] };
-        let pebble = if night {
-            [108, 114, 112]
-        } else {
-            [220, 208, 166]
-        };
-        for x in 47..view.width - 14 {
-            self.point(x, path_y, edge, 245);
-            self.point(x, path_y + 1, gravel, 255);
-            self.point(x, path_y + 2, if x % 5 == 0 { pebble } else { gravel }, 245);
-            self.point(x, path_y + 3, edge, 220);
+        let y = 80 - view.top();
+        let end = view.width - 18;
+        let added_land = view.x_growth();
+        let mut bends = [
+            (48, y + 1),
+            (65, y - 2),
+            (85, y - 1),
+            (107 + added_land, y + 1),
+            (125 + added_land, y),
+            (end, y - 3),
+        ];
+        for (x, _) in &mut bends {
+            *x = (*x).min(end);
         }
-        for y in (70 - view.top())..path_y + 1 {
-            for x in 48..=51 {
-                self.point(x, y, if x == 48 || x == 51 { edge } else { gravel }, 240);
-            }
-        }
+        self.path(&bends, false, 2, night);
+        self.path(&[(y - 10, 50), (y - 6, 51), (y + 1, 48)], true, 2, night);
         if view.width >= 210 {
-            let yard_road = 75 - view.top();
-            for x in 100..view.width - 16 {
-                self.point(x, yard_road, edge, 255);
-                self.point(
-                    x,
-                    yard_road + 1,
-                    if x % 6 == 0 { pebble } else { gravel },
-                    255,
-                );
-            }
-            for y in yard_road..path_y {
-                self.point(101, y, gravel, 255);
-                self.point(102, y, edge, 255);
-            }
+            self.path(&[(y - 7, 112), (y - 3, 107), (y + 1, 105)], true, 1, night);
+            self.path(
+                &[
+                    (112, y - 7),
+                    (135, y - 12),
+                    (end - 24, y - 11),
+                    (end, y - 16),
+                ],
+                false,
+                1,
+                night,
+            );
         }
         if view.height >= 143 {
-            for y in path_y + 4..135 {
-                self.point(48, y, edge, 235);
-                self.point(49, y, gravel, 255);
-                self.point(50, y, gravel, 255);
+            self.path(
+                &[(y + 2, 49), (100, 54), (114, 47), (133, 51)],
+                true,
+                2,
+                night,
+            );
+            let mut southern_bends = [(30, 134), (51, 133), (69, 129), (104, 131), (end, 128)];
+            for (x, _) in &mut southern_bends[..4] {
+                *x = (*x).min(end);
             }
-            for x in 18..view.width - 16 {
-                self.point(x, 134, edge, 255);
-                self.point(x, 135, if x % 6 == 0 { pebble } else { gravel }, 255);
-                self.point(x, 136, edge, 230);
+            self.path(&southern_bends, false, 2, night);
+        }
+    }
+
+    fn path(&mut self, bends: &[(i32, i32)], vertical: bool, width: i32, night: bool) {
+        let [edge, dirt, shade, grit] = if night {
+            [[59, 71, 75], [102, 98, 91], [86, 85, 81], [131, 119, 102]]
+        } else {
+            [
+                [134, 144, 77],
+                [203, 174, 113],
+                [172, 145, 95],
+                [228, 202, 142],
+            ]
+        };
+        for pair in bends.windows(2) {
+            let (from, start) = pair[0];
+            let (to, finish) = pair[1];
+            for along in from..to {
+                let center = start + (finish - start) * (along - from) / (to - from);
+                let near = width + i32::from(along.rem_euclid(11) < 3);
+                let far = width + i32::from(along.rem_euclid(17) >= 12);
+                for across in -near..=far {
+                    let (x, y) = if vertical {
+                        (center + across, along)
+                    } else {
+                        (along, center + across)
+                    };
+                    let grain = (x * 29 + y * 13 + x * y).rem_euclid(31);
+                    let (color, alpha) = match (across, grain) {
+                        (at, 0..=11) if at == -near => (edge, 138),
+                        (at, _) if at == -near => (shade, 172),
+                        (at, 0..=9) if at == far => (edge, 104),
+                        (at, _) if at == far => (shade, 194),
+                        (_, 0..=2) => (grit, 255),
+                        (_, 3..=5) => (shade, 235),
+                        _ => (dirt, 255),
+                    };
+                    self.point(x, y, color, alpha);
+                }
             }
         }
     }
 
-    fn plot_border(&mut self, plot: PlotVisual, night: bool) {
-        let Some(species) = plot.kind.species_index() else {
-            return;
+    fn plant_bed(&mut self, x: i32, y: i32, tree: bool, crop: bool, night: bool) {
+        let [base, ridge, shadow] = match (tree, crop, night) {
+            (true, _, false) => [[116, 139, 73], [149, 158, 83], [85, 117, 69]],
+            (true, _, true) => [[58, 76, 60], [73, 92, 65], [49, 65, 59]],
+            (_, true, false) => [[141, 89, 62], [184, 128, 76], [108, 73, 57]],
+            (_, true, true) => [[92, 70, 65], [123, 92, 71], [71, 58, 57]],
+            (_, _, false) => [[159, 112, 71], [194, 145, 89], [118, 94, 62]],
+            (_, _, true) => [[106, 83, 68], [133, 104, 77], [79, 68, 61]],
         };
-        let (x, y) = (plot.x, plot.y);
-        if (4..8).contains(&species) {
-            for dx in -7_i32..=7 {
-                let depth = if dx.abs() >= 6 { 1 } else { 2 };
-                for dy in -depth..=depth {
-                    self.point(
-                        x + dx,
-                        y + dy,
-                        if night { [55, 69, 64] } else { [108, 132, 83] },
-                        230,
-                    );
-                }
-            }
-            return;
-        }
-        let (edge, face) = if species < 4 {
-            if night {
-                ([96, 76, 68], [116, 92, 78])
-            } else {
-                ([156, 107, 76], [200, 146, 96])
-            }
-        } else if night {
-            ([81, 67, 57], [111, 87, 69])
-        } else {
-            ([125, 88, 59], [174, 125, 79])
-        };
-        for dx in -6..=6 {
-            self.point(x + dx, y + 2, edge, 255);
-            self.point(x + dx, y - 3, face, 255);
-        }
-        for dy in -2..2 {
-            self.point(x - 7, y + dy, edge, 255);
-            self.point(x + 7, y + dy, face, 255);
-        }
-        if species >= 8 {
-            for dx in (-5..=5).step_by(3) {
-                self.point(x + dx, y + 2, face, 255);
+        for dy in -3_i32..=2 {
+            let half = if dy.abs() == 3 || dy == 2 { 4 } else { 6 };
+            for dx in -half..=half {
+                let grain = (x + y + dx * 3 + dy * 7).rem_euclid(11);
+                let color = match (dy, grain) {
+                    (2, _) | (_, 0) => shadow,
+                    (-3, _) | (0, 4..=8) if crop => ridge,
+                    (_, 1..=3) => ridge,
+                    _ => base,
+                };
+                let alpha = if dx.abs() == half || dy == 2 {
+                    216
+                } else {
+                    255
+                };
+                self.point(x + dx, y + dy, color, alpha);
             }
         }
     }
@@ -1082,7 +1108,7 @@ impl Scene {
         }
     }
 
-    fn plot(&mut self, plot: PlotVisual) {
+    fn plot(&mut self, plot: PlotVisual, night: bool) {
         let PlotVisual {
             x,
             y,
@@ -1090,37 +1116,30 @@ impl Scene {
             stage,
             event,
         } = plot;
-        let soil = [128, 90, 69];
         let rim = [165, 124, 88];
         let dark = [97, 73, 68];
         if matches!(
             kind,
             Kind::Planter | Kind::ToolShed | Kind::Pond | Kind::Greenhouse
         ) {
-            self.small_building(x, y, kind, stage);
+            self.small_building(x, y, kind, stage, night);
         } else {
-            for dy in -2..=1 {
-                let edge = if dy == -2 || dy == 1 { 3 } else { 5 };
-                for dx in -edge..=edge {
-                    let color = if (dx + dy) % 3 == 0 { rim } else { soil };
-                    self.point(x + dx, y + dy, color, 236);
-                }
-            }
             let (color, fruit, tree, root) = match kind {
-                Kind::Daisy => ([106, 151, 97], [254, 232, 187], false, false),
-                Kind::Tulip => ([95, 154, 102], [217, 100, 131], false, false),
-                Kind::Lavender => ([116, 157, 123], [175, 131, 212], false, false),
-                Kind::Sunflower => ([114, 143, 80], [243, 191, 82], false, false),
-                Kind::Oak => ([95, 137, 87], [204, 172, 107], true, false),
-                Kind::Maple => ([171, 122, 82], [237, 162, 113], true, false),
-                Kind::Pine => ([78, 131, 113], [154, 183, 138], true, false),
-                Kind::Apple => ([105, 155, 98], [224, 112, 105], true, false),
-                Kind::Carrot => ([124, 161, 107], [236, 148, 85], false, true),
-                Kind::Radish => ([133, 161, 99], [226, 128, 145], false, true),
-                Kind::Lettuce => ([113, 161, 91], [174, 200, 108], false, true),
-                Kind::Pumpkin => ([110, 145, 99], [236, 149, 69], false, true),
+                Kind::Daisy => ([101, 150, 83], [255, 238, 193], false, false),
+                Kind::Tulip => ([95, 149, 87], [236, 110, 139], false, false),
+                Kind::Lavender => ([114, 149, 99], [185, 144, 213], false, false),
+                Kind::Sunflower => ([122, 146, 76], [255, 194, 74], false, false),
+                Kind::Oak => ([104, 153, 76], [206, 176, 105], true, false),
+                Kind::Maple => ([202, 133, 69], [247, 175, 105], true, false),
+                Kind::Pine => ([72, 130, 106], [142, 180, 122], true, false),
+                Kind::Apple => ([116, 157, 71], [227, 95, 82], true, false),
+                Kind::Carrot => ([108, 155, 82], [245, 153, 65], false, true),
+                Kind::Radish => ([119, 160, 87], [230, 124, 150], false, true),
+                Kind::Lettuce => ([115, 162, 84], [192, 204, 109], false, true),
+                Kind::Pumpkin => ([116, 145, 72], [246, 154, 59], false, true),
                 _ => unreachable!(),
             };
+            self.plant_bed(x, y, tree, root, night);
             match stage {
                 Stage::Seed => {
                     self.point(x - 2, y - 1, fruit, 255);
@@ -1172,27 +1191,89 @@ impl Scene {
                             }
                         }
                     };
-                    let stem = if tree && size > 2 { rim } else { color };
-                    for dy in 1..=size {
-                        self.point(x, y - dy, stem, 255);
-                    }
-                    let crown = if tree { size / 3 } else { (size / 2).min(2) };
-                    for dx in -crown..=crown {
-                        self.point(x + dx, y - size + 1 + dx.abs(), color, 255);
-                        if tree && size >= 6 {
-                            self.point(x + dx, y - size + 2 + dx.abs() / 2, color, 255);
+                    let color = if night {
+                        color.map(|channel: u8| channel - channel / 3)
+                    } else {
+                        color
+                    };
+                    let fruit = if night {
+                        fruit.map(|channel: u8| channel - channel / 4)
+                    } else {
+                        fruit
+                    };
+                    if tree && size >= 6 {
+                        self.orchard_tree((x, y), kind, size, color, fruit, night);
+                    } else {
+                        let leaf = color.map(|channel| channel.saturating_add(26));
+                        for dy in 1..=size {
+                            self.point(x, y - dy, color, 255);
                         }
-                    }
-                    if matches!(stage, Stage::Budding | Stage::Mature) {
-                        let fruit_y = if root { y - 2 } else { y - size };
-                        self.point(x, fruit_y, fruit, 255);
-                        if stage == Stage::Mature {
-                            self.point(x - 1, fruit_y + 1, fruit, 255);
-                            self.point(x + 1, fruit_y + 1, fruit, 255);
-                            self.point(x, fruit_y - 1, fruit, 255);
-                            if tree {
-                                self.point(x + 2, fruit_y + 3, fruit, 255);
-                                self.point(x - 2, fruit_y + 4, fruit, 255);
+                        for (dx, dy) in [(-2, 3), (-1, 2), (1, 2), (2, 3)] {
+                            if size >= dy {
+                                self.point(x + dx, y - dy, if dx < 0 { leaf } else { color }, 255);
+                            }
+                        }
+                        if matches!(stage, Stage::Budding | Stage::Mature) {
+                            let fruit_y = if root { y - 1 } else { y - size };
+                            let offsets: &[(i32, i32)] = match (kind, stage) {
+                                (_, Stage::Budding) => &[(0, 0)],
+                                (Kind::Lavender, _) => {
+                                    &[(0, -2), (-1, -1), (0, -1), (0, 0), (1, 0)]
+                                }
+                                (Kind::Tulip, _) => {
+                                    &[(-1, -1), (1, -1), (-1, 0), (0, 0), (1, 0), (0, 1)]
+                                }
+                                (Kind::Pumpkin | Kind::Lettuce, _) => &[
+                                    (-1, -1),
+                                    (0, -1),
+                                    (1, -1),
+                                    (-2, 0),
+                                    (-1, 0),
+                                    (0, 0),
+                                    (1, 0),
+                                    (2, 0),
+                                    (-1, 1),
+                                    (0, 1),
+                                    (1, 1),
+                                ],
+                                _ => &[(0, -1), (-1, 0), (0, 0), (1, 0), (0, 1)],
+                            };
+                            let glint = fruit.map(|channel| channel.saturating_add(23));
+                            for &(dx, dy) in offsets {
+                                self.point(
+                                    x + dx,
+                                    fruit_y + dy,
+                                    if dy < 0 { glint } else { fruit },
+                                    255,
+                                );
+                            }
+                            if stage == Stage::Mature {
+                                let spacing = if root { 4 } else { 3 };
+                                for (side, height) in [(-spacing, size - 2), (spacing, size - 3)] {
+                                    let top = y - height;
+                                    for sy in top..y {
+                                        self.point(x + side, sy, color, 255);
+                                    }
+                                    self.point(x + side - 1, y - 2, leaf, 255);
+                                    self.point(x + side + 1, y - 3, color, 255);
+                                    let bloom_y = if root { y - 1 } else { top };
+                                    self.point(x + side, bloom_y, fruit, 255);
+                                    self.point(x + side + 1, bloom_y, glint, 255);
+                                }
+                            }
+                            if stage == Stage::Mature
+                                && matches!(kind, Kind::Daisy | Kind::Sunflower)
+                            {
+                                self.point(
+                                    x,
+                                    fruit_y,
+                                    if kind == Kind::Daisy {
+                                        [220, 158, 66]
+                                    } else {
+                                        dark
+                                    },
+                                    255,
+                                );
                             }
                         }
                     }
@@ -1211,19 +1292,57 @@ impl Scene {
         }
     }
 
-    fn small_building(&mut self, x: i32, y: i32, kind: Kind, stage: Stage) {
-        let wood = [142, 97, 76];
-        let trim = [195, 145, 105];
-        let fill = match kind {
-            Kind::Planter => [134, 103, 76],
-            Kind::ToolShed => [165, 114, 84],
-            Kind::Pond => [126, 182, 204],
-            Kind::Greenhouse => [141, 182, 163],
-            _ => unreachable!(),
-        };
+    fn orchard_tree(
+        &mut self,
+        (x, y): (i32, i32),
+        kind: Kind,
+        height: i32,
+        leaf: [u8; 3],
+        fruit: [u8; 3],
+        night: bool,
+    ) {
+        let trunk = if night { [111, 83, 68] } else { [155, 106, 67] };
+        let shade = leaf.map(|channel| channel.saturating_sub(25));
+        let light = leaf.map(|channel| channel.saturating_add(25));
+        for dy in 1..height {
+            self.point(x, y - dy, trunk, 255);
+            if height >= 9 {
+                self.point(x + 1, y - dy, [98, 74, 62], 255);
+            }
+        }
+        let crown = height / 3;
+        for row in 0..height * 2 / 3 {
+            let half = if kind == Kind::Pine {
+                (row % 4 + row / 3).min(crown)
+            } else {
+                (1 + row.min(height * 2 / 3 - row)).min(crown)
+            };
+            for dx in -half..=half {
+                let color = if dx == half || row >= height * 2 / 3 - 2 {
+                    shade
+                } else if dx < 0 && (row + dx).rem_euclid(5) < 2 {
+                    light
+                } else {
+                    leaf
+                };
+                self.point(x + dx, y - height + row, color, 255);
+            }
+        }
+        if height >= 9 {
+            self.point(x - 2, y - height + 3, fruit, 255);
+        }
+        if height >= 12 {
+            self.point(x + 2, y - height + 4, fruit, 255);
+            self.point(x - 1, y - height + 5, fruit, 255);
+        }
+    }
+
+    fn small_building(&mut self, x: i32, y: i32, kind: Kind, stage: Stage, night: bool) {
+        let wood = if night { [91, 72, 66] } else { [121, 82, 59] };
+        let trim = if night { [127, 99, 73] } else { [188, 132, 82] };
         for dx in -7..=7 {
-            self.point(x + dx, y, wood, 255);
-            self.point(x + dx, y - 1, trim, 255);
+            self.point(x + dx, y + 1, wood, 110);
+            self.point(x + dx, y, trim, 255);
         }
         match stage {
             Stage::Groundwork => self.prop(Prop::Wood, x + 2, y - 2, 0),
@@ -1236,35 +1355,80 @@ impl Scene {
             }
             Stage::Damaged => self.prop(Prop::Stone, x, y - 2, 0),
             _ => {
-                let height = match kind {
-                    Kind::Planter => 4,
-                    Kind::Pond => 5,
-                    _ => 10,
-                };
-                for dy in 2..=height {
-                    let edge = if dy == height { 4 } else { 6 };
-                    for dx in -edge..=edge {
-                        let color = if dx == -edge || dx == edge || dy == height {
-                            trim
-                        } else {
-                            fill
-                        };
-                        self.point(x + dx, y - dy, color, 255);
-                    }
-                }
-                let prop = match kind {
-                    Kind::Planter => Prop::Flower,
-                    Kind::Pond => Prop::Puddle,
-                    Kind::ToolShed => Prop::Tool,
-                    Kind::Greenhouse => Prop::Leaf,
+                // A shared palette keeps the permanent garden fixtures legible at 1×.
+                let palette: [[u8; 3]; 9] = [
+                    [104, 73, 62],
+                    [155, 99, 64],
+                    [211, 152, 93],
+                    [80, 118, 76],
+                    [135, 164, 81],
+                    [79, 151, 145],
+                    [156, 199, 170],
+                    [235, 203, 125],
+                    [223, 130, 122],
+                ];
+                let art: &[&str] = match kind {
+                    Kind::Planter => &[
+                        "..7....8....7..",
+                        ".747..848..747.",
+                        "..34...34...3..",
+                        ".223444443422.",
+                        "00111111111100",
+                        ".012222222210.",
+                        "..0111111110..",
+                    ],
+                    Kind::ToolShed => &[
+                        "....2222222....",
+                        "...211111112...",
+                        "..21112211112..",
+                        ".2111111111112.",
+                        "000000000000000",
+                        ".121117771121.",
+                        ".121113331121.",
+                        ".122213431121.",
+                        ".121113331121.",
+                        ".121113331121.",
+                        ".000000000000.",
+                    ],
+                    Kind::Pond => &[
+                        "...34..........",
+                        "..433......3...",
+                        "..32666662334..",
+                        ".265555555562.",
+                        ".065555654552.",
+                        "..02655555620.",
+                        "....0222220...",
+                    ],
+                    Kind::Greenhouse => &[
+                        "....6666666....",
+                        "...656565656...",
+                        "..66565656566..",
+                        ".6666666666666.",
+                        ".456564656564.",
+                        ".456563656564.",
+                        ".454363634354.",
+                        ".454363634354.",
+                        ".333333333333.",
+                        ".000000000000.",
+                    ],
                     _ => unreachable!(),
                 };
-                self.prop(prop, x, y - 3, 0);
+                for (row, line) in art.iter().rev().enumerate() {
+                    for (column, ink) in line.bytes().enumerate() {
+                        if ink != b'.' {
+                            let mut color = palette[usize::from(ink - b'0')];
+                            if night {
+                                color = color.map(|channel| channel - channel / 3);
+                            }
+                            self.point(x - 7 + column as i32, y - row as i32, color, 255);
+                        }
+                    }
+                }
             }
         }
     }
 
-    fn structure(&mut self, building: Structure) {
+    fn structure(&mut self, building: Structure, light: [u16; 3]) {
         let Structure {
             x,
             y,
@@ -1277,7 +1441,11 @@ impl Scene {
         for (row, line) in tile.chunks_exact(48 * 4).enumerate() {
             for (column, pixel) in line.chunks_exact(4).enumerate() {
                 if pixel[3] != 0 {
-                    self.pixel(x - 24 + column as i32, y - 35 + row as i32, pixel);
+                    self.pixel(
+                        x - 24 + column as i32,
+                        y - 35 + row as i32,
+                        &lit_building_pixel(pixel, light),
+                    );
                 }
             }
         }
@@ -1427,42 +1595,91 @@ impl Scene {
     }
 
     fn pond(&mut self, x: i32, y: i32, dark: bool) {
-        let shore = if dark { [61, 72, 88] } else { [103, 117, 98] };
-        let water = if dark {
-            [64, 101, 130]
+        let [bank, deep, water, shallow, ripple, stone, sunlit] = if dark {
+            [
+                [54, 73, 73],
+                [36, 64, 89],
+                [40, 83, 109],
+                [53, 105, 122],
+                [79, 124, 141],
+                [80, 88, 87],
+                [106, 112, 107],
+            ]
         } else {
-            [107, 169, 184]
+            [
+                [114, 126, 76],
+                [39, 107, 129],
+                [54, 145, 159],
+                [88, 174, 172],
+                [144, 209, 193],
+                [138, 137, 109],
+                [177, 168, 131],
+            ]
         };
-        for dy in -5_i32..=5 {
-            let edge = 12 - dy.abs() * dy.abs() / 4;
-            for dx in -edge..=edge {
-                let color = if dx.abs() == edge || dy.abs() == 5 {
-                    shore
-                } else if (dx + 17 + 2 * dy) % 6 == 0 {
-                    [water[0] + 8, water[1] + 9, water[2] + 6]
-                } else {
-                    water
+        let banks: [(i32, i32); 12] = [
+            (-6, 2),
+            (-9, 5),
+            (-11, 9),
+            (-12, 10),
+            (-12, 12),
+            (-11, 13),
+            (-11, 13),
+            (-10, 12),
+            (-8, 11),
+            (-6, 9),
+            (-3, 7),
+            (1, 5),
+        ];
+        for (row, &(left, right)) in banks.iter().enumerate() {
+            let dy = row as i32 - 6;
+            for dx in left..=right {
+                let edge = (dx - left).min(right - dx);
+                let color = match (row, edge) {
+                    (0 | 11, _) | (_, 0) => bank,
+                    (1, _) | (2..=4, 1) => deep,
+                    (10, _) | (_, 1) => shallow,
+                    (3..=6, _) if dx < -4 => deep,
+                    _ => water,
                 };
                 self.point(x + dx, y + dy, color, 255);
             }
         }
-        let reeds = if dark { [74, 101, 76] } else { [110, 149, 74] };
-        for (dx, height) in [(-10, 4), (-8, 6), (8, 5), (10, 4)] {
-            for dy in 1..=height {
-                self.point(x + dx, y - 2 - dy, reeds, 255);
+        for (offset, dy, length) in [(-7, -3, 3), (1, -2, 4), (7, -1, 3), (-2, 1, 4), (4, 3, 5)] {
+            for dx in offset..offset + length {
+                self.point(x + dx, y + dy, ripple, if dx == offset { 108 } else { 166 });
             }
         }
-        for dx in -4..=-1 {
-            self.point(
-                x + dx,
-                y - 1,
-                if dark {
-                    [91, 126, 155]
-                } else {
-                    [171, 211, 211]
-                },
-                230,
-            );
+        for (dx, dy) in [(-11, 0), (-8, 3), (0, 5), (8, 3), (11, 1), (5, -5)] {
+            for (sx, sy) in [(0, 0), (1, 0), (-1, 1), (0, 1), (1, 1)] {
+                self.point(
+                    x + dx + sx,
+                    y + dy + sy,
+                    if sy == 0 { sunlit } else { stone },
+                    255,
+                );
+            }
+        }
+        let reed = if dark { [74, 105, 75] } else { [102, 153, 69] };
+        let tip = if dark { [121, 121, 81] } else { [166, 173, 77] };
+        for (dx, dy, height) in [
+            (-11, -2, 4),
+            (-9, -3, 6),
+            (-7, -4, 3),
+            (10, -2, 4),
+            (12, -1, 3),
+        ] {
+            for stem in 0..height {
+                self.point(
+                    x + dx,
+                    y + dy - stem,
+                    if stem == height - 1 { tip } else { reed },
+                    255,
+                );
+            }
+            self.point(x + dx - 1, y + dy - 2, tip, 255);
+        }
+        for (dx, dy) in [(-5, 0), (-4, -1), (-4, 0), (-3, 0), (-4, 1)] {
+            self.point(x + dx, y + dy, if dy < 0 { tip } else { reed }, 255);
         }
     }
 
@@ -1482,6 +1699,23 @@ impl Scene {
             self.point(x + dx, y + dy, [155, 210, 219], 255);
         }
         self.point(x + 1, y - 1, [62, 79, 110], 255);
+    }
+
+    fn pond_glint(&mut self, time: DayPart, ms: u64) {
+        let beat = (ms / 320) % 12;
+        if beat >= 5 {
+            return;
+        }
+        let (x, y) = self.view.fixed(38, 85);
+        let color = match time {
+            DayPart::Night => [86, 129, 149],
+            DayPart::Dusk => [193, 192, 148],
+            _ => [157, 217, 196],
+        };
+        let span = 1 + beat as i32 / 2;
+        for dx in -span..=span {
+            self.point(x + 5 + dx, y, color, 145 - beat as u8 * 24);
+        }
     }
 
     fn pond_event(&mut self, moment: Moment, (x, y): (i32, i32), ms: u64) {
@@ -1645,7 +1879,9 @@ impl Scene {
         }) = self.wardrobe.pose(desired, door, ms)
         {
             let frame = outfit.frame((ms / 500) as usize);
-            if outfit == Outfit::Garden && !self.wardrobe.changing {
+            if !self.wardrobe.changing
+                && (outfit == Outfit::Garden || outfit == Outfit::Sweater && motion == Motion::Nap)
+            {
                 self.role_animation(Role(0), motion, (x, y, flip), ms, (KEEPER, frame));
             } else {
                 self.sprite(KEEPER, frame, (x, y, flip), motion);
@@ -1869,11 +2105,12 @@ impl Scene {
                 let elapsed = ms.saturating_sub(*self.cat_entry.get_or_insert(ms));
                 if elapsed < 1_450 {
                     let (x, y) = lerp(start, door, elapsed, 1_450);
-                    self.sprite(
-                        CAT_WALK,
-                        (ms / 200) as usize,
-                        (x, y, door.0 < start.0),
+                    self.role_animation(
+                        Role(10),
                         Motion::Patrol,
+                        (x, y, door.0 < start.0),
+                        ms,
+                        (CAT_WALK, (ms / 200) as usize),
                     );
                     return;
                 }
@@ -1892,11 +2129,12 @@ impl Scene {
         if let Some((moment, (pond_x, pond_y))) = fishing {
             if moment.phase == Phase::Eating {
                 self.cat_last = Some((pond_x + 3, pond_y + 6));
-                self.sprite(
-                    CAT_EAT,
-                    (ms / 320) as usize,
-                    (pond_x + 3, pond_y + 6, false),
+                self.role_animation(
+                    Role(10),
                     Motion::Bob,
+                    (pond_x + 3, pond_y + 6, false),
+                    ms,
+                    (CAT_EAT, (ms / 320) as usize),
                 );
                 return;
             }
@@ -1954,20 +2192,22 @@ impl Scene {
         if state.cat == CatAction::Sleep {
             motion = Motion::Still;
             let lift = ((ms / 1_400) % 3) as i32;
-            self.sleep_mark(x + 9 + lift, y - 15 - lift);
+            let (side, above) = if self.detailed { (5, 8) } else { (9, 15) };
+            self.sleep_mark(x + side + lift, y - above - lift);
         }
         self.cat_last = Some((x, y));
-        if matches!(state.cat, CatAction::Idle | CatAction::Walk) {
-            self.role_animation(
-                Role(10),
-                motion,
-                (x, y, flip),
-                ms,
-                (sheet, (ms / pace) as usize),
-            );
-        } else {
-            self.sprite(sheet, (ms / pace) as usize, (x, y, flip), motion);
-        }
+        let motion = match (self.detailed, state.cat) {
+            (true, CatAction::Sleep) => Motion::Nap,
+            (true, CatAction::Eat | CatAction::Treat) => Motion::Bob,
+            _ => motion,
+        };
+        self.role_animation(
+            Role(10),
+            motion,
+            (x, y, flip),
+            ms,
+            (sheet, (ms / pace) as usize),
+        );
     }
 
     fn actor_prop(&mut self, prop: Prop, x: i32, y: i32, flip: bool, ms: u64) {
@@ -2120,6 +2360,22 @@ fn over(target: &mut [u8], pixel: &[u8]) {
         for (dest, source) in target.iter_mut().zip(pixel) {
             *dest = (u16::from(*source) + u16::from(*dest) * inverse / 255) as u8;
         }
+    }
+}
+
+fn over_building(target: &mut [u8], pixel: &[u8], light: [u16; 3]) {
+    if pixel[3] != 0 {
+        over(target, &lit_building_pixel(pixel, light));
+    }
+}
+
+fn lit_building_pixel(pixel: &[u8], light: [u16; 3]) -> [u8; 4] {
+    // The atlas uses premultiplied BGRA. Warm window glass stays luminous at night.
+    if pixel[3] == 255 && pixel[2] >= 233 && pixel[1] >= 182 && pixel[0] <= 146 {
+        [pixel[0], pixel[1], pixel[2], pixel[3]]
+    } else {
+        let shade = |channel: usize| (u16::from(pixel[channel]) * light[channel] / 100) as u8;
+        [shade(0), shade(1), shade(2), pixel[3]]
     }
 }
 

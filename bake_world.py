@@ -9,29 +9,18 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw
 
-from bake_scene import CatSprites, NEAREST, SIZE, lawn_texture, make_scene, tiles
+from bake_landscape import base_yard, terrain_sources
+from bake_scene import CatSprites, NEAREST, SIZE
 
 
 OUTPUT = Path(__file__).resolve().parent / "assets" / "world"
 SPRITE_SIZE = (48, 32)
 LIGHT = {
-    "dawn": ((0.91, 0.88, 0.91), (19, 9, 18), (255, 190, 119), 0.22),
+    "dawn": ((0.92, 0.89, 0.89), (18, 9, 17), (255, 204, 134), 0.22),
     "day": ((1.00, 1.00, 1.00), (0, 0, 0), (0, 0, 0), 0.00),
-    "dusk": ((0.88, 0.70, 0.82), (28, 13, 24), (255, 171, 108), 0.36),
-    "night": ((0.55, 0.63, 0.80), (10, 12, 26), (255, 184, 100), 0.55),
+    "dusk": ((0.89, 0.72, 0.77), (28, 10, 27), (255, 178, 105), 0.36),
+    "night": ((0.49, 0.56, 0.69), (9, 14, 27), (255, 185, 104), 0.46),
 }
-
-
-def base_yard():
-    tile_set = tiles()
-    # Reserve a proper patch beside the visitor path for the future flowers.
-    tile_set[83] = Image.new("RGBA", (16, 16))
-    scene = make_scene(tile_set, water_bowl=False)
-    art = ImageDraw.Draw(scene)
-    art.line((134, 80, 138, 80), fill="#a6bd88")
-    art.line((137, 84, 141, 84), fill="#849f71")
-    art.point((135, 83), fill="#bbcc99")
-    return scene
 
 
 def lit_color(color, scale, lift, lamp, glow):
@@ -51,7 +40,7 @@ def lighting(scene, name):
             continue
         x, y = index % SIZE[0], index // SIZE[0]
         # A narrow pool of warm light falls across the doorstep and grass.
-        distance = ((x - 36) / 16) ** 2 + ((y - 64) / 11) ** 2
+        distance = ((x - 35) / 13) ** 2 + ((y - 64) / 10) ** 2
         glow = strength * max(0.0, 1.0 - distance) if alpha == 255 else 0
         if y < 56:
             glow *= 0.5
@@ -66,29 +55,14 @@ def lighting(scene, name):
         art.point((34, 59), fill="#fff1bf")
         art.point((36, 62), fill="#fff1bf")
         art.line((33, 64, 37, 64), fill="#dc955b")
-    if name == "night":
-        ImageDraw.Draw(frame).point((143, 46), fill=(255, 223, 143, 192))
-        ImageDraw.Draw(frame).point((100, 57), fill=(248, 215, 137, 185))
-        ImageDraw.Draw(frame).point((17, 67), fill=(235, 228, 152, 176))
     return frame
 
 
 def terrain_frames():
     """Clock phase first, then two lawn tiles, stepping stones and flowers."""
-    tile_set = tiles()
-    plain = lawn_texture(tile_set[0])
-    varied = lawn_texture(tile_set[1])
-    stones = plain.copy()
-    stones.alpha_composite(lawn_texture(tile_set[43]))
-    flowers = varied.copy()
-    art = ImageDraw.Draw(flowers)
-    art.point((5, 10), fill="#637d54")
-    art.line((4, 9, 6, 9), fill="#fff0aa")
-    art.point((5, 8), fill="#ffcc92")
-    art.point((12, 5), fill="#637d54")
-    art.point((12, 4), fill="#e6b2a3")
+    tiles = terrain_sources()
     for scale, lift, lamp, _ in LIGHT.values():
-        for tile in (plain, varied, stones, flowers):
+        for tile in tiles:
             frame = tile.copy()
             frame.putdata([
                 (*lit_color((red, green, blue), scale, lift, lamp, 0), alpha)
@@ -376,87 +350,9 @@ def visitor_cat(coat):
 
 
 def gardener_frames():
-    base_colors = {
-        "#": "#43394a", "h": "#854e4d", "H": "#bc795e", "s": "#ffdaaa",
-        "S": "#efae85", "p": "#e89287", "e": "#4d3e50", "r": "#df8b79",
-    }
-    braids = (".###.......###.", "#Hhh#.....#hHh#", "#Hh#.......#hh#",
-              "#hr#.......#rh#", ".#h#.......#h#.")
-    face = (
-        "...#########...", "..#HHHHHhhhh#..", ".#HHHHHhhhhh#..",
-        ".#HHHssshhhhh#.", ".#Hssssssshhh#.", ".#Hssesesshhh#.",
-        "..#hpssspshh#..", "...#ssssssh#...", "....##SS##.....",
-    )
+    from bake_action_animation import keeper_costumes
 
-    # Atlas order is part of the renderer contract, three poses per outfit.
-    outfits = (
-        (  # Straw hat and green overalls for gardening.
-            {"C": "#bdd5a2", "c": "#6f9a7c", "d": "#466955", "a": "#eec887",
-             "A": "#ffe2a0", "b": "#80584e"},
-            (".....######......", "....#AAAAaa#.....", "...#AAaaAaaa#....",
-             "..#aaaaaaaaaa#...", ".##AAAAAAAAaa##..", "..############..."),
-            ("....#######....", "...#CCaCaCC#...", "..#CScacacCC#..", "..#scccccCs#...",
-             "...#cdCcdC#....", "...#dcccdd#....", "....######....."),
-        ),
-        (  # Cream apron over a coral dress for feeding.
-            {"C": "#f4a48b", "c": "#c77679", "d": "#a95e70", "a": "#efd3aa",
-             "A": "#fff2ce", "b": "#814f62"},
-            (".................", ".........##......", ".......##Cr#.....",
-             ".....##AA#C#.....", "....#AaaA##......"),
-            ("....#######....", "...#CAcAcCC#...", "..#CCAAACCc#...", "..#sAaaAAsc#...",
-             "...#AAaaAAc#...", "..#caaaaaacc#..", "..###########.."),
-        ),
-        (  # Gold helmet and work jacket for building.
-            {"C": "#75a2ad", "c": "#487d8c", "d": "#39566b", "a": "#e6a651",
-             "A": "#ffdb78", "b": "#715047"},
-            (".....#######.....", "....#AAaAAAa#....", "...#AAAaAAAAa#...",
-             "...#AAAaAAAaa#...", "..##AAAAAAAA###..", "...###########..."),
-            ("....#######....", "...#CCaCcCC#...", "..#CCAcAcCcC#..", "..#sCAaAaCs#...",
-             "...#ccdccC#....", "...#ddcccC#....", "....######....."),
-        ),
-        (  # Blue rain hood, rain jacket and golden rain boots.
-            {"C": "#91cece", "c": "#5699ab", "d": "#476779", "a": "#f0ca75",
-             "A": "#ffe7a0", "b": "#d29655"},
-            (".....#######.....", "....#CCCCccc#....", "...#CCccCCccc#...",
-             "..#CCc####cCc#...", "..#Cc#....#cCc#..", "..#c#......#cc#..",
-             "..#c#......#dc#..", "..#cd#....#dc#...", "...#dc#..#dc#...."),
-            ("...#######.....", "..#CCCAdcCC#...", "..#CCcAccCcC#..", "..#cCCCacCcc#..",
-             "...#CcAdccc#...", "...#Cccdcc##...", "...########...."),
-        ),
-        (  # Knit sweater and a mint scarf off duty.
-            {"C": "#c9aec7", "c": "#ac83a8", "d": "#776481", "a": "#83aa94",
-             "A": "#b6cf9e", "b": "#725b77"},
-            (),
-            ("....#######....", "...#AAAAaAA#...", "..#CCcAacCC#...", "..#sCcAAcCs#...",
-             "...#CCCacC#....", "...#ccccCC#....", "....######....."),
-        ),
-    )
-
-    def stamp(art, rows, origin, colors):
-        for y, row in enumerate(rows, origin[1]):
-            for x, char in enumerate(row, origin[0]):
-                if char != ".":
-                    art.point((x, y), fill=colors[char])
-
-    for outfit, (palette, hat, clothes) in enumerate(outfits):
-        colors = {**base_colors, **palette}
-        for step in range(3):
-            frame = Image.new("RGBA", SPRITE_SIZE)
-            art = ImageDraw.Draw(frame)
-            art.ellipse((16, 27, 32, 30), fill=(63, 48, 52, 61))
-            stamp(art, braids, (17, 16), colors)
-            stamp(art, face, (17, 12), colors)
-            if step == 2:
-                art.point((22, 17), fill=colors["S"])
-                art.point((24, 17), fill=colors["S"])
-            stamp(art, hat, (16, 9), colors)
-            stamp(art, clothes, (17, 21), colors)
-            left, right = 21 + (step == 1), 26 - (step == 2)
-            for x, lift in ((left, step == 1), (right, step == 2)):
-                art.line((x, 27, x + 2, 27), fill=colors["d"])
-                art.line((x - 1, 29 - lift, x + 2, 29 - lift), fill=colors["b"])
-                art.point((x, 28 - lift), fill=colors["a"] if outfit == 3 else colors["b"])
-            yield frame
+    return keeper_costumes()
 
 
 def sparrow_frames():

@@ -52,6 +52,7 @@ FILES = (
     "bake_cast.py",
     "bake_action_animation.py",
     "bake_construction.py",
+    "bake_landscape.py",
     "bake_scene.py",
     "bake_world.py",
     "sources/cat.json",
