@@ -1,0 +1,5 @@
+/target/
+__pycache__/
+*.exe
+cat-home-position.txt
+cat-home-settings.txt
