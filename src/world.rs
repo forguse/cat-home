@@ -6,7 +6,7 @@ use crate::ecology::{self, Event, Kind, Plot, Stage};
 use crate::effects::Effects;
 use crate::fishing::{self, Moment, Phase};
 use crate::projects::{self, LOTS, Project};
-use crate::renderer::Damage;
+use crate::renderer::{DETAIL_BYTES, Damage, DetailSprite};
 use crate::simulation::{CareAction, CatAction, DayPart, Season, Snapshot, Visitor, Weather};
 
 const WIDTH: i32 = 160;
@@ -37,6 +37,9 @@ const HEDGEHOG: &[u8] = include_bytes!("../assets/world/hedgehog.bgra");
 const RABBIT: &[u8] = include_bytes!("../assets/world/rabbit.bgra");
 const FROG: &[u8] = include_bytes!("../assets/world/frog.bgra");
 const EXTRA_CAST: &[u8] = include_bytes!("../assets/world/extra-cast.bgra");
+const ACTION_ANIMATIONS: &[u8] = include_bytes!("../assets/world/action-animation.bgra");
+const BUILDING_STAGES: &[u8] = include_bytes!("../assets/world/construction-progress.bgra");
+const STAGE_BYTES: usize = 48 * 40 * 4;
 
 #[repr(C)]
 #[derive(Default)]
@@ -137,6 +140,10 @@ pub fn check_assets() -> bool {
         && KEEPER.len() == SPRITE_BYTES * OUTFIT_FRAMES * 5
         && EXTRA_CAST.len() == SPRITE_BYTES * 3 * 21
         && valid(EXTRA_CAST, SPRITE_BYTES, 3 * 21)
+        && ACTION_ANIMATIONS.len() == DETAIL_BYTES * 30 * 6 * 6
+        && valid(ACTION_ANIMATIONS, DETAIL_BYTES, 30 * 6 * 6)
+        && BUILDING_STAGES.len() == STAGE_BYTES * 12 * 12
+        && valid(BUILDING_STAGES, STAGE_BYTES, 12 * 12)
         && [
             CAT_IDLE, CAT_SLEEP, CAT_WALK, CAT_EAT, CAT_TREAT, KEEPER, SPARROW, GREY_CAT,
             BLACK_CAT, SQUIRREL, HEDGEHOG, RABBIT, FROG,
@@ -298,7 +305,7 @@ pub fn notebook(
         fishing.is_some(),
         effects,
     );
-    if let Some(role) = context.guest {
+    for role in [context.guest, context.companion].into_iter().flatten() {
         text.push_str(&format!("\n访客 {}", role.label()));
         if let Some(action) = cast::action(role, &context) {
             text.push_str(&format!(" · {} ({})", action.label, action.id));
@@ -403,6 +410,7 @@ struct Structure {
     y: i32,
     kind: projects::Kind,
     stage: projects::Stage,
+    late: bool,
 }
 
 fn garden_at(
@@ -449,8 +457,17 @@ fn cast_context<'a>(
     context.food = snack_available(effects, actions, now);
     context.knock = recent(actions.window_tapped_at, now, 5);
     context.fish = fish;
-    context.guest =
-        selected_guest(state, actions, now).or_else(|| Role::from_visitor(state.visitor));
+    let legacy = Role::from_visitor(state.visitor);
+    let extra = selected_guest(state, actions, now);
+    context.guest = legacy.or(extra);
+    context.companion = if legacy.is_some() && extra.is_some() {
+        extra
+    } else {
+        context
+            .guest
+            .and_then(|primary| cast::paired_guest(primary, state))
+    }
+    .filter(|role| Some(*role) != context.guest && cast::can_visit(*role));
     context
 }
 
@@ -645,6 +662,8 @@ pub struct Scene {
     cat_last: Option<(i32, i32)>,
     cat_entry: Option<u64>,
     results: [Option<cast::Action>; 4],
+    details: [Option<DetailSprite>; 4],
+    detailed: bool,
 }
 
 impl Scene {
@@ -659,6 +678,8 @@ impl Scene {
             cat_last: None,
             cat_entry: None,
             results: [None; 4],
+            details: [None; 4],
+            detailed: false,
         }
     }
 
@@ -668,6 +689,23 @@ impl Scene {
 
     pub fn take_results(&mut self) -> [Option<cast::Action>; 4] {
         std::mem::take(&mut self.results)
+    }
+
+    pub fn render_detailed(
+        &mut self,
+        state: &Snapshot,
+        now_ms: u64,
+        actions: &ManualActions,
+        size: (i32, i32),
+        unlocks: &[u64; 16],
+        projects: &[Project; LOTS],
+        effects: &Effects,
+    ) -> (&[u8], Option<Damage>, &[Option<DetailSprite>; 4]) {
+        self.detailed = true;
+        let (_, changed) =
+            self.render_view(state, now_ms, actions, size, unlocks, projects, effects);
+        self.detailed = false;
+        (&self.pixels, changed, &self.details)
     }
 
     pub fn render_view(
@@ -683,6 +721,7 @@ impl Scene {
         let view = View::new(size);
         let previous = self.painted.take();
         self.results.fill(None);
+        self.details.fill(None);
         let garden = garden_at(state, size, unlocks, effects);
         let mut plots = [None; 16];
         for plot in garden.plots() {
@@ -710,6 +749,7 @@ impl Scene {
                 y: site.y,
                 kind: site.kind,
                 stage: site.stage,
+                late: site.stage_progress >= 50,
             });
             if working.is_none() && site.working {
                 working = Some((site.x + 11, site.y - 2));
@@ -779,21 +819,46 @@ impl Scene {
         let context = cast_context(state, &garden, actions, now, fishing.is_some(), effects);
         let keeper_act = cast::action(Role(0), &context);
         let cat_act = cast::action(Role(10), &context);
-        let visitor_act =
-            Role::from_visitor(state.visitor).and_then(|role| cast::action(role, &context));
+        let guests = [context.guest, context.companion];
+        let guest_actions = guests.map(|guest| guest.and_then(|role| cast::action(role, &context)));
+        let joint = guest_actions
+            .iter()
+            .flatten()
+            .chain(
+                [keeper_act.as_ref(), cat_act.as_ref()]
+                    .into_iter()
+                    .flatten(),
+            )
+            .find(|action| action.partner.is_some());
+        let own_scene = |action: Option<cast::Action>| {
+            action.filter(|act| joint.is_none_or(|leader| Some(act.role) != leader.partner))
+        };
+        let reacting = |role| joint.filter(|leader| leader.partner == Some(role));
         self.people(
             state,
             active.keeper,
-            active.visitor,
             plot_job(state, &garden),
             fishing.map(|moment| (moment, pond)),
             working,
-            keeper_act.as_ref(),
-            visitor_act.as_ref(),
+            own_scene(keeper_act).as_ref(),
+            reacting(Role(0)),
             now_ms,
         );
-        if let Some(role) = context.guest.filter(|role| role.is_extra()) {
-            self.extra_guest(role, cast::action(role, &context).as_ref(), now_ms);
+        for (role, action) in guests
+            .into_iter()
+            .zip(guest_actions.iter())
+            .filter_map(|(role, action)| Some((role?, action.as_ref())))
+        {
+            let baseline = active
+                .visitor
+                .filter(|_| Some(role) == Role::from_visitor(state.visitor));
+            self.draw_guest(
+                role,
+                baseline,
+                own_scene(action.copied()).as_ref(),
+                reacting(role),
+                now_ms,
+            );
         }
         self.cat(
             state,
@@ -801,7 +866,8 @@ impl Scene {
             now_ms,
             actions,
             fishing.map(|moment| (moment, pond)),
-            cat_act.as_ref(),
+            own_scene(cat_act).as_ref(),
+            reacting(Role(10)),
         );
         (
             &self.pixels,
@@ -858,6 +924,7 @@ impl Scene {
             }
         }
         self.apply_season(backdrop.season);
+        self.yard_paths(backdrop.daylight == 3);
         let (pond_x, pond_y) = view.fixed(38, 85);
         self.pond(pond_x, pond_y, backdrop.daylight == 3);
         if let Some(lit) = backdrop.lantern {
@@ -868,6 +935,7 @@ impl Scene {
             self.prop(Prop::Water, x.min(view.width - 10), y, 0);
         }
         for plot in backdrop.plots.into_iter().flatten() {
+            self.plot_border(plot, backdrop.daylight == 3);
             self.plot(plot);
         }
         for building in backdrop.buildings.into_iter().flatten() {
@@ -896,6 +964,102 @@ impl Scene {
             self.background.shrink_to(size);
         }
         self.painted = None;
+    }
+
+    fn yard_paths(&mut self, night: bool) {
+        let view = self.view;
+        let path_y = 81 - view.top();
+        let edge = if night { [72, 79, 77] } else { [150, 137, 103] };
+        let gravel = if night { [90, 97, 96] } else { [194, 179, 140] };
+        let pebble = if night {
+            [108, 114, 112]
+        } else {
+            [220, 208, 166]
+        };
+        for x in 47..view.width - 14 {
+            self.point(x, path_y, edge, 245);
+            self.point(x, path_y + 1, gravel, 255);
+            self.point(x, path_y + 2, if x % 5 == 0 { pebble } else { gravel }, 245);
+            self.point(x, path_y + 3, edge, 220);
+        }
+        for y in (70 - view.top())..path_y + 1 {
+            for x in 48..=51 {
+                self.point(x, y, if x == 48 || x == 51 { edge } else { gravel }, 240);
+            }
+        }
+        if view.width >= 210 {
+            let yard_road = 75 - view.top();
+            for x in 100..view.width - 16 {
+                self.point(x, yard_road, edge, 255);
+                self.point(
+                    x,
+                    yard_road + 1,
+                    if x % 6 == 0 { pebble } else { gravel },
+                    255,
+                );
+            }
+            for y in yard_road..path_y {
+                self.point(101, y, gravel, 255);
+                self.point(102, y, edge, 255);
+            }
+        }
+        if view.height >= 143 {
+            for y in path_y + 4..135 {
+                self.point(48, y, edge, 235);
+                self.point(49, y, gravel, 255);
+                self.point(50, y, gravel, 255);
+            }
+            for x in 18..view.width - 16 {
+                self.point(x, 134, edge, 255);
+                self.point(x, 135, if x % 6 == 0 { pebble } else { gravel }, 255);
+                self.point(x, 136, edge, 230);
+            }
+        }
+    }
+
+    fn plot_border(&mut self, plot: PlotVisual, night: bool) {
+        let Some(species) = plot.kind.species_index() else {
+            return;
+        };
+        let (x, y) = (plot.x, plot.y);
+        if (4..8).contains(&species) {
+            for dx in -7_i32..=7 {
+                let depth = if dx.abs() >= 6 { 1 } else { 2 };
+                for dy in -depth..=depth {
+                    self.point(
+                        x + dx,
+                        y + dy,
+                        if night { [55, 69, 64] } else { [108, 132, 83] },
+                        230,
+                    );
+                }
+            }
+            return;
+        }
+        let (edge, face) = if species < 4 {
+            if night {
+                ([96, 76, 68], [116, 92, 78])
+            } else {
+                ([156, 107, 76], [200, 146, 96])
+            }
+        } else if night {
+            ([81, 67, 57], [111, 87, 69])
+        } else {
+            ([125, 88, 59], [174, 125, 79])
+        };
+        for dx in -6..=6 {
+            self.point(x + dx, y + 2, edge, 255);
+            self.point(x + dx, y - 3, face, 255);
+        }
+        for dy in -2..2 {
+            self.point(x - 7, y + dy, edge, 255);
+            self.point(x + 7, y + dy, face, 255);
+        }
+        if species >= 8 {
+            for dx in (-5..=5).step_by(3) {
+                self.point(x + dx, y + 2, face, 255);
+            }
+        }
     }
 
     fn apply_season(&mut self, season: Season) {
@@ -1101,150 +1265,49 @@ impl Scene {
     }
 
     fn structure(&mut self, building: Structure) {
-        use projects::Stage as Work;
-        let Structure { x, y, kind, stage } = building;
-        let style = kind.style();
-        let (width, height, base, roof) = match style {
-            1 => (11, 12, [177, 123, 78], [121, 89, 95]),
-            2 => (12, 14, [153, 157, 171], [107, 110, 131]),
-            3 => (11, 13, [173, 99, 90], [119, 76, 88]),
-            4 => (10, 18, [182, 139, 93], [103, 145, 112]),
-            5 => (12, 11, [151, 192, 187], [218, 224, 203]),
-            6 => (11, 13, [130, 171, 178], [84, 119, 152]),
-            7 => (12, 12, [170, 128, 101], [119, 129, 156]),
-            8 => (13, 16, [164, 96, 85], [120, 78, 94]),
-            9 => (7, 24, [155, 122, 107], [101, 108, 138]),
-            10 => (12, 12, [212, 170, 123], [154, 94, 111]),
-            11 => (13, 11, [143, 185, 148], [97, 138, 116]),
-            _ => (12, 14, [142, 142, 135], [82, 132, 137]),
+        let Structure {
+            x,
+            y,
+            kind,
+            stage,
+            late,
+        } = building;
+        let index = (usize::from(kind.style()) - 1) * 12 + stage as usize * 2 + usize::from(late);
+        let tile = frame(BUILDING_STAGES, STAGE_BYTES, index);
+        for (row, line) in tile.chunks_exact(48 * 4).enumerate() {
+            for (column, pixel) in line.chunks_exact(4).enumerate() {
+                if pixel[3] != 0 {
+                    self.pixel(x - 24 + column as i32, y - 35 + row as i32, pixel);
+                }
+            }
+        }
+    }
+
+    fn role_animation(
+        &mut self,
+        role: Role,
+        motion: Motion,
+        position: (i32, i32, bool),
+        ms: u64,
+        fallback: (&[u8], usize),
+    ) {
+        if !self.detailed {
+            self.sprite(fallback.0, fallback.1, position, motion);
+            return;
+        }
+        let timing = match motion {
+            Motion::Hop | Motion::Patrol => 130,
+            Motion::Bob | Motion::Tilt => 170,
+            Motion::Nap => 440,
+            Motion::Still => 250,
         };
-        let dark = [83, 68, 82];
-        let timber = [180, 135, 93];
-        let trim = [225, 187, 129];
-        let glass = [164, 208, 206];
-        if stage == Work::Planned {
-            for dx in (-width..=width).step_by(3) {
-                self.point(x + dx, y, [211, 173, 111], 230);
-            }
-            for dx in [-width, width] {
-                for dy in 1..=4 {
-                    self.point(x + dx, y - dy, timber, 255);
-                }
-            }
-            return;
-        }
-        for dx in -width..=width {
-            self.point(x + dx, y, dark, 255);
-            self.point(
-                x + dx,
-                y - 1,
-                if style == 6 { [106, 160, 177] } else { trim },
-                255,
-            );
-        }
-        if stage == Work::Foundation {
-            self.prop(Prop::Wood, x - 4, y - 2, 0);
-            self.prop(Prop::Stone, x + 4, y - 2, 0);
-            return;
-        }
-        let lifted = if matches!(style, 4 | 6) {
-            if style == 4 { 6 } else { 3 }
-        } else {
-            2
-        };
-        for dy in 2..=height {
-            for dx in [-width + 1, width - 1] {
-                self.point(x + dx, y - dy, timber, 255);
-            }
-            if dy >= lifted && matches!(stage, Work::Finish | Work::Complete) && style != 7 {
-                for dx in -width + 2..width - 1 {
-                    let row_edge = matches!(style, 1..=3 | 6 | 8 | 12) && (dy + 1) % 4 == 0;
-                    let framing = matches!(style, 5 | 11) && (dx % 4 == 0 || dy % 5 == 0);
-                    let color = if framing {
-                        roof
-                    } else if row_edge {
-                        timber
-                    } else {
-                        base
-                    };
-                    self.point(x + dx, y - dy, color, 255);
-                }
-            }
-        }
-        if stage == Work::Frame {
-            for dx in -width..=width {
-                let dy = (dx + width) * (height - 3) / (width * 2);
-                self.point(x + dx, y - 2 - dy, trim, 255);
-            }
-            return;
-        }
-        for rise in 0..=6 {
-            let span = match style {
-                2 => width + 1 - i32::from(rise >= 3) * 2,
-                5 | 11 => width + 1 - (rise * rise / 4),
-                8 => width + 1 - rise / 2 - i32::from(rise > 3) * 2,
-                7 | 10 => width + 2 - rise / 3,
-                _ => width + 2 - rise * 2,
-            };
-            for dx in -span..=span {
-                let color = if rise == 0 {
-                    dark
-                } else if style == 10 && (dx + width + 2) / 2 % 2 == 0 {
-                    [244, 204, 154]
-                } else {
-                    roof
-                };
-                self.point(x + dx, y - height - rise, color, 255);
-            }
-        }
-        if stage == Work::Roof {
-            return;
-        }
-        let door = if style == 8 { 3 } else { 2 };
-        if !matches!(style, 5 | 7 | 11) {
-            for dy in lifted..(lifted + 6).min(height) {
-                for dx in -door..=door {
-                    self.point(
-                        x + dx,
-                        y - dy,
-                        if dx == 0 && style == 8 { trim } else { dark },
-                        255,
-                    );
-                }
-            }
-        }
-        if stage != Work::Complete {
-            return;
-        }
-        let window_height = height / 2 + 2;
-        for offset in [-(width / 2), width / 2] {
-            for dy in 0..3 {
-                for dx in -1..=1 {
-                    self.point(
-                        x + offset + dx,
-                        y - window_height - dy,
-                        if dy == 0 { trim } else { glass },
-                        255,
-                    );
-                }
-            }
-        }
-        match style {
-            4 | 9 => {
-                for dy in 1..height - 2 {
-                    self.point(x + width - 3, y - dy, timber, 255);
-                    if dy % 2 == 0 {
-                        self.point(x + width - 2, y - dy, trim, 255);
-                    }
-                }
-            }
-            5 | 11 => self.prop(Prop::Flower, x - width + 2, y - 2, 0),
-            6 => self.prop(Prop::Puddle, x + 4, y + 2, 0),
-            7 => self.prop(Prop::Lamp, x, y - height + 1, 0),
-            8 => self.prop(Prop::Seed, x - width, y - 3, 0),
-            10 => self.prop(Prop::Food, x + width - 2, y - 3, 0),
-            12 => self.prop(Prop::Tool, x + width - 2, y - 3, 0),
-            _ => {}
+        let index = (usize::from(role.0) * 6 + motion as usize) * 6 + (ms / timing) as usize % 6;
+        let detail = DetailSprite::new(frame(ACTION_ANIMATIONS, DETAIL_BYTES, index), position);
+        if let Some(area) = detail.damage((self.view.width, self.view.height))
+            && let Some(slot) = self.details.iter_mut().find(|slot| slot.is_none())
+        {
+            *slot = Some(detail);
+            self.painted = Some(self.painted.map_or(area, |old| old.union(area)));
         }
     }
 
@@ -1370,15 +1433,23 @@ impl Scene {
         } else {
             [107, 169, 184]
         };
-        for dy in -3_i32..=3 {
-            let edge = 9 - dy.abs() * 2;
+        for dy in -5_i32..=5 {
+            let edge = 12 - dy.abs() * dy.abs() / 4;
             for dx in -edge..=edge {
-                let color = if dx.abs() == edge || dy == 3 {
+                let color = if dx.abs() == edge || dy.abs() == 5 {
                     shore
+                } else if (dx + 17 + 2 * dy) % 6 == 0 {
+                    [water[0] + 8, water[1] + 9, water[2] + 6]
                 } else {
                     water
                 };
                 self.point(x + dx, y + dy, color, 255);
+            }
+        }
+        let reeds = if dark { [74, 101, 76] } else { [110, 149, 74] };
+        for (dx, height) in [(-10, 4), (-8, 6), (8, 5), (10, 4)] {
+            for dy in 1..=height {
+                self.point(x + dx, y - 2 - dy, reeds, 255);
             }
         }
         for dx in -4..=-1 {
@@ -1453,12 +1524,11 @@ impl Scene {
         &mut self,
         state: &Snapshot,
         keeper: Option<&Activity>,
-        visitor: Option<&Activity>,
         job: Option<&Plot>,
         fishing: Option<(Moment, (i32, i32))>,
         project: Option<(i32, i32)>,
         role_action: Option<&cast::Action>,
-        guest_action: Option<&cast::Action>,
+        reaction: Option<&cast::Action>,
         ms: u64,
     ) {
         let outfit = keeper_outfit(state, job).unwrap_or(Outfit::Garden);
@@ -1514,6 +1584,16 @@ impl Scene {
                 outfit,
                 prop,
             })
+        } else if let Some(leader) = reaction {
+            let (x, y, flip) = self.partner_position(leader, ms);
+            Some(KeeperPose {
+                x,
+                y,
+                flip,
+                outfit,
+                motion: Motion::Tilt,
+                prop: Prop::None,
+            })
         } else if let Some(action) = role_action {
             let (x, y, flip) = self.cast_position(action, ms);
             let prop = if action.phase == cast::Phase::Approach {
@@ -1564,12 +1644,12 @@ impl Scene {
             prop,
         }) = self.wardrobe.pose(desired, door, ms)
         {
-            self.sprite(
-                KEEPER,
-                outfit.frame((ms / 500) as usize),
-                (x, y, flip),
-                motion,
-            );
+            let frame = outfit.frame((ms / 500) as usize);
+            if outfit == Outfit::Garden && !self.wardrobe.changing {
+                self.role_animation(Role(0), motion, (x, y, flip), ms, (KEEPER, frame));
+            } else {
+                self.sprite(KEEPER, frame, (x, y, flip), motion);
+            }
             self.actor_prop(prop, x, y, flip, ms);
             if !self.wardrobe.changing {
                 if let Some((moment, pond)) = fishing {
@@ -1581,65 +1661,66 @@ impl Scene {
                 }
             }
         }
-        self.draw_visitor(state, visitor, guest_action, ms);
     }
 
-    fn draw_visitor(
+    fn draw_guest(
         &mut self,
-        state: &Snapshot,
-        visitor: Option<&Activity>,
+        role: Role,
+        baseline: Option<&Activity>,
         action: Option<&cast::Action>,
+        reaction: Option<&cast::Action>,
         ms: u64,
     ) {
-        if let Some(activity) = visitor {
-            let guest = match state.visitor {
-                Visitor::None => return,
-                Visitor::Sparrow => SPARROW,
-                Visitor::GreyCat => GREY_CAT,
-                Visitor::BlackCat => BLACK_CAT,
-                Visitor::Squirrel => SQUIRREL,
-                Visitor::Hedgehog => HEDGEHOG,
-                Visitor::Rabbit => RABBIT,
-                Visitor::Frog => FROG,
-            };
-            if let Some(action) = action {
-                self.cast_sprite(guest, (ms / 680) as usize, action, ms);
-            } else {
-                let (x, y, flip) = pose(activity, ms);
-                let (x, y) = self.view.roaming(x, y);
-                self.sprite(guest, (ms / 680) as usize, (x, y, !flip), activity.motion);
-                self.actor_prop(activity.prop, x, y, !flip, ms);
-            }
-        }
-    }
-
-    fn extra_guest(&mut self, role: Role, action: Option<&cast::Action>, ms: u64) {
-        let group = match role.0 {
-            1..=9 => role.0 - 1,
-            18..=29 => role.0 - 9,
+        let step = (ms / 650) as usize % 3;
+        let fallback: (&[u8], usize) = match role.0 {
+            1..=9 => (EXTRA_CAST, usize::from(role.0 - 1) * 3 + step),
+            11 => (GREY_CAT, step),
+            12 => (BLACK_CAT, step),
+            13 => (SPARROW, step),
+            14 => (SQUIRREL, step),
+            15 => (HEDGEHOG, step),
+            16 => (RABBIT, step),
+            17 => (FROG, step),
+            18..=29 => (EXTRA_CAST, usize::from(role.0 - 9) * 3 + step),
             _ => return,
         };
-        let step = usize::from(group) * 3 + (ms / 650) as usize % 3;
-        if let Some(action) = action {
-            self.cast_sprite(EXTRA_CAST, step, action, ms);
+        if let Some(leader) = reaction {
+            let position = self.partner_position(leader, ms);
+            self.role_animation(role, Motion::Tilt, position, ms, fallback);
+        } else if let Some(action) = action {
+            let (x, y, flip) = self.cast_position(action, ms);
+            self.role_animation(role, action.motion, (x, y, flip), ms, fallback);
+            if action.phase != cast::Phase::Approach {
+                self.actor_prop(action.prop, x, y, flip, ms);
+            }
+            self.cast_result(action, x, y, ms);
+        } else if let Some(activity) = baseline {
+            let (x, y, flip) = pose(activity, ms);
+            let (x, y) = self.view.roaming(x, y);
+            self.role_animation(role, activity.motion, (x, y, !flip), ms, fallback);
+            self.actor_prop(activity.prop, x, y, !flip, ms);
         } else {
             let x = self.view.width - 24;
             let y = (self.view.height - 24).max(16);
-            self.sprite(EXTRA_CAST, step, (x, y, true), Motion::Still);
+            self.role_animation(role, Motion::Still, (x, y, true), ms, fallback);
         }
     }
 
-    fn cast_sprite(&mut self, atlas: &[u8], step: usize, action: &cast::Action, ms: u64) {
-        let (x, y, flip) = self.cast_position(action, ms);
-        self.sprite(atlas, step, (x, y, flip), action.motion);
-        if action.phase != cast::Phase::Approach {
-            self.actor_prop(action.prop, x, y, flip, ms);
-        }
-        self.cast_result(action, x, y, ms);
+    fn partner_position(&self, action: &cast::Action, ms: u64) -> (i32, i32, bool) {
+        let (x, y, _) = self.cast_position(action, ms);
+        let on_right = x < self.view.width - 24;
+        let neighbor = if on_right { x + 12 } else { x - 12 };
+        (neighbor.clamp(9, self.view.width - 10), y, on_right)
     }
 
     fn cast_position(&self, action: &cast::Action, ms: u64) -> (i32, i32, bool) {
-        let (x, y) = if action.plot.is_some() {
+        let pond_pair = matches!(
+            (action.role.0, action.partner.map(|role| role.0)),
+            (17, Some(19)) | (7, Some(17 | 19 | 20))
+        );
+        let (x, y) = if pond_pair {
+            self.view.fixed(32, 86)
+        } else if action.plot.is_some() {
             (action.x, action.y)
         } else if action.target == cast::Target::Pond && action.phase != cast::Phase::Approach {
             self.view.fixed(42, 85)
@@ -1661,7 +1742,10 @@ impl Scene {
         } else {
             (x, y, action.role.0 >= 10)
         };
-        let (dx, dy, patrol_flip) = motion_offset(action.motion, ms);
+        let (dx, mut dy, patrol_flip) = motion_offset(action.motion, ms);
+        if self.detailed && matches!(action.motion, Motion::Hop | Motion::Bob) {
+            dy = 0;
+        }
         (
             (x + dx).clamp(9, self.view.width - 10),
             (y + dy).clamp(12, self.view.height - 10),
@@ -1776,6 +1860,7 @@ impl Scene {
         actions: &ManualActions,
         fishing: Option<(Moment, (i32, i32))>,
         role_action: Option<&cast::Action>,
+        reaction: Option<&cast::Action>,
     ) {
         let Some(activity) = activity else { return };
         if state.day_part == DayPart::Night && state.cat == CatAction::Sleep {
@@ -1825,7 +1910,13 @@ impl Scene {
         };
         let mut motion = activity.motion;
         let mut prop = activity.prop;
-        if let Some(action) = role_action.filter(|_| state.cat != CatAction::Treat) {
+        if let Some(leader) =
+            reaction.filter(|_| matches!(state.cat, CatAction::Idle | CatAction::Walk))
+        {
+            (x, y, flip) = self.partner_position(leader, ms);
+            motion = Motion::Tilt;
+            prop = Prop::None;
+        } else if let Some(action) = role_action.filter(|_| state.cat != CatAction::Treat) {
             (x, y, flip) = self.cast_position(action, ms);
             motion = action.motion;
             prop = if action.phase == cast::Phase::Approach {
@@ -1866,7 +1957,17 @@ impl Scene {
             self.sleep_mark(x + 9 + lift, y - 15 - lift);
         }
         self.cat_last = Some((x, y));
-        self.sprite(sheet, (ms / pace) as usize, (x, y, flip), motion);
+        if matches!(state.cat, CatAction::Idle | CatAction::Walk) {
+            self.role_animation(
+                Role(10),
+                motion,
+                (x, y, flip),
+                ms,
+                (sheet, (ms / pace) as usize),
+            );
+        } else {
+            self.sprite(sheet, (ms / pace) as usize, (x, y, flip), motion);
+        }
     }
 
     fn actor_prop(&mut self, prop: Prop, x: i32, y: i32, flip: bool, ms: u64) {
@@ -2322,6 +2423,8 @@ mod tests {
             phase: cast::Phase::Work,
             phase_progress: 50,
             completes_now: false,
+            variant: 0,
+            partner: None,
             window: 1,
             plot: Some(original.id),
         };

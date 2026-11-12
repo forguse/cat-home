@@ -102,6 +102,7 @@ pub struct Project {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u8)]
 pub enum Stage {
     Planned,
     Foundation,
@@ -132,6 +133,7 @@ pub struct Sample {
     pub kind: Kind,
     pub stage: Stage,
     pub percent: u8,
+    pub stage_progress: u8,
     pub working: bool,
 }
 
@@ -139,13 +141,13 @@ pub struct Sample {
 // for the full building sprite and keep the expansion sites on the lawn.
 const SITES: [(i32, i32, i32, i32); LOTS] = [
     (150, 82, 88, 68),
-    (224, 82, 127, 62),
+    (224, 82, 127, 66),
     (130, 143, 35, 126),
-    (140, 166, 81, 149),
+    (140, 166, 81, 126),
     (314, 82, 215, 66),
-    (351, 82, 252, 68),
-    (148, 180, 131, 161),
-    (390, 82, 292, 65),
+    (351, 82, 252, 66),
+    (148, 180, 131, 126),
+    (390, 82, 292, 66),
 ];
 
 fn position(lot: usize, (width, height): (i32, i32)) -> Option<(i32, i32)> {
@@ -194,6 +196,7 @@ pub fn visible_with_help<'a>(
                 kind: project.kind,
                 stage,
                 percent,
+                stage_progress: progress_within_stage(project, age, local_seconds, stage, percent),
                 working,
             })
         })
@@ -236,6 +239,46 @@ fn progress(
     let working =
         worked < goal && (shift_start..shift_start + shift_length).contains(&local_seconds);
     (stage, percent, working)
+}
+
+fn progress_within_stage(
+    project: Project,
+    age: u64,
+    local_seconds: u64,
+    stage: Stage,
+    percent: u8,
+) -> u8 {
+    if project.kind == Kind::Empty || age < project.start_age {
+        return 0;
+    }
+    let plan = project.kind.blueprint();
+    let elapsed = age - project.start_age;
+    let [foundation, frame, roof] = plan.milestones;
+    let (done, total) = match stage {
+        Stage::Planned => {
+            let started = (local_seconds % DAY + DAY - elapsed % DAY) % DAY;
+            let opening = u64::from(plan.shift_start) * 60;
+            let closing = opening + u64::from(plan.shift_minutes) * 60;
+            let wait = match started {
+                time if time < opening => opening - time,
+                time if time >= closing => DAY - time + opening,
+                _ => 0,
+            };
+            (elapsed, wait)
+        }
+        Stage::Foundation => (u64::from(percent), u64::from(foundation)),
+        Stage::Frame => (
+            u64::from(percent - foundation),
+            u64::from(frame - foundation),
+        ),
+        Stage::Roof => (u64::from(percent - frame), u64::from(roof - frame)),
+        Stage::Finish => (u64::from(percent - roof), u64::from(100 - roof)),
+        Stage::Complete => (elapsed.saturating_sub(u64::from(plan.days) * DAY), DAY),
+    };
+    done.min(total)
+        .saturating_mul(100)
+        .checked_div(total)
+        .unwrap_or(0) as u8
 }
 
 fn work_until(local: u64, start: u64, length: u64) -> u64 {
@@ -328,5 +371,29 @@ mod tests {
         assert_eq!(sample(7 * DAY - 1).percent, 99);
         assert_ne!(sample(7 * DAY - 1).stage, Stage::Complete);
         assert_eq!(sample(7 * DAY).stage, Stage::Complete);
+    }
+
+    #[test]
+    fn visible_progress_covers_both_halves_of_every_construction_stage() {
+        for kind in BLUEPRINTS {
+            let mut projects = [Project::default(); LOTS];
+            projects[0].kind = kind;
+            let mut phases = 0u16;
+            let end = (u64::from(kind.days()) + 1) * DAY;
+            for age in (0..=end).step_by(60) {
+                let stage = visible(age, age % DAY, (160, 100), &projects)
+                    .next()
+                    .unwrap();
+                assert!(stage.stage_progress <= 100);
+                let frame = stage.stage as u8 * 2 + u8::from(stage.stage_progress >= 50);
+                phases |= 1 << frame;
+            }
+            assert_eq!(
+                phases,
+                0x0fff,
+                "{} did not visit every stage half",
+                kind.label()
+            );
+        }
     }
 }

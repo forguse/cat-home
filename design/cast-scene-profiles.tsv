@@ -1,0 +1,56 @@
+# R: role, solo total including original actions, permitted shifts, permitted weather, permitted seasons
+R	H01	475	dawn,day,dusk,night	clear,clouds,rain,snow	spring,autumn,winter
+R	H02	195	dawn,day,dusk	clear,clouds,rain	spring,autumn,winter
+R	H03	195	day,dusk	clear,clouds,rain	spring,autumn,winter
+R	H04	91	dusk,night	clear,clouds,rain,snow	spring,autumn,winter
+R	H05	107	dawn,day,dusk,night	clear,clouds,rain,snow	spring,autumn,winter
+R	H06	142	day	clear,clouds,rain,snow	spring,autumn,winter
+R	H07	91	day,dusk	clear,clouds,rain,snow	spring,autumn,winter
+R	H08	144	dawn,day,dusk	clear,clouds,rain	spring,autumn,winter
+R	H09	93	dawn,day,dusk	clear,clouds	spring,autumn,winter
+R	H10	110	day,dusk	clear,clouds	spring,autumn,winter
+R	A01	334	dawn,day,dusk,night	clear,clouds,rain,snow	spring,autumn,winter
+R	A02	78	dawn,day,dusk	clear,clouds,rain	spring,autumn,winter
+R	A03	70	dusk,night	clear,clouds,rain	spring,autumn,winter
+R	A04	80	dawn,day,dusk	clear,clouds,rain	spring,autumn,winter
+R	A05	68	dawn,day	clear,clouds	spring,autumn,winter
+R	A06	48	dusk,night	clear,clouds,rain	spring,autumn
+R	A07	58	dawn,day	clear,clouds,rain	spring,autumn,winter
+R	A08	54	day,dusk,night	clouds,rain	spring,autumn
+R	A09	57	dawn,day	clear,clouds	spring,autumn
+R	A10	54	dawn,day,dusk	clear,clouds,rain	spring,autumn,winter
+R	A11	45	day,dusk,night	clouds,rain	spring,autumn
+R	A12	45	day	clear,clouds	spring,autumn
+R	A13	45	dusk,night	clear,clouds	spring,autumn
+R	A14	55	day	clear,clouds	spring,autumn
+R	A15	53	dawn,day,dusk	clear,clouds,rain	spring,autumn,winter
+R	A16	42	dawn,day	clear,clouds,snow	spring,autumn,winter
+R	A17	47	day	clear,clouds	spring,autumn
+R	A18	39	day	clear	spring,autumn
+R	A19	39	dusk,night	clear,clouds	spring,autumn,winter
+R	A20	46	dawn,day,dusk	clear,clouds	spring,autumn,winter
+# E: effect, three names paired with their current program result. Mode zero is the original result.
+E	Trail	留下路线	在经过的位置留下足迹	留下可辨足迹	在目标附近留下维持更久的足迹	留下耐久足迹	延长足迹可见时间
+E	Signal	当场提醒	在目标附近留下信号	多留一阵提醒	留下持续更久的信号	保留信号	延长信号停留时间
+E	Rest	短暂停歇	登记当前休息处	留下一处歇脚点	登记休息处并延长记录	多歇一阵	延长休息痕迹的保留时间
+E	Bond	试探着打招呼	增加熟悉度	互相熟悉	提高熟悉度，有同伴时记录双方来往	继续结伴	增加熟悉度并延长来往标记
+E	MoveObject	搬动眼前小物	增加拾物并留下移动标记	归拢散物	收集更多拾物	留下拾物堆	增加拾物并延长堆放标记
+E	Forage	寻找一口食物	食物可用时取食，也可发现小物件	多取一份	有食物可多取用，也可发现更多小物件	反复探查食点	取食或拾物，并延长食点记录
+E	Tidy	随手清理	清掉足迹和散物	收拾周边	多清掉一些散物	保留整洁记录	减少散物并延长清理标记
+E	Water	整理眼前水源	角色补水、饮水或照料目标地块	集中照料水分	加强对应的补水、饮水或植物照料	保持水分记录	延长水面变化或照料标记
+E	Drain	疏通积水	目标积涝时推进修复，否则调整水位	检查排水后续	推进排水并留下查看记录	留下排水记录	调整水位或修复积涝，标记留得更久
+E	Sow	趁空地播种	合适的空地换种并开始生长，否则收存种子	播种并催芽	适宜的地块换种并推进生长，没空位时收存种子	留下育苗记录	播种或收存种子，延长落种标记
+E	TendPlant	照料当下植株	给可生长的地块增加照料进度	集中养护植株	给目标地块增加更多照料进度	留下养护记录	照料目标并延长养护标记
+E	Pollinate	在花间授粉	合适的开花植株推进生长并增加种子	沿花丛授粉	推进目标花的进度并多留种子	留下授粉记录	在合适的花上授粉，延长花间标记
+E	Harvest	收下可用果实	成熟地块进入采收并留下食物和种子	收果备餐	采收并多留下食物	整理收获处	采收并延长收获标记
+E	Build	补一段工时	给正在施工的工程增加工时	集中赶一段活	给适用工程增加更多工时	留下施工记录	增加工时并延长施工标记
+E	Repair	修正眼前损坏	推进灾后修复或补充在建工程工时	细查后修补	推进修补并记录检查情况	留下修补记录	延长修复标记，保留实际修复或工时
+E	Shelter	找一处遮护	留下临时遮护标记	收拢遮护材料	留下遮护标记并记录拾物	留用遮护点	延长遮护标记
+E	Nest	查看窝点	留下巢窝或藏点	把材料带到窝边	留下窝点并记录拾物	留用窝点	延长窝点标记
+E	Deliver	送来一包种子	留下投递记录并增加种子	捎来庭院物件	留下投递记录并增加拾物	送来一份食物	增加可取用的食物并延长投递标记
+E	Forecast	观察当前天气	在观察手记留下天气预报	多留一阵预报	让天气预报在观察手记里多保留一会儿	保存预报记录	延长预报记录的有效时间
+E	Art	画下眼前景物	留下小画和作画记录	把画留在院里	让小画在院里多留一会儿	多留一会小画	延长小画标记
+E	SeedTrade	换一份种子	用可用拾物或食物换种子	挑选后换种	用材料交换并多留下种子	留下换种记录	换种后延长记录标记
+E	Food	备下一份餐	增加可取用的食物	多备一些食物	增加更多可取用食物	留出备用餐	备餐并延长食物标记
+E	Lamp	打理当下灯光	在自动照明模式下临时亮灯	添一阵灯光	在自动照明模式下让灯多亮一会儿	延长照明记录	延长自动照明亮灯效果
+E	Survey	查看目标处	留下最近观察记录	多留一阵观察	留下一条能保留更久的观察记录	保留观察记录	延长观察记录

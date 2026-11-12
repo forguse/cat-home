@@ -304,6 +304,127 @@ pub fn visible_sites(width: usize, height: usize) -> u16 {
     })
 }
 
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum Bed {
+    Flower,
+    Tree,
+    Crop,
+}
+
+impl Bed {
+    fn for_kind(kind: Kind) -> Option<Self> {
+        match kind.species_index()? {
+            0..=3 => Some(Self::Flower),
+            4..=7 => Some(Self::Tree),
+            _ => Some(Self::Crop),
+        }
+    }
+}
+
+#[derive(Clone, Copy)]
+struct Footprint {
+    left: usize,
+    right: usize,
+    top: usize,
+    bottom: usize,
+}
+
+impl Footprint {
+    fn around(x: usize, y: usize, side: usize, above: usize, below: usize) -> Self {
+        Self {
+            left: x.saturating_sub(side),
+            right: x.saturating_add(side),
+            top: y.saturating_sub(above),
+            bottom: y.saturating_add(below),
+        }
+    }
+
+    fn bed(x: usize, y: usize, bed: Bed) -> Self {
+        Self::around(x, y, 5, if bed == Bed::Tree { 13 } else { 8 }, 2)
+    }
+
+    fn overlaps(self, other: Self) -> bool {
+        self.left <= other.right
+            && other.left <= self.right
+            && self.top <= other.bottom
+            && other.top <= self.bottom
+    }
+}
+
+// Plant beds are grouped by the current crop, while their original slot IDs
+// continue to own the care, unlock, and growth records across crop rotations.
+fn arrange_beds(garden: &mut Garden, width: usize, height: usize) {
+    let top = 100usize.saturating_sub(height);
+    let front = 88usize.saturating_sub(top);
+    let far_edge = width.saturating_sub(13);
+    let pond = Footprint::around(38, 85usize.saturating_sub(top), 10, 4, 4);
+    let bowl = Footprint::around(
+        86 + width.saturating_sub(160),
+        84usize.saturating_sub(top),
+        3,
+        5,
+        2,
+    );
+    let mut occupied = [None; SITE_COUNT];
+    for (slot, plot) in garden.plots[..garden.count].iter().enumerate() {
+        if Bed::for_kind(plot.kind).is_none() {
+            occupied[slot] = Some(Footprint::around(plot.x, plot.y, 9, 13, 3));
+        }
+    }
+    for bed in [Bed::Tree, Bed::Flower, Bed::Crop] {
+        for (slot, plot) in garden.plots[..garden.count].iter_mut().enumerate() {
+            if Bed::for_kind(plot.kind) != Some(bed) {
+                continue;
+            }
+            let available = |x, y| {
+                let footprint = Footprint::bed(x, y, bed);
+                if x < 13 || x > far_edge || y < 18 || y + 5 >= height {
+                    return None;
+                }
+                if footprint.overlaps(pond)
+                    || footprint.overlaps(bowl)
+                    || occupied
+                        .iter()
+                        .flatten()
+                        .any(|other| footprint.overlaps(*other))
+                {
+                    return None;
+                }
+                Some((x, y, footprint))
+            };
+            let row = |start, end: usize, spacing, y| {
+                (start..=end.min(far_edge))
+                    .step_by(spacing)
+                    .find_map(|x| available(x, y))
+            };
+            let south = || {
+                [142, 158, 176, 192]
+                    .into_iter()
+                    .filter(|y| *y + 5 < height)
+                    .find_map(|y| row(58, far_edge, 14, y))
+            };
+            let preferred = match bed {
+                Bed::Flower => [66, 77, 55].into_iter().find_map(|x| available(x, front)),
+                Bed::Tree if width >= 188 => (108..=far_edge)
+                    .rev()
+                    .step_by(14)
+                    .find_map(|x| available(x, front)),
+                Bed::Tree => row(121, 147, 13, 73usize.saturating_sub(top)),
+                Bed::Crop => south().or_else(|| row(105, 137, 16, front)),
+            };
+            if let Some((x, y, footprint)) = preferred
+                .or_else(|| row(53, far_edge, 12, front))
+                .or_else(south)
+                .or_else(|| available(plot.x, plot.y))
+            {
+                plot.x = x;
+                plot.y = y;
+                occupied[slot] = Some(footprint);
+            }
+        }
+    }
+}
+
 // Durations per real phase, in hours. Every species visits each plot over rotations.
 const FLOWER: [u64; 6] = [1, 8, 24, 16, 36, 11];
 const TREE: [u64; 6] = [8, 24, 48, 48, 72, 16];
@@ -629,6 +750,7 @@ pub fn plots_with_care(
         garden.plots[garden.count] = plot;
         garden.count += 1;
     }
+    arrange_beds(&mut garden, width, height);
     garden
 }
 
@@ -663,6 +785,44 @@ mod tests {
                 (old.id, old.kind, old.stage),
                 (expanded.id, expanded.kind, expanded.stage)
             );
+        }
+    }
+
+    #[test]
+    fn compact_and_expanded_planting_use_orderly_unobstructed_beds() {
+        let compact = plots(0, 0, 160, 100, Season::Spring, Weather::Clear);
+        for plot in compact.plots() {
+            let (xs, y) = match Bed::for_kind(plot.kind).unwrap() {
+                Bed::Flower => (55..=77, 88),
+                Bed::Tree => (121..=147, 73),
+                Bed::Crop => (105..=137, 88),
+            };
+            assert!(xs.contains(&plot.x));
+            assert_eq!(plot.y, y);
+        }
+        let expanded = plots(0, 0, 300, 200, Season::Spring, Weather::Clear);
+        for plot in expanded.plots() {
+            match Bed::for_kind(plot.kind) {
+                Some(Bed::Crop) => assert!(plot.y > 126),
+                Some(Bed::Tree) => assert!(plot.x > 160),
+                _ => {}
+            }
+        }
+        for width in [80, 100, 160, 188, 208, 300, 430] {
+            for height in [60, 85, 100, 123, 143, 170, 200] {
+                for day in (0..100).step_by(3) {
+                    let garden = plots(day * DAY, 0, width, height, Season::Spring, Weather::Clear);
+                    for (index, plot) in garden.plots().iter().enumerate() {
+                        assert!(
+                            garden.plots()[..index]
+                                .iter()
+                                .all(|other| (other.x, other.y) != (plot.x, plot.y)),
+                            "{width}x{height}, day {day}: overlapping plot {}",
+                            plot.id
+                        );
+                    }
+                }
+            }
         }
     }
 

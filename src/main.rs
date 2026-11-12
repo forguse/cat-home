@@ -422,7 +422,7 @@ impl App {
         let now = world::unix_millis();
         let snapshot = self.snapshot(now / 1_000, self.settings.clock.time());
         let size = self.renderer.logical_size();
-        let (image, dirty) = self.scene.render_view(
+        let (image, dirty, details) = self.scene.render_detailed(
             &snapshot,
             now,
             &self.settings.manual,
@@ -431,7 +431,9 @@ impl App {
             &self.settings.projects,
             &self.settings.effects,
         );
-        self.renderer.draw(hwnd, self.position, image, dirty)?;
+        let animated = details.iter().any(Option::is_some);
+        self.renderer
+            .draw(hwnd, self.position, image, dirty, details)?;
         let results = self.scene.take_results();
         if world::apply_results(
             &snapshot,
@@ -445,6 +447,8 @@ impl App {
         }
         Ok(if self.scene.in_transition() {
             180
+        } else if animated {
+            world::redraw_ms(&snapshot).min(220)
         } else {
             world::redraw_ms(&snapshot)
         })
