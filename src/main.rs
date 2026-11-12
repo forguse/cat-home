@@ -36,6 +36,7 @@ use windows_sys::{
         Graphics::Gdi::{GetMonitorInfoW, MONITOR_DEFAULTTONEAREST, MONITORINFO, MonitorFromPoint},
         System::LibraryLoader::GetModuleHandleW,
         UI::{
+            Accessibility::{HWINEVENTHOOK, SetWinEventHook, UnhookWinEvent},
             HiDpi::{DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2, SetProcessDpiAwarenessContext},
             Input::KeyboardAndMouse::{GetAsyncKeyState, ReleaseCapture, SetCapture, VK_LBUTTON},
             Shell::{
@@ -477,31 +478,52 @@ impl App {
         }
         let interval = match self.render(hwnd) {
             Ok(interval) => {
-                let foreground = unsafe { GetForegroundWindow() };
-                if !self.user_hidden && (needs_show || foreground != self.foreground) {
-                    // Show Desktop can move the shell above ordinary windows.
-                    // Rejoin the desktop layer without making the widget topmost.
-                    if desktop_foreground(foreground) {
-                        show_home_window(hwnd, HWND_TOP);
-                    } else if needs_show {
-                        let after = if foreground == hwnd
-                            || unsafe { GetWindowLongW(foreground, GWL_EXSTYLE) } as u32
-                                & WS_EX_TOPMOST
-                                != 0
-                        {
-                            HWND_TOP
-                        } else {
-                            foreground
-                        };
-                        show_home_window(hwnd, after);
-                    }
-                }
-                self.foreground = foreground;
+                self.place_home(hwnd, needs_show);
                 interval
             }
             Err(_) => 900,
         };
         self.set_timer(hwnd, if self.drag.is_some() { 32 } else { interval });
+    }
+
+    fn place_home(&mut self, hwnd: HWND, needs_show: bool) {
+        if self.user_hidden {
+            return;
+        }
+        let foreground = unsafe { GetForegroundWindow() };
+        if !needs_show && foreground == self.foreground {
+            // Desktop organizers may raise their fences just after Show Desktop.
+            if !self.preview && is_topmost(hwnd) && desktop_overlap_above(hwnd) {
+                show_home_window(hwnd, HWND_TOPMOST);
+            }
+            return;
+        }
+        self.foreground = foreground;
+        // Show Desktop can stack the shell above every ordinary window.
+        if !self.preview && desktop_foreground(foreground) {
+            show_home_window(hwnd, HWND_TOPMOST);
+        } else if needs_show || is_topmost(hwnd) {
+            if is_topmost(hwnd) {
+                show_home_window(hwnd, HWND_NOTOPMOST);
+            }
+            let after = if foreground.is_null() || foreground == hwnd || is_topmost(foreground) {
+                HWND_TOP
+            } else {
+                foreground
+            };
+            show_home_window(hwnd, after);
+        }
+    }
+
+    fn reveal(&mut self, hwnd: HWND) {
+        self.user_hidden = false;
+        self.refresh(hwnd);
+        let after = if is_topmost(hwnd) {
+            HWND_TOPMOST
+        } else {
+            HWND_TOP
+        };
+        show_home_window(hwnd, after);
     }
 
     fn tick(&mut self, hwnd: HWND) {
@@ -719,11 +741,41 @@ fn show_home_window(hwnd: HWND, after: HWND) {
     }
 }
 
+fn is_topmost(hwnd: HWND) -> bool {
+    (unsafe { GetWindowLongW(hwnd, GWL_EXSTYLE) } as u32 & WS_EX_TOPMOST) != 0
+}
+
+fn desktop_overlap_above(hwnd: HWND) -> bool {
+    let mut home: RECT = unsafe { mem::zeroed() };
+    if unsafe { GetWindowRect(hwnd, &mut home) } == 0 {
+        return false;
+    }
+    let mut above = unsafe { GetWindow(hwnd, GW_HWNDPREV) };
+    for _ in 0..64 {
+        if above.is_null() {
+            break;
+        }
+        let mut rect: RECT = unsafe { mem::zeroed() };
+        if unsafe { IsWindowVisible(above) } != 0
+            && unsafe { GetWindowRect(above, &mut rect) } != 0
+            && rect.left < home.right
+            && rect.right > home.left
+            && rect.top < home.bottom
+            && rect.bottom > home.top
+            && desktop_foreground(above)
+        {
+            return true;
+        }
+        above = unsafe { GetWindow(above, GW_HWNDPREV) };
+    }
+    false
+}
+
 fn desktop_foreground(foreground: HWND) -> bool {
-    if foreground.is_null()
-        || foreground == unsafe { GetShellWindow() }
-        || unsafe { IsIconic(foreground) } != 0
-    {
+    if foreground.is_null() {
+        return false;
+    }
+    if foreground == unsafe { GetShellWindow() } {
         return true;
     }
     let mut class = [0u16; 96];
@@ -862,22 +914,27 @@ fn append_group(parent: HMENU, label: &str, append_items: impl FnOnce(HMENU)) {
 
 fn toggle_home(hwnd: HWND) {
     with_app(|app| {
-        app.user_hidden = !app.user_hidden;
         if app.user_hidden {
-            unsafe { ShowWindow(hwnd, SW_HIDE) };
+            app.reveal(hwnd);
         } else {
-            app.refresh(hwnd);
-            show_home_window(hwnd, HWND_TOP);
+            app.user_hidden = true;
+            unsafe {
+                SetWindowPos(
+                    hwnd,
+                    HWND_NOTOPMOST,
+                    0,
+                    0,
+                    0,
+                    0,
+                    SWP_HIDEWINDOW | SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE,
+                );
+            }
         }
     });
 }
 
 fn reveal_home(hwnd: HWND) {
-    with_app(|app| {
-        app.user_hidden = false;
-        app.refresh(hwnd);
-        show_home_window(hwnd, HWND_TOP);
-    });
+    with_app(|app| app.reveal(hwnd));
 }
 
 fn append_startup(menu: HMENU) {
@@ -1234,6 +1291,23 @@ fn show_menu(hwnd: HWND) {
 
 thread_local! { static TASKBAR_CREATED: u32 = unsafe { RegisterWindowMessageW(w!("TaskbarCreated")) }; }
 
+unsafe extern "system" fn foreground_changed(
+    _: HWINEVENTHOOK,
+    _: u32,
+    _: HWND,
+    _: i32,
+    _: i32,
+    _: u32,
+    _: u32,
+) {
+    with_app(|app| {
+        let hwnd = app.tray.hwnd;
+        if unsafe { IsWindowVisible(hwnd) } != 0 {
+            app.place_home(hwnd, false);
+        }
+    });
+}
+
 unsafe extern "system" fn window_proc(
     hwnd: HWND,
     message: u32,
@@ -1435,6 +1509,15 @@ fn run() -> io::Result<()> {
             *cell.borrow_mut() = Some(app);
         });
         with_app(|app| app.refresh(hwnd));
+        let foreground_hook = SetWinEventHook(
+            EVENT_SYSTEM_FOREGROUND,
+            EVENT_SYSTEM_FOREGROUND,
+            ptr::null_mut(),
+            Some(foreground_changed),
+            0,
+            0,
+            WINEVENT_OUTOFCONTEXT,
+        );
         let mut message: MSG = mem::zeroed();
         let result = loop {
             match GetMessageW(&mut message, ptr::null_mut(), 0, 0) {
@@ -1446,6 +1529,9 @@ fn run() -> io::Result<()> {
                 }
             }
         };
+        if !foreground_hook.is_null() {
+            UnhookWinEvent(foreground_hook);
+        }
         APP.with(|cell| {
             if let Some(app) = cell.borrow_mut().take() {
                 app.save_settings();
