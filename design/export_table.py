@@ -61,7 +61,7 @@ def main():
     for number, name, result in read_rows("interaction.tsv"):
         roles.append((number, "interaction", "手动交互", name, "手动触发", result))
     counts = Counter(role for _, role, *_ in roles)
-    assert len({row[0] for row in roles}) == len(roles) == 1_000
+    assert len({row[0] for row in roles}) == len(roles) == 1_025
     tabs = '<button type="button" data-role="" aria-pressed="true">全部</button>' + "".join(
         f'<button type="button" data-role="{role}" aria-pressed="false">{label} {counts[role]}</button>'
         for role, label in ROLES.items()
@@ -98,7 +98,7 @@ tbody tr:nth-child(even) {{ background:#f7f8f3; }}
 </style>
 <main>
   <h1>猫咪小屋的小世界</h1>
-  <p>112 项角色与庭院活动，864 种地块上的种植进程，12 种灾害与恢复阶段，以及 12 项手动操作。植物从播种长到收获，庭院会逐步开放新的地块。昼夜跟随电脑时间，天气是院内模拟。</p>
+  <p>{sum(counts[role] for role in ('cat', 'keeper', 'visitor', 'yard'))} 项角色与庭院活动，{counts['plant']} 种地块上的种植进程，{counts['disaster']} 种灾害与恢复阶段，以及 {counts['interaction']} 项手动操作。小屋用自己的时钟推进昼夜、模拟天气与植物生长。默认速度 4×，可以从菜单调整。</p>
   <div class="controls" aria-label="筛选行为">{tabs}<input type="search" aria-label="搜索行为" placeholder="搜花木、地块、天气或动作"></div>
   <div class="wrap">
   <table>

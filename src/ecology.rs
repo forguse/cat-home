@@ -478,6 +478,7 @@ fn update_plot(plot: &mut Plot, age: u64, revealed: u64, seed: u64, open_air: bo
     }
 }
 
+#[cfg(test)]
 pub fn plots(
     now_secs: u64,
     started: u64,

@@ -112,6 +112,10 @@ enum Gate {
     Sparrow,
     GreyCat,
     BlackCat,
+    Squirrel,
+    Hedgehog,
+    Rabbit,
+    Frog,
     Dawn,
     Day,
     Dusk,
@@ -204,6 +208,10 @@ pub fn current(state: &Snapshot) -> Active {
         Visitor::Sparrow => catalog.pick(Gate::Sparrow, phase / 17),
         Visitor::GreyCat => catalog.pick(Gate::GreyCat, phase / 24),
         Visitor::BlackCat => catalog.pick(Gate::BlackCat, phase / 24),
+        Visitor::Squirrel => catalog.pick(Gate::Squirrel, phase / 18),
+        Visitor::Hedgehog => catalog.pick(Gate::Hedgehog, phase / 24),
+        Visitor::Rabbit => catalog.pick(Gate::Rabbit, phase / 19),
+        Visitor::Frog => catalog.pick(Gate::Frog, phase / 19),
     };
     Active {
         cat: catalog.pick(cat_gate, phase / cat_seconds),
@@ -277,6 +285,10 @@ fn parse_gate(actor: &str, gate: &str) -> Gate {
         ("visitor", "sparrow") => Gate::Sparrow,
         ("visitor", "grey") => Gate::GreyCat,
         ("visitor", "black") => Gate::BlackCat,
+        ("visitor", "squirrel") => Gate::Squirrel,
+        ("visitor", "hedgehog") => Gate::Hedgehog,
+        ("visitor", "rabbit") => Gate::Rabbit,
+        ("visitor", "frog") => Gate::Frog,
         ("yard", "dawn") => Gate::Dawn,
         ("yard", "day") => Gate::Day,
         ("yard", "dusk") => Gate::Dusk,
@@ -355,7 +367,7 @@ mod tests {
     }
 
     #[test]
-    fn table_contains_112_distinct_drawable_activities() {
+    fn table_contains_136_distinct_drawable_activities() {
         let catalog = CATALOG.get_or_init(Catalog::load);
         let mut ids = BTreeSet::new();
         for activity in catalog.groups.iter().flatten() {
@@ -371,7 +383,7 @@ mod tests {
                 activity.id
             );
         }
-        assert_eq!(ids.len(), 112);
+        assert_eq!(ids.len(), 136);
     }
 
     #[test]
@@ -391,7 +403,7 @@ mod tests {
         let events = count("D\t") * RESPONSE_STAGES;
         let manual = include_str!("../design/interaction.tsv").lines().count();
         let authored = ANIMALS.lines().count() + VISITORS_YARD.lines().count();
-        assert_eq!(authored + PLANT_ENTRIES + events + manual, 1_000);
+        assert_eq!(authored + PLANT_ENTRIES + events + manual, 1_025);
     }
 
     #[test]
@@ -490,7 +502,15 @@ mod tests {
                 ids.insert(current(&state).keeper.expect("keeper activity").id);
             }
         }
-        for visitor in [Visitor::Sparrow, Visitor::GreyCat, Visitor::BlackCat] {
+        for visitor in [
+            Visitor::Sparrow,
+            Visitor::GreyCat,
+            Visitor::BlackCat,
+            Visitor::Squirrel,
+            Visitor::Hedgehog,
+            Visitor::Rabbit,
+            Visitor::Frog,
+        ] {
             state.visitor = visitor;
             for phase in 0..550 {
                 state.phase_seconds = phase;

@@ -2,6 +2,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::activities::{self, Activity, Motion, Prop};
 use crate::ecology::{self, Event, Kind, Plot, Stage};
+use crate::fishing::{self, Moment, Phase};
 use crate::renderer::Damage;
 use crate::simulation::{CareAction, CatAction, DayPart, Season, Snapshot, Visitor, Weather};
 
@@ -15,6 +16,7 @@ const TERRAIN: &[u8] = include_bytes!("../assets/world/terrain.bgra");
 const SPRITE_W: usize = 48;
 const SPRITE_H: usize = 32;
 const SPRITE_BYTES: usize = SPRITE_W * SPRITE_H * 4;
+const OUTFIT_FRAMES: usize = 3;
 const SCENES: &[u8] = include_bytes!("../assets/world/scenes.bgra");
 const BUILDS: &[u8] = include_bytes!("../assets/world/builds.bgra");
 const CONSTRUCTION: &[u8] = include_bytes!("../assets/world/construction.bgra");
@@ -27,6 +29,10 @@ const KEEPER: &[u8] = include_bytes!("../assets/world/keeper.bgra");
 const SPARROW: &[u8] = include_bytes!("../assets/world/sparrow.bgra");
 const GREY_CAT: &[u8] = include_bytes!("../assets/world/grey_cat.bgra");
 const BLACK_CAT: &[u8] = include_bytes!("../assets/world/black_cat.bgra");
+const SQUIRREL: &[u8] = include_bytes!("../assets/world/squirrel.bgra");
+const HEDGEHOG: &[u8] = include_bytes!("../assets/world/hedgehog.bgra");
+const RABBIT: &[u8] = include_bytes!("../assets/world/rabbit.bgra");
+const FROG: &[u8] = include_bytes!("../assets/world/frog.bgra");
 
 #[repr(C)]
 #[derive(Default)]
@@ -53,10 +59,10 @@ pub fn unix_millis() -> u64 {
     u64::try_from(value.as_millis()).unwrap_or(u64::MAX)
 }
 
-pub fn local_minutes() -> u16 {
+pub fn local_seconds() -> u64 {
     let mut time = LocalTime::default();
     unsafe { GetLocalTime(&mut time) };
-    time.hour * 60 + time.minute
+    u64::from(time.hour) * 3_600 + u64::from(time.minute) * 60 + u64::from(time.second)
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -122,8 +128,10 @@ pub fn check_assets() -> bool {
         && valid(CONSTRUCTION, FRAME_BYTES, 9)
         && TERRAIN.len() == TILE_BYTES * 16
         && valid(TERRAIN, TILE_BYTES, 16)
+        && KEEPER.len() == SPRITE_BYTES * OUTFIT_FRAMES * 5
         && [
-            CAT_IDLE, CAT_SLEEP, CAT_WALK, CAT_EAT, CAT_TREAT, KEEPER, SPARROW, GREY_CAT, BLACK_CAT,
+            CAT_IDLE, CAT_SLEEP, CAT_WALK, CAT_EAT, CAT_TREAT, KEEPER, SPARROW, GREY_CAT,
+            BLACK_CAT, SQUIRREL, HEDGEHOG, RABBIT, FROG,
         ]
         .iter()
         .all(|bytes| valid(bytes, SPRITE_BYTES, 2))
@@ -169,6 +177,8 @@ pub fn status_line(state: &Snapshot) -> String {
     };
     let cat = match state.cat {
         CatAction::Idle => "猫咪在院里",
+        CatAction::Sleep if state.day_part == DayPart::Night => "猫咪在屋里睡觉",
+        CatAction::Sleep if (780..815).contains(&state.minutes_of_day) => "猫咪在院里午睡",
         CatAction::Sleep => "猫咪睡着了",
         CatAction::Walk => "猫咪散步",
         CatAction::Eat => "猫咪吃饭",
@@ -179,6 +189,10 @@ pub fn status_line(state: &Snapshot) -> String {
         Visitor::Sparrow => " · 小麻雀来串门",
         Visitor::GreyCat => " · 灰猫来串门",
         Visitor::BlackCat => " · 黑猫来串门",
+        Visitor::Squirrel => " · 松鼠来串门",
+        Visitor::Hedgehog => " · 刺猬来串门",
+        Visitor::Rabbit => " · 兔子来串门",
+        Visitor::Frog => " · 青蛙来串门",
     };
     let progress = match state.build_stage {
         0 => format!("花圃 {}%", state.build_percent),
@@ -191,10 +205,11 @@ pub fn status_line(state: &Snapshot) -> String {
 
 pub fn notebook(state: &Snapshot, size: (i32, i32), unlocks: &[u64; 16]) -> String {
     let active = activities::current(state);
-    let garden = garden_at(state, unix_millis() / 1000, size, unlocks);
+    let garden = garden_at(state, size, unlocks);
     let job = plot_job(state, &garden);
+    let fishing = fishing::moment(state);
     let mut status = *state;
-    if job.is_some() {
+    if job.is_some() || fishing.is_some() {
         status.caretaker = CareAction::Tending;
     }
     let mut text = status_line(&status).replace(" · ", "\n");
@@ -236,6 +251,26 @@ pub fn notebook(state: &Snapshot, size: (i32, i32), unlocks: &[u64; 16]) -> Stri
             plot.job_label(),
             plot.kind.label()
         ));
+    }
+    let outfit = if fishing.is_some() {
+        Some(if state.weather == Weather::Rain {
+            Outfit::Raincoat
+        } else {
+            Outfit::Garden
+        })
+    } else {
+        keeper_outfit(state, job)
+    };
+    if let Some(outfit) = outfit {
+        text.push_str(&format!("\n园丁穿着{}", outfit.label()));
+    }
+    if let Some(moment) = fishing {
+        text.push_str(match moment.phase {
+            Phase::Casting | Phase::Waiting | Phase::Bite => "\n园丁在池边钓鱼",
+            Phase::Caught => "\n园丁钓到一条小鱼",
+            Phase::Eating => "\n橘猫在吃刚钓到的鱼",
+            Phase::Disappointed => "\n这次没钓到鱼，园丁有点失落",
+        });
     }
     text
 }
@@ -297,10 +332,10 @@ struct PlotVisual {
     event: Event,
 }
 
-fn garden_at(state: &Snapshot, now: u64, size: (i32, i32), unlocks: &[u64; 16]) -> ecology::Garden {
+fn garden_at(state: &Snapshot, size: (i32, i32), unlocks: &[u64; 16]) -> ecology::Garden {
     ecology::plots_with_unlocks(
-        now,
-        now.saturating_sub(state.phase_seconds),
+        state.world_start.saturating_add(state.phase_seconds),
+        state.world_start,
         size.0 as usize,
         size.1 as usize,
         state.season,
@@ -316,12 +351,142 @@ fn plot_job<'a>(state: &Snapshot, garden: &'a ecology::Garden) -> Option<&'a Plo
     garden.job()
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum Outfit {
+    Garden,
+    Apron,
+    Helmet,
+    Raincoat,
+    Sweater,
+}
+
+impl Outfit {
+    fn frame(self, step: usize) -> usize {
+        self as usize * OUTFIT_FRAMES + step % OUTFIT_FRAMES
+    }
+
+    fn label(self) -> &'static str {
+        match self {
+            Self::Garden => "草帽和背带裤",
+            Self::Apron => "厨房围裙",
+            Self::Helmet => "安全帽和工作服",
+            Self::Raincoat => "雨衣和雨靴",
+            Self::Sweater => "针织外套",
+        }
+    }
+}
+
+fn keeper_outfit(state: &Snapshot, job: Option<&Plot>) -> Option<Outfit> {
+    let outdoors = || {
+        if matches!(state.weather, Weather::Rain | Weather::Snow) {
+            Outfit::Raincoat
+        } else {
+            Outfit::Garden
+        }
+    };
+    match state.caretaker {
+        CareAction::Feeding => Some(Outfit::Apron),
+        CareAction::Building => Some(Outfit::Helmet),
+        CareAction::Tending => Some(outdoors()),
+        CareAction::Resting => Some(Outfit::Sweater),
+        CareAction::Away => job.map(|plot| {
+            if matches!(plot.stage, Stage::Groundwork | Stage::Framing)
+                || (plot.id >= 12 && plot.stage == Stage::Repairing)
+            {
+                Outfit::Helmet
+            } else {
+                outdoors()
+            }
+        }),
+    }
+}
+
+#[derive(Clone, Copy)]
+struct KeeperPose {
+    x: i32,
+    y: i32,
+    outfit: Outfit,
+    motion: Motion,
+    flip: bool,
+    prop: Prop,
+}
+
+#[derive(Default)]
+struct Wardrobe {
+    target: Option<Outfit>,
+    started: u64,
+    from: Option<KeeperPose>,
+    last: Option<KeeperPose>,
+    changing: bool,
+}
+
+impl Wardrobe {
+    fn pose(
+        &mut self,
+        desired: Option<KeeperPose>,
+        door: (i32, i32),
+        now: u64,
+    ) -> Option<KeeperPose> {
+        let target = desired.map(|pose| pose.outfit);
+        if self.target != target {
+            self.target = target;
+            self.started = now;
+            self.from = self.last;
+        }
+        let age = now.saturating_sub(self.started);
+        let leave_at = if self.from.is_some() { 2_050 } else { 450 };
+        self.changing = if desired.is_some() {
+            age < leave_at + 1_250
+        } else {
+            self.from.is_some() && age < 1_250
+        };
+        let pose = if age < 1_250 && self.from.is_some() {
+            self.from
+                .map(|pose| approach(pose, (pose.x, pose.y), door, age, 1_250))
+        } else if age < leave_at {
+            None
+        } else if age < leave_at + 1_250 {
+            desired.map(|pose| approach(pose, door, (pose.x, pose.y), age - leave_at, 1_250))
+        } else {
+            desired
+        };
+        self.last = pose;
+        pose
+    }
+}
+
+fn approach(
+    mut pose: KeeperPose,
+    start: (i32, i32),
+    end: (i32, i32),
+    at: u64,
+    span: u64,
+) -> KeeperPose {
+    (pose.x, pose.y) = lerp(start, end, at, span);
+    pose.flip = end.0 < start.0;
+    pose.motion = Motion::Patrol;
+    pose.prop = Prop::None;
+    pose
+}
+
+fn lerp(start: (i32, i32), end: (i32, i32), at: u64, span: u64) -> (i32, i32) {
+    let step = at.min(span) as i32;
+    let span = span as i32;
+    (
+        start.0 + (end.0 - start.0) * step / span,
+        start.1 + (end.1 - start.1) * step / span,
+    )
+}
+
 pub struct Scene {
     pixels: Vec<u8>,
     background: Vec<u8>,
     backdrop: Option<Backdrop>,
     view: View,
     painted: Option<Damage>,
+    wardrobe: Wardrobe,
+    cat_last: Option<(i32, i32)>,
+    cat_entry: Option<u64>,
 }
 
 impl Scene {
@@ -332,7 +497,14 @@ impl Scene {
             backdrop: None,
             view: View::new((WIDTH, HEIGHT)),
             painted: None,
+            wardrobe: Wardrobe::default(),
+            cat_last: None,
+            cat_entry: None,
         }
+    }
+
+    pub fn in_transition(&self) -> bool {
+        self.wardrobe.changing || (self.cat_entry.is_some() && self.cat_last.is_some())
     }
 
     pub fn render_view(
@@ -345,7 +517,7 @@ impl Scene {
     ) -> (&[u8], Option<Damage>) {
         let view = View::new(size);
         let previous = self.painted.take();
-        let garden = garden_at(state, now_ms / 1000, size, unlocks);
+        let garden = garden_at(state, size, unlocks);
         let mut plots = [None; 16];
         for plot in garden.plots() {
             plots[usize::from(plot.id)] = Some(PlotVisual {
@@ -402,14 +574,30 @@ impl Scene {
             let (x, y) = view.roaming(140, 80);
             self.prop(Prop::Food, x, y, now_ms);
         }
+        let pond = garden
+            .plots()
+            .iter()
+            .find(|plot| plot.kind == Kind::Pond && plot.stage == Stage::Complete)
+            .map_or_else(
+                || view.fixed(38, 85),
+                |plot| (plot.x as i32, plot.y as i32 - 2),
+            );
+        let fishing = fishing::moment(state);
         self.people(
             state,
             active.keeper,
             active.visitor,
             plot_job(state, &garden),
+            fishing.map(|moment| (moment, pond)),
             now_ms,
         );
-        self.cat(state, active.cat, now_ms, actions);
+        self.cat(
+            state,
+            active.cat,
+            now_ms,
+            actions,
+            fishing.map(|moment| (moment, pond)),
+        );
         (
             &self.pixels,
             match (dirty, self.painted) {
@@ -465,6 +653,8 @@ impl Scene {
             }
         }
         self.apply_season(backdrop.season);
+        let (pond_x, pond_y) = view.fixed(38, 85);
+        self.pond(pond_x, pond_y, backdrop.daylight == 3);
         if let Some(lit) = backdrop.lantern {
             self.porch_light(lit);
         }
@@ -817,15 +1007,120 @@ impl Scene {
         self.point(35, 64 - self.view.top(), frame, 255);
     }
 
+    fn pond(&mut self, x: i32, y: i32, dark: bool) {
+        let shore = if dark { [61, 72, 88] } else { [103, 117, 98] };
+        let water = if dark {
+            [64, 101, 130]
+        } else {
+            [107, 169, 184]
+        };
+        for dy in -3_i32..=3 {
+            let edge = 9 - dy.abs() * 2;
+            for dx in -edge..=edge {
+                let color = if dx.abs() == edge || dy == 3 {
+                    shore
+                } else {
+                    water
+                };
+                self.point(x + dx, y + dy, color, 255);
+            }
+        }
+        for dx in -4..=-1 {
+            self.point(
+                x + dx,
+                y - 1,
+                if dark {
+                    [91, 126, 155]
+                } else {
+                    [171, 211, 211]
+                },
+                230,
+            );
+        }
+    }
+
+    fn fish(&mut self, x: i32, y: i32) {
+        for (dx, dy) in [
+            (-3, -1),
+            (-2, 0),
+            (-3, 1),
+            (-1, 0),
+            (0, -1),
+            (0, 0),
+            (0, 1),
+            (1, -1),
+            (1, 0),
+            (2, 0),
+        ] {
+            self.point(x + dx, y + dy, [155, 210, 219], 255);
+        }
+        self.point(x + 1, y - 1, [62, 79, 110], 255);
+    }
+
+    fn pond_event(&mut self, moment: Moment, (x, y): (i32, i32), ms: u64) {
+        match moment.phase {
+            Phase::Casting | Phase::Waiting | Phase::Bite => {
+                let swing = if moment.phase == Phase::Casting {
+                    i32::from(moment.elapsed / 5)
+                } else {
+                    3
+                };
+                for n in 0..8 {
+                    self.point(x + 14 - n, y - 8 - n / 2 + 3 - swing, [159, 112, 83], 255);
+                }
+                for n in 0..12 {
+                    self.point(x + 7 - n / 2, y - 12 + n, [231, 229, 201], 178);
+                }
+                let dip = i32::from(moment.phase == Phase::Bite && (ms / 220).is_multiple_of(2));
+                self.point(x + 1, y - 1 + dip, [246, 137, 123], 255);
+                if moment.phase == Phase::Bite {
+                    self.prop(Prop::Puddle, x, y + 1, ms);
+                }
+            }
+            Phase::Caught => self.fish(x + 12, y - 11 - i32::from(moment.elapsed % 3)),
+            Phase::Eating => {
+                self.prop(Prop::Food, x + 8, y + 5, ms);
+                if moment.elapsed < 28 {
+                    self.fish(x + 8, y + 2);
+                }
+            }
+            Phase::Disappointed => {
+                let drop = ((ms / 520) % 3) as i32;
+                for (dx, dy) in [(0, 0), (-1, 1), (0, 1), (1, 1), (0, 2)] {
+                    self.point(x + 17 + dx, y - 12 + dy + drop, [150, 194, 226], 220);
+                }
+            }
+        }
+    }
+
     fn people(
         &mut self,
         state: &Snapshot,
         keeper: Option<&Activity>,
         visitor: Option<&Activity>,
         job: Option<&Plot>,
+        fishing: Option<(Moment, (i32, i32))>,
         ms: u64,
     ) {
-        if let Some(plot) = job {
+        let outfit = keeper_outfit(state, job).unwrap_or(Outfit::Garden);
+        let desired = if let Some((moment, (x, y))) = fishing {
+            Some(KeeperPose {
+                x: x + 16,
+                y: y - 2,
+                flip: true,
+                motion: if moment.phase == Phase::Disappointed {
+                    Motion::Tilt
+                } else {
+                    Motion::Still
+                },
+                outfit: if state.weather == Weather::Rain {
+                    Outfit::Raincoat
+                } else {
+                    Outfit::Garden
+                },
+                prop: Prop::None,
+            })
+        } else if let Some(plot) = job {
             let x = plot.x as i32;
             let y = plot.y as i32;
             let prop = match plot.stage {
@@ -836,13 +1131,14 @@ impl Scene {
                 Stage::Groundwork | Stage::Framing | Stage::Complete => Prop::Wood,
                 Stage::Damaged | Stage::Repairing => Prop::Tool,
             };
-            self.sprite(
-                KEEPER,
-                (ms / 650) as usize,
-                (x - 9, y + 3, false),
-                Motion::Tilt,
-            );
-            self.prop(prop, x + 5, y - 4 - ((ms / 950) % 2) as i32, ms);
+            Some(KeeperPose {
+                x: x - 9,
+                y: y + 3,
+                flip: false,
+                motion: Motion::Tilt,
+                outfit,
+                prop,
+            })
         } else if let Some(activity) = keeper {
             let (mut x, mut y, flip) = pose(activity, ms);
             if state.caretaker == CareAction::Building {
@@ -854,17 +1150,44 @@ impl Scene {
                 x += dx;
                 y += dy;
                 (x, y) = self.view.fixed(x, y);
-                if x >= self.view.width {
-                    return self.draw_visitor(state, visitor, ms);
-                }
-                if activity.prop == Prop::Tool {
-                    self.prop(Prop::Spark, x + 9, y - 13, ms);
-                }
             } else {
                 (x, y) = self.view.roaming(x, y);
             }
-            self.sprite(KEEPER, (ms / 560) as usize, (x, y, flip), activity.motion);
-            self.actor_prop(activity.prop, x, y, flip, ms);
+            (x < self.view.width).then_some(KeeperPose {
+                x,
+                y,
+                flip,
+                motion: activity.motion,
+                outfit,
+                prop: activity.prop,
+            })
+        } else {
+            None
+        };
+        let door = self.view.fixed(50, 69);
+        if let Some(KeeperPose {
+            x,
+            y,
+            outfit,
+            motion,
+            flip,
+            prop,
+        }) = self.wardrobe.pose(desired, door, ms)
+        {
+            self.sprite(
+                KEEPER,
+                outfit.frame((ms / 500) as usize),
+                (x, y, flip),
+                motion,
+            );
+            self.actor_prop(prop, x, y, flip, ms);
+            if !self.wardrobe.changing {
+                if let Some((moment, pond)) = fishing {
+                    self.pond_event(moment, pond, ms);
+                } else if state.caretaker == CareAction::Building && prop == Prop::Tool {
+                    self.prop(Prop::Spark, x + 9, y - 13, ms);
+                }
+            }
         }
         self.draw_visitor(state, visitor, ms);
     }
@@ -876,6 +1199,10 @@ impl Scene {
                 Visitor::Sparrow => SPARROW,
                 Visitor::GreyCat => GREY_CAT,
                 Visitor::BlackCat => BLACK_CAT,
+                Visitor::Squirrel => SQUIRREL,
+                Visitor::Hedgehog => HEDGEHOG,
+                Visitor::Rabbit => RABBIT,
+                Visitor::Frog => FROG,
             };
             let (x, y, flip) = pose(activity, ms);
             let (x, y) = self.view.roaming(x, y);
@@ -890,10 +1217,44 @@ impl Scene {
         activity: Option<&Activity>,
         ms: u64,
         actions: &ManualActions,
+        fishing: Option<(Moment, (i32, i32))>,
     ) {
         let Some(activity) = activity else { return };
+        if state.day_part == DayPart::Night && state.cat == CatAction::Sleep {
+            let door = self.view.fixed(50, 69);
+            if let Some(start) = self.cat_last {
+                let elapsed = ms.saturating_sub(*self.cat_entry.get_or_insert(ms));
+                if elapsed < 1_450 {
+                    let (x, y) = lerp(start, door, elapsed, 1_450);
+                    self.sprite(
+                        CAT_WALK,
+                        (ms / 200) as usize,
+                        (x, y, door.0 < start.0),
+                        Motion::Patrol,
+                    );
+                    return;
+                }
+                self.cat_last = None;
+            }
+            let (x, y) = self.view.fixed(43, 52 - ((ms / 950) % 3) as i32);
+            self.sleep_mark(x, y);
+            return;
+        }
+        self.cat_entry = None;
         let (mut x, mut y, mut flip) = pose(activity, ms);
         (x, y) = self.view.roaming(x, y);
+        if let Some((moment, (pond_x, pond_y))) = fishing {
+            if moment.phase == Phase::Eating {
+                self.cat_last = Some((pond_x + 3, pond_y + 6));
+                self.sprite(
+                    CAT_EAT,
+                    (ms / 320) as usize,
+                    (pond_x + 3, pond_y + 6, false),
+                    Motion::Bob,
+                );
+                return;
+            }
+        }
         let (mut sheet, pace) = match state.cat {
             CatAction::Idle => (CAT_IDLE, 850),
             CatAction::Sleep => (CAT_SLEEP, 1_700),
@@ -902,6 +1263,13 @@ impl Scene {
             CatAction::Treat => (CAT_TREAT, 260),
         };
         let mut motion = activity.motion;
+        if state.cat == CatAction::Sleep && (780..815).contains(&state.minutes_of_day) {
+            let sheltered = matches!(state.weather, Weather::Rain | Weather::Snow);
+            (x, y) = self.view.fixed(
+                if sheltered { 57 } else { 110 },
+                if sheltered { 73 } else { 78 },
+            );
+        }
         if cat_heard_window(state, ms / 1000, actions) {
             (x, y) = self.view.fixed(51, 75);
             flip = true;
@@ -920,6 +1288,7 @@ impl Scene {
             let lift = ((ms / 1_400) % 3) as i32;
             self.sleep_mark(x + 9 + lift, y - 15 - lift);
         }
+        self.cat_last = Some((x, y));
         self.sprite(sheet, (ms / pace) as usize, (x, y, flip), motion);
     }
 
@@ -1087,6 +1456,62 @@ mod tests {
             WeatherMode::Clear,
             None,
         )
+    }
+
+    #[test]
+    fn clothes_change_only_after_the_keeper_passes_through_the_house() {
+        let door = (50, 69);
+        let garden = KeeperPose {
+            x: 92,
+            y: 79,
+            outfit: Outfit::Garden,
+            motion: Motion::Still,
+            flip: false,
+            prop: Prop::Water,
+        };
+        let apron = KeeperPose {
+            x: 75,
+            y: 80,
+            outfit: Outfit::Apron,
+            prop: Prop::Food,
+            ..garden
+        };
+        let mut wardrobe = Wardrobe::default();
+        assert!(wardrobe.pose(Some(garden), door, 10_000).is_none());
+        assert_eq!(
+            wardrobe.pose(Some(garden), door, 12_000).unwrap().outfit,
+            Outfit::Garden
+        );
+        assert_eq!(
+            wardrobe.pose(Some(apron), door, 13_000).unwrap().outfit,
+            Outfit::Garden
+        );
+        let midway = wardrobe.pose(Some(apron), door, 13_600).unwrap();
+        assert!(midway.x < garden.x && midway.x > door.0);
+        assert!(wardrobe.pose(Some(apron), door, 14_500).is_none());
+        let emerging = wardrobe.pose(Some(apron), door, 15_100).unwrap();
+        assert_eq!(emerging.outfit, Outfit::Apron);
+        assert!(emerging.x < apron.x);
+        assert_eq!(wardrobe.pose(Some(apron), door, 16_500).unwrap().x, apron.x);
+        assert!(!wardrobe.changing);
+    }
+
+    #[test]
+    fn cat_stays_outdoors_for_a_noon_nap_and_walks_inside_at_night() {
+        let mut state = sample();
+        state.cat = CatAction::Sleep;
+        state.minutes_of_day = 800;
+        state.day_part = DayPart::Day;
+        let mut scene = Scene::new();
+        let manual = ManualActions::default();
+        scene.render_view(&state, 1_000_000, &manual, (160, 100), &UNLOCKS);
+        assert_eq!(scene.cat_last, Some((110, 78)));
+        state.day_part = DayPart::Night;
+        scene.render_view(&state, 1_000_100, &manual, (160, 100), &UNLOCKS);
+        assert!(scene.in_transition());
+        scene.render_view(&state, 1_001_700, &manual, (160, 100), &UNLOCKS);
+        assert_eq!(scene.cat_last, None);
+        assert!(!scene.in_transition());
     }
 
     #[test]

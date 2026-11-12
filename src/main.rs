@@ -3,7 +3,9 @@
 // Native window and tray lifecycle adapted from Nekodachi's window.rs and
 // tray.rs, Copyright (c) 2026 Yannick Herrero, MIT.
 mod activities;
+mod clock;
 mod ecology;
+mod fishing;
 mod renderer;
 mod simulation;
 mod world;
@@ -19,6 +21,7 @@ use std::{
     time::{Duration, Instant},
 };
 
+use clock::{Anchor, Clock, Speed, WorldTime};
 use renderer::{DEFAULT_HEIGHT, DEFAULT_WIDTH, Renderer, dimensions};
 use simulation::{Season, Snapshot, Visitor, WeatherMode};
 use windows_sys::{
@@ -60,6 +63,7 @@ const MENU_TAP: usize = 43;
 const MENU_NOTEBOOK: usize = 44;
 const MENU_LANTERN: usize = 50;
 const MENU_INVITE: usize = 60;
+const MENU_SPEED: usize = 70;
 const SIZES: [((i32, i32), &str); 4] = [
     ((360, 225), "360 × 225"),
     ((480, 300), "480 × 300"),
@@ -82,10 +86,20 @@ const LANTERNS: [(Option<bool>, &str, &str); 3] = [
     (Some(true), "on", "点亮"),
     (Some(false), "off", "熄灭"),
 ];
-const VISITORS: [(Visitor, &str, &str); 3] = [
+const VISITORS: [(Visitor, &str, &str); 7] = [
     (Visitor::Sparrow, "sparrow", "小麻雀"),
     (Visitor::GreyCat, "grey-cat", "灰猫"),
     (Visitor::BlackCat, "black-cat", "黑猫"),
+    (Visitor::Squirrel, "squirrel", "松鼠"),
+    (Visitor::Hedgehog, "hedgehog", "小刺猬"),
+    (Visitor::Rabbit, "rabbit", "兔子"),
+    (Visitor::Frog, "frog", "青蛙"),
+];
+const SPEEDS: [(Speed, &str); 4] = [
+    (Speed::One, "1 倍（夜间 2 倍）"),
+    (Speed::Two, "2 倍（夜间 4 倍）"),
+    (Speed::Four, "4 倍（夜间 8 倍）"),
+    (Speed::Eight, "8 倍（夜间 16 倍）"),
 ];
 
 struct Settings {
@@ -94,19 +108,21 @@ struct Settings {
     season: Season,
     weather: WeatherMode,
     started: u64,
+    clock: Clock,
     treat_at: Option<u64>,
     manual: ManualActions,
     plot_unlocks: [u64; 16],
 }
 
 impl Settings {
-    fn load(now: u64) -> Self {
+    fn load(now: u64, local_seconds: u64) -> Self {
         let mut settings = Self {
             width: DEFAULT_WIDTH,
             height: DEFAULT_HEIGHT,
             season: Season::Spring,
             weather: WeatherMode::Auto,
             started: now,
+            clock: Clock::load(now, local_seconds, None),
             treat_at: None,
             manual: ManualActions::default(),
             plot_unlocks: [0; 16],
@@ -115,6 +131,11 @@ impl Settings {
             return settings;
         };
         let mut saved_height = None;
+        let mut saved_started = None;
+        let mut clock_anchor_real = 0;
+        let mut clock_anchor_world = 0;
+        let mut clock_anchor_local_seconds = u64::MAX;
+        let mut clock_speed = 0;
         for (key, value) in raw.lines().filter_map(|line| line.split_once('=')) {
             let value = value.trim();
             match key.trim() {
@@ -137,11 +158,13 @@ impl Settings {
                         settings.weather = *weather;
                     }
                 }
-                "started" => {
-                    if let Some(started) = parse_timestamp(value, now) {
-                        settings.started = started;
-                    }
+                "started" => saved_started = value.parse::<u64>().ok(),
+                "clock_anchor_real" => clock_anchor_real = value.parse().unwrap_or_default(),
+                "clock_anchor_world" => clock_anchor_world = value.parse().unwrap_or_default(),
+                "clock_anchor_local_seconds" => {
+                    clock_anchor_local_seconds = value.parse().unwrap_or(u64::MAX)
                 }
+                "clock_speed" => clock_speed = value.parse().unwrap_or_default(),
                 "treat_at" => settings.treat_at = parse_timestamp(value, now),
                 "water_bowl" => {
                     if let Ok(water) = value.parse() {
@@ -184,6 +207,18 @@ impl Settings {
             settings.width,
             saved_height.unwrap_or_else(|| legacy_height(settings.width)),
         );
+        let clock_anchor = Anchor::decode(
+            clock_anchor_real,
+            clock_anchor_world,
+            clock_anchor_local_seconds,
+            clock_speed,
+        );
+        settings.clock = Clock::load(now, local_seconds, clock_anchor);
+        if let Some(started) =
+            saved_started.filter(|&started| started > 0 && started <= settings.clock.time().seconds)
+        {
+            settings.started = started;
+        }
         settings
     }
 
@@ -204,13 +239,20 @@ impl Settings {
             .iter()
             .find(|(value, _, _)| *value == self.manual.invited_visitor)
             .map_or("none", |(_, name, _)| *name);
+        let anchor = self.clock.anchor(world::unix_millis() / 1_000);
         let mut contents = format!(
-            "width={}\nheight={}\nseason={season}\nweather={weather}\nstarted={}\ntreat_at={}\n\
+            "width={}\nheight={}\nseason={season}\nweather={weather}\nstarted={}\n\
+            clock_anchor_real={}\nclock_anchor_world={}\nclock_anchor_local_seconds={}\nclock_speed={}\n\
+            treat_at={}\n\
             water_bowl={}\nlantern={lantern}\nkeeper_called_at={}\nvisitor_snack_at={}\n\
             invited_visitor={visitor}\nvisitor_invited_at={}\nwindow_tapped_at={}\nplot_unlocks=",
             self.width,
             self.height,
             self.started,
+            anchor.real,
+            anchor.world.seconds,
+            anchor.world.seconds_of_day,
+            anchor.speed as u8,
             self.treat_at.unwrap_or(0),
             self.manual.water_bowl,
             self.manual.keeper_called_at.unwrap_or(0),
@@ -279,7 +321,11 @@ impl App {
     fn unlock_visible_plots(&mut self) {
         let (width, height) = self.renderer.logical_size();
         let visible = ecology::visible_sites(width as usize, height as usize);
-        let age = (world::unix_millis() / 1_000)
+        let age = self
+            .settings
+            .clock
+            .time()
+            .seconds
             .saturating_sub(self.settings.started)
             .saturating_add(1);
         for (index, slot) in self.settings.plot_unlocks.iter_mut().enumerate() {
@@ -304,22 +350,37 @@ impl App {
         }
     }
 
-    fn snapshot(&self, now_ms: u64) -> Snapshot {
-        let now = now_ms / 1_000;
+    fn snapshot(&self, wall_now: u64, time: WorldTime) -> Snapshot {
+        let treat = self
+            .settings
+            .treat_at
+            .filter(|&at| at <= wall_now && wall_now - at < 4)
+            .map(|_| time.seconds);
         let base = simulation::snapshot(
-            now,
+            time.seconds,
             self.settings.started,
-            world::local_minutes(),
+            time.minutes(),
             self.settings.season,
             self.settings.weather,
-            self.settings.treat_at,
+            treat,
         );
-        world::observe(base, now, &self.settings.manual)
+        world::observe(base, wall_now, &self.settings.manual)
+    }
+
+    fn world_time_label(&self, time: WorldTime) -> String {
+        let minutes = time.minutes();
+        let period = if time.is_night() { "夜间" } else { "日间" };
+        let speed = self.settings.clock.speed().multiplier_at(time);
+        format!(
+            "小屋时间 {:02}:{:02}（{period} {speed} 倍）",
+            minutes / 60,
+            minutes % 60
+        )
     }
 
     fn render(&mut self, hwnd: HWND) -> io::Result<u32> {
         let now = world::unix_millis();
-        let snapshot = self.snapshot(now);
+        let snapshot = self.snapshot(now / 1_000, self.settings.clock.time());
         let (image, dirty) = self.scene.render_view(
             &snapshot,
             now,
@@ -328,7 +389,11 @@ impl App {
             &self.settings.plot_unlocks,
         );
         self.renderer.draw(hwnd, self.position, image, dirty)?;
-        Ok(world::redraw_ms(&snapshot))
+        Ok(if self.scene.in_transition() {
+            180
+        } else {
+            world::redraw_ms(&snapshot)
+        })
     }
 
     fn set_timer(&mut self, hwnd: HWND, interval: u32) {
@@ -696,10 +761,16 @@ fn toggle_home(hwnd: HWND) {
 fn show_notebook(hwnd: HWND) {
     let mut text = None;
     with_app(|app| {
-        text = Some(world::notebook(
-            &app.snapshot(world::unix_millis()),
-            app.renderer.logical_size(),
-            &app.settings.plot_unlocks,
+        let time = app.settings.clock.time();
+        let snapshot = app.snapshot(world::unix_millis() / 1_000, time);
+        text = Some(format!(
+            "{}\n{}",
+            app.world_time_label(time),
+            world::notebook(
+                &snapshot,
+                app.renderer.logical_size(),
+                &app.settings.plot_unlocks
+            ),
         ));
     });
     if let Some(text) = text {
@@ -721,18 +792,23 @@ fn show_menu(hwnd: HWND) {
     };
     let mut menu_state = None;
     with_app(|app| {
-        let status = world::status_line(&app.snapshot(world::unix_millis()));
+        let time = app.settings.clock.time();
+        let status = world::status_line(&app.snapshot(world::unix_millis() / 1_000, time));
         menu_state = Some((
             (app.settings.width, app.settings.height),
             app.settings.weather,
             app.settings.season,
+            app.settings.clock.speed(),
             app.settings.manual.water_bowl,
             app.settings.manual.lantern,
             app.user_hidden,
+            app.world_time_label(time),
             status,
         ));
     });
-    let Some((size, weather, season, water_bowl, lantern, hidden, status)) = menu_state else {
+    let Some((size, weather, season, speed, water_bowl, lantern, hidden, clock, status)) =
+        menu_state
+    else {
         return;
     };
     unsafe {
@@ -740,6 +816,7 @@ fn show_menu(hwnd: HWND) {
         if menu.is_null() {
             return;
         }
+        append_label(menu, MF_STRING | MF_GRAYED, 0, &clock);
         append_label(menu, MF_STRING | MF_GRAYED, 0, &status);
         AppendMenuW(menu, MF_SEPARATOR, 0, ptr::null());
         AppendMenuW(menu, MF_STRING, MENU_TREAT, w!("喂点零食"));
@@ -797,6 +874,14 @@ fn show_menu(hwnd: HWND) {
                 .into_iter()
                 .enumerate()
                 .map(|(index, (value, _, text))| (MENU_SEASON + index, text, value == season)),
+        );
+        append_options(
+            menu,
+            "日间时间流速",
+            SPEEDS
+                .into_iter()
+                .enumerate()
+                .map(|(index, (value, text))| (MENU_SPEED + index, text, value == speed)),
         );
         AppendMenuW(menu, MF_SEPARATOR, 0, ptr::null());
         AppendMenuW(
@@ -857,6 +942,12 @@ fn show_menu(hwnd: HWND) {
                 app.settings.season = SEASONS[id - MENU_SEASON].0;
                 app.save_settings();
                 app.refresh(hwnd);
+            }),
+            id if (MENU_SPEED..MENU_SPEED + SPEEDS.len()).contains(&id) => with_app(|app| {
+                if app.settings.clock.set_speed(SPEEDS[id - MENU_SPEED].0) {
+                    app.save_settings();
+                    app.refresh(hwnd);
+                }
             }),
             id if (MENU_LANTERN..MENU_LANTERN + LANTERNS.len()).contains(&id) => with_app(|app| {
                 app.interact(hwnd, YardAction::SetLantern(LANTERNS[id - MENU_LANTERN].0));
@@ -1023,7 +1114,7 @@ fn run() -> io::Result<()> {
             return Err(io::Error::last_os_error());
         }
 
-        let mut settings = Settings::load(world::unix_millis() / 1_000);
+        let mut settings = Settings::load(world::unix_millis() / 1_000, world::local_seconds());
         if let Some((width, height)) = requested_size {
             (settings.width, settings.height) = dimensions(width, height);
         }
@@ -1083,7 +1174,9 @@ fn run() -> io::Result<()> {
             }
         };
         APP.with(|cell| {
-            cell.borrow_mut().take();
+            if let Some(app) = cell.borrow_mut().take() {
+                app.save_settings();
+            }
         });
         result
     }

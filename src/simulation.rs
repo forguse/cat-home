@@ -56,11 +56,17 @@ pub enum Visitor {
     Sparrow,
     GreyCat,
     BlackCat,
+    Squirrel,
+    Hedgehog,
+    Rabbit,
+    Frog,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Snapshot {
     pub day_part: DayPart,
+    /// Time on the world's clock, from midnight through 23:59.
+    pub minutes_of_day: u16,
     pub weather: Weather,
     pub season: Season,
     pub cat: CatAction,
@@ -72,7 +78,9 @@ pub struct Snapshot {
     pub build_percent: u8,
     /// Unfinished construction remains visible while the caretaker is off duty.
     pub build_in_progress: bool,
-    /// Seconds elapsed since the resident's first day.
+    /// Stable start of this world's virtual clock and seed for its routines.
+    pub world_start: u64,
+    /// Simulated seconds elapsed since the resident's first day.
     pub phase_seconds: u64,
 }
 
@@ -100,9 +108,10 @@ pub fn snapshot(
     treat_at: Option<u64>,
 ) -> Snapshot {
     let age = now.saturating_sub(started);
-    let day_part = day_part(local_minutes);
+    let minutes_of_day = local_minutes % 1_440;
+    let day_part = day_part(minutes_of_day);
     let weather = weather_at(now, started, season, mode);
-    let local_seconds = u64::from(local_minutes % 1_440) * 60 + now % 60;
+    let local_seconds = u64::from(minutes_of_day) * 60 + now % 60;
     let worked = work_elapsed(age.saturating_sub(PREPARATION), local_seconds);
     let build_stage = BUILD_MINUTES
         .iter()
@@ -122,11 +131,20 @@ pub fn snapshot(
     let building = next_work.is_some() && age >= PREPARATION && during_shift(local_seconds);
     let build_in_progress = next_work.is_some() && (building || project_worked > 0);
     let caretaker = caretaker_at(age, local_seconds, day_part, building);
-    let visitor = visitor_at(age, started);
-    let cat = cat_at(now, age, day_part, weather, caretaker, treat_at);
+    let visitor = visitor_at(now, age, started, local_seconds, season, mode);
+    let cat = cat_at(
+        now,
+        age,
+        minutes_of_day,
+        day_part,
+        weather,
+        caretaker,
+        treat_at,
+    );
 
     Snapshot {
         day_part,
+        minutes_of_day,
         weather,
         season,
         cat,
@@ -135,6 +153,7 @@ pub fn snapshot(
         build_stage,
         build_percent,
         build_in_progress,
+        world_start: started,
         phase_seconds: age,
     }
 }
@@ -192,7 +211,14 @@ fn weather_at(now: u64, seed: u64, season: Season, mode: WeatherMode) -> Weather
     }
 }
 
-fn visitor_at(age: u64, seed: u64) -> Visitor {
+fn visitor_at(
+    now: u64,
+    age: u64,
+    seed: u64,
+    local_seconds: u64,
+    season: Season,
+    mode: WeatherMode,
+) -> Visitor {
     if VISIT_ONBOARDING.contains(&age) {
         return Visitor::Sparrow;
     }
@@ -208,11 +234,37 @@ fn visitor_at(age: u64, seed: u64) -> Visitor {
     if !(arrival..arrival + duration).contains(&in_slot) {
         return Visitor::None;
     }
-    match (event >> 32) % 3 {
-        0 => Visitor::Sparrow,
-        1 => Visitor::GreyCat,
-        _ => Visitor::BlackCat,
-    }
+    // Sample at arrival so a passing shower or dusk leaves a guest's visit intact.
+    let elapsed = in_slot - arrival;
+    let arrival_local = (local_seconds + DAY - elapsed) % DAY;
+    let day = day_part((arrival_local / 60) as u16);
+    let arrival_now = now.saturating_sub(elapsed);
+    let weather = weather_at(arrival_now, seed, season, mode);
+    let recent_rain = mode == WeatherMode::Auto
+        && arrival_now % WEATHER_PERIOD < 15 * 60
+        && arrival_now
+            .checked_sub(WEATHER_PERIOD)
+            .is_some_and(|earlier| weather_at(earlier, seed, season, mode) == Weather::Rain);
+    choose_visitor(event >> 32, day, weather, recent_rain)
+}
+
+fn choose_visitor(roll: u64, day: DayPart, weather: Weather, recent_rain: bool) -> Visitor {
+    let dry = matches!(weather, Weather::Clear | Weather::Clouds);
+    let candidates = [
+        Some(Visitor::Sparrow),
+        Some(Visitor::GreyCat),
+        Some(Visitor::BlackCat),
+        (day == DayPart::Day && dry).then_some(Visitor::Squirrel),
+        (matches!(day, DayPart::Dusk | DayPart::Night) && weather != Weather::Snow)
+            .then_some(Visitor::Hedgehog),
+        (matches!(day, DayPart::Dawn | DayPart::Day) && dry).then_some(Visitor::Rabbit),
+        (weather == Weather::Rain || (recent_rain && dry)).then_some(Visitor::Frog),
+    ];
+    let mut eligible = candidates.into_iter().flatten();
+    let index = (roll % eligible.clone().count() as u64) as usize;
+    eligible
+        .nth(index)
+        .expect("three guests are always eligible")
 }
 
 fn caretaker_at(age: u64, local_seconds: u64, day: DayPart, building: bool) -> CareAction {
@@ -241,6 +293,7 @@ fn caretaker_at(age: u64, local_seconds: u64, day: DayPart, building: bool) -> C
 fn cat_at(
     now: u64,
     age: u64,
+    minutes_of_day: u16,
     day: DayPart,
     weather: Weather,
     caretaker: CareAction,
@@ -255,17 +308,13 @@ fn cat_at(
     if caretaker == CareAction::Feeding {
         return CatAction::Eat;
     }
-    let sheltered = matches!(weather, Weather::Rain | Weather::Snow);
-    if day == DayPart::Night {
-        return if (0..90).contains(&(age % (35 * 60))) {
-            CatAction::Idle
-        } else {
-            CatAction::Sleep
-        };
-    }
-    if age % (28 * 60) >= 24 * 60 {
+    if day == DayPart::Night
+        || (13 * 60..13 * 60 + 35).contains(&minutes_of_day)
+        || age % (28 * 60) >= 24 * 60
+    {
         return CatAction::Sleep;
     }
+    let sheltered = matches!(weather, Weather::Rain | Weather::Snow);
     if !sheltered && (50..67).contains(&(age % (3 * 60))) {
         CatAction::Walk
     } else {
@@ -386,6 +435,87 @@ mod tests {
                 .windows(2)
                 .all(|pair| (960..=2_400).contains(&(pair[1] - pair[0])))
         );
+    }
+
+    #[test]
+    fn new_guests_have_distinct_arrival_conditions() {
+        let arrivals = |day, weather, recent_rain| {
+            (0..42)
+                .map(|roll| choose_visitor(roll, day, weather, recent_rain))
+                .collect::<Vec<_>>()
+        };
+        let daylight = arrivals(DayPart::Day, Weather::Clear, false);
+        assert!(daylight.contains(&Visitor::Squirrel));
+        assert!(daylight.contains(&Visitor::Rabbit));
+        assert!(!daylight.contains(&Visitor::Hedgehog));
+        assert!(!daylight.contains(&Visitor::Frog));
+
+        let dawn = arrivals(DayPart::Dawn, Weather::Clouds, false);
+        assert!(dawn.contains(&Visitor::Rabbit));
+        assert!(!dawn.contains(&Visitor::Squirrel));
+
+        let dusk = arrivals(DayPart::Dusk, Weather::Clear, false);
+        assert!(dusk.contains(&Visitor::Hedgehog));
+        let snowy_night = arrivals(DayPart::Night, Weather::Snow, true);
+        assert!(!snowy_night.contains(&Visitor::Hedgehog));
+        assert!(!snowy_night.contains(&Visitor::Frog));
+
+        let raining = arrivals(DayPart::Day, Weather::Rain, false);
+        assert!(raining.contains(&Visitor::Frog));
+        assert!(!raining.contains(&Visitor::Squirrel));
+        assert!(!raining.contains(&Visitor::Rabbit));
+        assert!(arrivals(DayPart::Day, Weather::Clear, true).contains(&Visitor::Frog));
+    }
+
+    #[test]
+    fn virtual_epoch_is_preserved_in_the_snapshot() {
+        let state = snapshot(
+            50_100,
+            50_000,
+            1_980,
+            Season::Spring,
+            WeatherMode::Clear,
+            None,
+        );
+        assert_eq!(state.world_start, 50_000);
+        assert_eq!(state.phase_seconds, 100);
+        assert_eq!(state.minutes_of_day, 540);
+    }
+
+    #[test]
+    fn cat_sleeps_at_night_and_naps_after_lunch() {
+        assert_eq!(at(200, 779).cat, CatAction::Idle);
+        assert_eq!(at(200, 780).cat, CatAction::Sleep);
+        assert_eq!(at(200, 814).cat, CatAction::Sleep);
+        assert_eq!(at(200, 815).cat, CatAction::Idle);
+        assert_eq!(at(0, 1_200).cat, CatAction::Sleep);
+        assert_eq!(at(0, 299).cat, CatAction::Sleep);
+        assert_eq!(at(0, 300).cat, CatAction::Idle);
+        assert_eq!(at(20, 1_200).cat, CatAction::Eat);
+
+        let treat = snapshot(200, 0, 1_200, Season::Spring, WeatherMode::Clear, Some(199));
+        assert_eq!(treat.cat, CatAction::Treat);
+    }
+
+    #[test]
+    fn all_guests_arrive_on_the_natural_schedule() {
+        let started = 1_800_000_000;
+        let mut guests = Vec::new();
+        for age in (0..7 * DAY).step_by(30) {
+            let local_minutes = ((age / 60 + 360) % 1_440) as u16;
+            let state = snapshot(
+                started + age,
+                started,
+                local_minutes,
+                Season::Spring,
+                WeatherMode::Auto,
+                None,
+            );
+            if state.visitor != Visitor::None && !guests.contains(&state.visitor) {
+                guests.push(state.visitor);
+            }
+        }
+        assert_eq!(guests.len(), 7, "observed guests: {guests:?}");
     }
 
     #[test]

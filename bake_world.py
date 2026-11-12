@@ -317,31 +317,87 @@ def visitor_cat(cat, coat):
 
 
 def gardener_frames():
-    colors = {
-        "#": "#473d50", "h": "#a46660", "H": "#cf9274", "t": "#dfa47b",
-        "s": "#ffcf99", "e": "#4b4354", "g": "#688778", "G": "#93ac8e",
-        "a": "#b77967", "p": "#5e6374", "b": "#745454", "x": "#f1c180",
+    base_colors = {
+        "#": "#43394a", "h": "#854e4d", "H": "#bc795e", "s": "#ffdaaa",
+        "S": "#efae85", "p": "#e89287", "e": "#4d3e50", "r": "#df8b79",
     }
-    figure = (
-        "....#####....", "...#HHHHh#...", "..#HHhHhhh#..", ".#HHHHHhhhh#.",
-        "############.", "..#tssssst#..", "..#seessse#..", "...#sssst#...",
-        "...###t###...", "..#GGggga##..", "..#GGgaxx#s#.", ".#sgggaxxg##.",
-        ".#s#Ggggag#..", "..########...", "...#pp#pp#...", "...#p##p#....",
+    braids = (".###.......###.", "#Hhh#.....#hHh#", "#Hh#.......#hh#",
+              "#hr#.......#rh#", ".#h#.......#h#.")
+    face = (
+        "...#########...", "..#HHHHHhhhh#..", ".#HHHHHhhhhh#..",
+        ".#HHHssshhhhh#.", ".#Hssssssshhh#.", ".#Hssesesshhh#.",
+        "..#hpssspshh#..", "...#ssssssh#...", "....##SS##.....",
     )
-    for step in range(3):
-        frame = Image.new("RGBA", SPRITE_SIZE)
-        art = ImageDraw.Draw(frame)
-        art.ellipse((17, 28, 31, 30), fill=(64, 48, 52, 63))
-        for y, line in enumerate(figure):
-            for x, char in enumerate(line):
-                if char in colors:
-                    art.point((18 + x, 12 + y), fill=colors[char])
-        art.line((21 + (step == 1), 28, 23 + (step == 1), 28), fill=colors["b"])
-        art.line((25 + (step == 2), 28, 27 + (step == 2), 28), fill=colors["b"])
-        if step == 1:
-            art.point((23, 18), fill=colors["s"])
-            art.point((24, 18), fill=colors["s"])
-        yield frame
+
+    # Atlas order is part of the renderer contract, three poses per outfit.
+    outfits = (
+        (  # Straw hat and green overalls for gardening.
+            {"C": "#bdd5a2", "c": "#6f9a7c", "d": "#466955", "a": "#eec887",
+             "A": "#ffe2a0", "b": "#80584e"},
+            (".....######......", "....#AAAAaa#.....", "...#AAaaAaaa#....",
+             "..#aaaaaaaaaa#...", ".##AAAAAAAAaa##..", "..############..."),
+            ("....#######....", "...#CCaCaCC#...", "..#CScacacCC#..", "..#scccccCs#...",
+             "...#cdCcdC#....", "...#dcccdd#....", "....######....."),
+        ),
+        (  # Cream apron over a coral dress for feeding.
+            {"C": "#f4a48b", "c": "#c77679", "d": "#a95e70", "a": "#efd3aa",
+             "A": "#fff2ce", "b": "#814f62"},
+            (".................", ".........##......", ".......##Cr#.....",
+             ".....##AA#C#.....", "....#AaaA##......"),
+            ("....#######....", "...#CAcAcCC#...", "..#CCAAACCc#...", "..#sAaaAAsc#...",
+             "...#AAaaAAc#...", "..#caaaaaacc#..", "..###########.."),
+        ),
+        (  # Gold helmet and work jacket for building.
+            {"C": "#75a2ad", "c": "#487d8c", "d": "#39566b", "a": "#e6a651",
+             "A": "#ffdb78", "b": "#715047"},
+            (".....#######.....", "....#AAaAAAa#....", "...#AAAaAAAAa#...",
+             "...#AAAaAAAaa#...", "..##AAAAAAAA###..", "...###########..."),
+            ("....#######....", "...#CCaCcCC#...", "..#CCAcAcCcC#..", "..#sCAaAaCs#...",
+             "...#ccdccC#....", "...#ddcccC#....", "....######....."),
+        ),
+        (  # Blue rain hood, rain jacket and golden rain boots.
+            {"C": "#91cece", "c": "#5699ab", "d": "#476779", "a": "#f0ca75",
+             "A": "#ffe7a0", "b": "#d29655"},
+            (".....#######.....", "....#CCCCccc#....", "...#CCccCCccc#...",
+             "..#CCc####cCc#...", "..#Cc#....#cCc#..", "..#c#......#cc#..",
+             "..#c#......#dc#..", "..#cd#....#dc#...", "...#dc#..#dc#...."),
+            ("...#######.....", "..#CCCAdcCC#...", "..#CCcAccCcC#..", "..#cCCCacCcc#..",
+             "...#CcAdccc#...", "...#Cccdcc##...", "...########...."),
+        ),
+        (  # Knit sweater and a mint scarf off duty.
+            {"C": "#c9aec7", "c": "#ac83a8", "d": "#776481", "a": "#83aa94",
+             "A": "#b6cf9e", "b": "#725b77"},
+            (),
+            ("....#######....", "...#AAAAaAA#...", "..#CCcAacCC#...", "..#sCcAAcCs#...",
+             "...#CCCacC#....", "...#ccccCC#....", "....######....."),
+        ),
+    )
+
+    def stamp(art, rows, origin, colors):
+        for y, row in enumerate(rows, origin[1]):
+            for x, char in enumerate(row, origin[0]):
+                if char != ".":
+                    art.point((x, y), fill=colors[char])
+
+    for outfit, (palette, hat, clothes) in enumerate(outfits):
+        colors = {**base_colors, **palette}
+        for step in range(3):
+            frame = Image.new("RGBA", SPRITE_SIZE)
+            art = ImageDraw.Draw(frame)
+            art.ellipse((16, 27, 32, 30), fill=(63, 48, 52, 61))
+            stamp(art, braids, (17, 16), colors)
+            stamp(art, face, (17, 12), colors)
+            if step == 2:
+                art.point((22, 17), fill=colors["S"])
+                art.point((24, 17), fill=colors["S"])
+            stamp(art, hat, (16, 9), colors)
+            stamp(art, clothes, (17, 21), colors)
+            left, right = 21 + (step == 1), 26 - (step == 2)
+            for x, lift in ((left, step == 1), (right, step == 2)):
+                art.line((x, 27, x + 2, 27), fill=colors["d"])
+                art.line((x - 1, 29 - lift, x + 2, 29 - lift), fill=colors["b"])
+                art.point((x, 28 - lift), fill=colors["a"] if outfit == 3 else colors["b"])
+            yield frame
 
 
 def sparrow_frames():
@@ -367,6 +423,81 @@ def sparrow_frames():
             art.line((19, 25, 21, 24), fill=colors["T"])
         elif step == 2:
             art.point((24, 23), fill=colors["e"])
+        yield frame
+
+
+# Each animal keeps the same foot anchor as the atlas-derived cats.
+WILDLIFE = {
+    "squirrel": (
+        {"#": "#523c44", "T": "#e2a46e", "t": "#b57557", "E": "#f4ca95",
+         "e": "#ffe4b9", "b": "#765249"},
+        (
+            "...#####...........", "..#TTTTt#..........", ".#TTtttt#....##....",
+            ".#TTt###....#tt#...", "#TTtt#.....#ttTt##.", "#Ttt#.....#tEt#et#.",
+            "#ttt#....#ttEEeeb#.", ".#tt#...#tttEEE##..", ".#ttt###tttEEt#....",
+            "..#tttttttEEt#.....", "...#tttTtEEE##.....", "....#tttttttt#.....",
+            ".....########......", "......bb...bb......",
+        ),
+        (0, 0, 1),
+        (((14, 5, "t"), (15, 5, "#")), ((1, 3, "T"), (12, 11, "E"))),
+    ),
+    "hedgehog": (
+        {"#": "#4e4050", "S": "#927063", "s": "#694f52", "h": "#c28e71",
+         "E": "#eac3a0", "e": "#f6d8b1", "b": "#92695c"},
+        (
+            ".....#.#...........", "...##s#s###........", "..#SsssSss##.......",
+            ".#SsSssSsSSs#..#...", ".#sSssSsSsss#.#h##.", "#SsSssSssSs#hhEh#..",
+            "#sSssSssSS#hE#eE#..", "#ssSsSSss#hEEEEeh#.", ".#ssssss#hEEEEE##..",
+            "..#############....", ".....bb.....bb.....",
+        ),
+        (0, 0, 0),
+        (((13, 6, "h"), (14, 6, "#")), ((6, 10, "."), (7, 10, "b"), (11, 10, "b"))),
+    ),
+    "rabbit": (
+        {"#": "#534958", "w": "#e0c9b5", "W": "#f3dfc8", "p": "#d5a1a0",
+         "e": "#fff1d9", "b": "#ac8b85"},
+        (
+            ".........###......", ".....##.#Wp#......", "....#Wp##Wp#......",
+            "....#Wp#Wp#.......", "....#Wp#W#........", ".....#wWW##.......",
+            "......#WWWW#......", ".....#WWWW#W#.....", ".....#WWWWeWe#....",
+            "....#WWWWWeeeb#...", ".###wwWWWWWe##....", "#eW#wwWWWWw#......",
+            "#WWwwwwWWww#......", ".##wwwwwwwww##....", "...############...",
+            ".....bb...bbb.....",
+        ),
+        (0, 2, 0),
+        (((10, 7, "w"), (11, 7, "#")), ((6, 3, "p"), (12, 15, "w"))),
+    ),
+    "frog": (
+        {"#": "#40544e", "G": "#9cb883", "g": "#64866e", "v": "#7ba388",
+         "E": "#c8d595", "e": "#e5dd9b", "b": "#819878"},
+        (
+            "......###...###....", ".....#GeG#.#GeG#...", "....#Ge#G###G#eG#..",
+            "....#GGGGvGGGGG#...", "...#vvvGGGGGGvvv#..", "..#gggvGEEEEEGgg#..",
+            ".#ggvg#EEEEEE#gvg#.", ".#gvvg#EEEEEE#gvv#.", "..####bbbbbbb####..",
+            "..vvv.........vvv..",
+        ),
+        (0, 1, 0),
+        (((7, 2, "e"), (13, 2, "e")), ((8, 7, "e"), (9, 7, "e"), (10, 7, "e"))),
+    ),
+}
+
+
+def wildlife_frames(name):
+    colors, figure, lifts, details = WILDLIFE[name]
+    width = max(map(len, figure))
+    left = 24 - width // 2
+    for step, lift in enumerate(lifts):
+        frame = Image.new("RGBA", SPRITE_SIZE)
+        art = ImageDraw.Draw(frame)
+        top = 29 - len(figure) - lift
+        art.ellipse((left + 2, 28, left + width - 2, 30), fill=(61, 46, 52, 52))
+        for y, line in enumerate(figure):
+            for x, char in enumerate(line):
+                if char in colors:
+                    art.point((left + x, top + y), fill=colors[char])
+        if step > 0:
+            for x, y, char in details[step - 1]:
+                art.point((left + x, top + y), fill=colors.get(char, (0, 0, 0, 0)))
         yield frame
 
 
@@ -410,6 +541,7 @@ def main():
         "grey_cat": list(visitor_cat(cat, "grey")),
         "black_cat": list(visitor_cat(cat, "black")),
     }
+    sprites.update((name, list(wildlife_frames(name))) for name in WILDLIFE)
     atlases = {
         "scenes": day_scenes.values(),
         "terrain": terrain_frames(),
