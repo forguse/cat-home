@@ -31,6 +31,7 @@ FILES = (
     "src/projects.rs",
     "src/renderer.rs",
     "src/simulation.rs",
+    "src/startup.rs",
     "src/world.rs",
     "design/animals.tsv",
     "design/cast-rules.tsv",

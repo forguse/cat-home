@@ -585,71 +585,221 @@ struct KeeperPose {
     prop: Prop,
 }
 
+type Point = (i32, i32);
+
+#[derive(Clone, Copy)]
+struct Footprint {
+    near: Point,
+    far: Point,
+}
+
+impl Footprint {
+    fn contains(self, (x, y): Point) -> bool {
+        x > self.near.0 && x < self.far.0 && y > self.near.1 && y < self.far.1
+    }
+
+    fn crosses(self, from: Point, to: Point) -> bool {
+        let mut entry: f32 = 0.0;
+        let mut exit: f32 = 1.0;
+        for (start, end, near, far) in [
+            (from.0, to.0, self.near.0, self.far.0),
+            (from.1, to.1, self.near.1, self.far.1),
+        ] {
+            if start == end {
+                if start <= near || start >= far {
+                    return false;
+                }
+            } else {
+                let delta = (end - start) as f32;
+                let a = (near - start) as f32 / delta;
+                let b = (far - start) as f32 / delta;
+                entry = entry.max(a.min(b));
+                exit = exit.min(a.max(b));
+            }
+        }
+        entry < exit
+    }
+
+    fn next_corner(self, from: Point, to: Point) -> Option<Point> {
+        // Targets such as a duck on the pond are allowed inside their landmark.
+        if self.contains(from) || self.contains(to) || !self.crosses(from, to) {
+            return None;
+        }
+        let corners = [
+            self.near,
+            (self.far.0, self.near.1),
+            (self.near.0, self.far.1),
+            self.far,
+        ];
+        let distance = |a: Point, b: Point| (a.0 - b.0).abs() + (a.1 - b.1).abs();
+        let mut best = None;
+        let mut shortest = i32::MAX;
+        for first in corners {
+            if first == from || self.crosses(from, first) {
+                continue;
+            }
+            for last in corners {
+                if self.crosses(first, last) || self.crosses(last, to) {
+                    continue;
+                }
+                let length = distance(from, first) + distance(first, last) + distance(last, to);
+                if length < shortest {
+                    shortest = length;
+                    best = Some(first);
+                }
+            }
+        }
+        best
+    }
+}
+
+type Route = [Option<Footprint>; 2];
+
+#[derive(Clone, Copy)]
+struct Step {
+    point: Point,
+    walking: bool,
+    left: Option<bool>,
+}
+
+#[derive(Clone, Copy, Default)]
+struct Travel {
+    position: Option<Point>,
+    anchor: Option<Point>,
+    last_ms: u64,
+    walking: bool,
+    left: Option<bool>,
+}
+
+impl Travel {
+    fn start(point: Point, now: u64) -> Self {
+        Self {
+            position: Some((point.0 * 1_000, point.1 * 1_000)),
+            last_ms: now,
+            ..Self::default()
+        }
+    }
+
+    fn advance(
+        &mut self,
+        anchor: Point,
+        destination: Point,
+        now: u64,
+        speed: i32,
+        route: Route,
+    ) -> Step {
+        let target = (destination.0 * 1_000, destination.1 * 1_000);
+        let (x, y) = *self.position.get_or_insert(target);
+        let waypoint = route.into_iter().flatten().find_map(|block| {
+            block.next_corner(((x + 500) / 1_000, (y + 500) / 1_000), destination)
+        });
+        let target = waypoint.map_or(target, |(x, y)| (x * 1_000, y * 1_000));
+        let dx = target.0 - x;
+        let dy = target.1 - y;
+        let distance = dx.abs().max(dy.abs());
+        // Time before a changed destination belongs to the previous action.
+        let elapsed = if self.anchor == Some(anchor) {
+            now.saturating_sub(self.last_ms).min(1_000) as i32
+        } else {
+            0
+        };
+        let step = elapsed * speed;
+        let (x, y) = if distance > step {
+            (
+                x + (i64::from(dx) * i64::from(step) / i64::from(distance)) as i32,
+                y + (i64::from(dy) * i64::from(step) / i64::from(distance)) as i32,
+            )
+        } else {
+            target
+        };
+        self.position = Some((x, y));
+        self.anchor = Some(anchor);
+        self.last_ms = now;
+        // Small idle and patrol offsets already have their own animation.
+        self.walking = waypoint.is_some() || distance > step + 1_000;
+        if dx != 0 {
+            self.left = Some(dx < 0);
+        }
+        Step {
+            point: ((x + 500).div_euclid(1_000), (y + 500).div_euclid(1_000)),
+            walking: self.walking,
+            left: self.left,
+        }
+    }
+}
+
+#[derive(Clone, Copy, Default)]
+struct GuestTravel {
+    role: Option<Role>,
+    path: Travel,
+}
+
 #[derive(Default)]
 struct Wardrobe {
-    target: Option<Outfit>,
-    started: u64,
-    from: Option<KeeperPose>,
-    last: Option<KeeperPose>,
-    changing: bool,
+    outfit: Option<Outfit>,
+    ready_at: Option<u64>,
+    waiting: bool,
+    path: Travel,
 }
 
 impl Wardrobe {
     fn pose(
         &mut self,
         desired: Option<KeeperPose>,
-        door: (i32, i32),
+        door: Point,
         now: u64,
+        speed: i32,
+        route: Route,
     ) -> Option<KeeperPose> {
+        self.waiting = false;
         let target = desired.map(|pose| pose.outfit);
-        if self.target != target {
-            self.target = target;
-            self.started = now;
-            self.from = self.last;
+        if self.outfit != target
+            && let Some(outfit) = self.outfit
+        {
+            let step = self.path.advance(door, door, now, speed, route);
+            if step.walking {
+                let (x, y) = step.point;
+                return Some(KeeperPose {
+                    x,
+                    y,
+                    outfit,
+                    motion: Motion::Patrol,
+                    flip: step.left.unwrap_or(false),
+                    prop: Prop::None,
+                });
+            }
+            self.outfit = None;
+            self.ready_at = Some(now.saturating_add(800));
         }
-        let age = now.saturating_sub(self.started);
-        let leave_at = if self.from.is_some() { 2_050 } else { 450 };
-        self.changing = if desired.is_some() {
-            age < leave_at + 1_250
+        let mut pose = desired?;
+        if self.outfit.is_none() {
+            let ready = *self.ready_at.get_or_insert_with(|| now.saturating_add(450));
+            if now < ready {
+                self.waiting = true;
+                return None;
+            }
+            self.outfit = Some(pose.outfit);
+            self.ready_at = None;
+            self.path = Travel::start(door, now);
+        }
+        let anchor = (pose.x, pose.y);
+        let (dx, _, turn) = motion_offset(pose.motion, now);
+        let destination = (anchor.0 + dx, anchor.1);
+        let step = self.path.advance(anchor, destination, now, speed, route);
+        (pose.x, pose.y) = step.point;
+        if step.walking {
+            pose.flip = step.left.unwrap_or(pose.flip);
+            pose.motion = Motion::Patrol;
+            pose.prop = Prop::None;
         } else {
-            self.from.is_some() && age < 1_250
-        };
-        let pose = if age < 1_250 && self.from.is_some() {
-            self.from
-                .map(|pose| approach(pose, (pose.x, pose.y), door, age, 1_250))
-        } else if age < leave_at {
-            None
-        } else if age < leave_at + 1_250 {
-            desired.map(|pose| approach(pose, door, (pose.x, pose.y), age - leave_at, 1_250))
-        } else {
-            desired
-        };
-        self.last = pose;
-        pose
+            pose.flip ^= turn;
+        }
+        Some(pose)
     }
-}
 
-fn approach(
-    mut pose: KeeperPose,
-    start: (i32, i32),
-    end: (i32, i32),
-    at: u64,
-    span: u64,
-) -> KeeperPose {
-    (pose.x, pose.y) = lerp(start, end, at, span);
-    pose.flip = end.0 < start.0;
-    pose.motion = Motion::Patrol;
-    pose.prop = Prop::None;
-    pose
-}
-
-fn lerp(start: (i32, i32), end: (i32, i32), at: u64, span: u64) -> (i32, i32) {
-    let step = at.min(span) as i32;
-    let span = span as i32;
-    (
-        start.0 + (end.0 - start.0) * step / span,
-        start.1 + (end.1 - start.1) * step / span,
-    )
+    fn in_transition(&self) -> bool {
+        self.path.walking || self.waiting
+    }
 }
 
 pub struct Scene {
@@ -659,8 +809,9 @@ pub struct Scene {
     view: View,
     painted: Option<Damage>,
     wardrobe: Wardrobe,
-    cat_last: Option<(i32, i32)>,
-    cat_entry: Option<u64>,
+    cat_path: Travel,
+    cat_indoors: bool,
+    guests: [GuestTravel; 2],
     results: [Option<cast::Action>; 4],
     details: [Option<DetailSprite>; 4],
     detailed: bool,
@@ -675,8 +826,9 @@ impl Scene {
             view: View::new((WIDTH, HEIGHT)),
             painted: None,
             wardrobe: Wardrobe::default(),
-            cat_last: None,
-            cat_entry: None,
+            cat_path: Travel::default(),
+            cat_indoors: false,
+            guests: [GuestTravel::default(); 2],
             results: [None; 4],
             details: [None; 4],
             detailed: false,
@@ -684,7 +836,9 @@ impl Scene {
     }
 
     pub fn in_transition(&self) -> bool {
-        self.wardrobe.changing || (self.cat_entry.is_some() && self.cat_last.is_some())
+        self.wardrobe.in_transition()
+            || self.cat_path.walking
+            || self.guests.iter().any(|guest| guest.path.walking)
     }
 
     pub fn take_results(&mut self) -> [Option<cast::Action>; 4] {
@@ -845,6 +999,7 @@ impl Scene {
             reacting(Role(0)),
             now_ms,
         );
+        self.departing_guests(guests, now_ms);
         for (role, action) in guests
             .into_iter()
             .zip(guest_actions.iter())
@@ -1819,7 +1974,7 @@ impl Scene {
                 prop,
             })
         } else if let Some(leader) = reaction {
-            let (x, y, flip) = self.partner_position(leader, ms);
+            let (x, y, flip) = self.partner_position(leader);
             Some(KeeperPose {
                 x,
                 y,
@@ -1829,7 +1984,7 @@ impl Scene {
                 prop: Prop::None,
             })
         } else if let Some(action) = role_action {
-            let (x, y, flip) = self.cast_position(action, ms);
+            let (x, y, flip) = self.cast_position(action);
             let prop = if action.phase == cast::Phase::Approach {
                 Prop::None
             } else {
@@ -1844,7 +1999,7 @@ impl Scene {
                 prop,
             })
         } else if let Some(activity) = keeper {
-            let (mut x, mut y, flip) = pose(activity, ms);
+            let (mut x, mut y) = (activity.x, activity.y);
             if state.caretaker == CareAction::Building {
                 let (dx, dy) = match state.build_stage {
                     0 => (5, 13),
@@ -1860,7 +2015,7 @@ impl Scene {
             (x < self.view.width).then_some(KeeperPose {
                 x,
                 y,
-                flip,
+                flip: false,
                 motion: activity.motion,
                 outfit,
                 prop: activity.prop,
@@ -1869,6 +2024,11 @@ impl Scene {
             None
         };
         let door = self.view.fixed(50, 69);
+        let speed = self.walk_speed(Role(0));
+        let route = self.route(Role(0));
+        if let Some(action) = role_action {
+            self.queue_cast_result(action);
+        }
         if let Some(KeeperPose {
             x,
             y,
@@ -1876,24 +2036,23 @@ impl Scene {
             motion,
             flip,
             prop,
-        }) = self.wardrobe.pose(desired, door, ms)
+        }) = self.wardrobe.pose(desired, door, ms, speed, route)
         {
-            let frame = outfit.frame((ms / 500) as usize);
-            if !self.wardrobe.changing
-                && (outfit == Outfit::Garden || outfit == Outfit::Sweater && motion == Motion::Nap)
-            {
+            let pace = if motion == Motion::Patrol { 170 } else { 500 };
+            let frame = outfit.frame((ms / pace) as usize);
+            if outfit == Outfit::Garden || outfit == Outfit::Sweater && motion == Motion::Nap {
                 self.role_animation(Role(0), motion, (x, y, flip), ms, (KEEPER, frame));
             } else {
                 self.sprite(KEEPER, frame, (x, y, flip), motion);
             }
             self.actor_prop(prop, x, y, flip, ms);
-            if !self.wardrobe.changing {
+            if !self.wardrobe.in_transition() {
                 if let Some((moment, pond)) = fishing {
                     self.pond_event(moment, pond, ms);
                 } else if outfit == Outfit::Helmet && prop == Prop::Tool {
                     self.prop(Prop::Spark, x + 9, y - 13, ms);
                 } else if let Some(action) = role_action {
-                    self.cast_result(action, x, y, ms);
+                    self.draw_cast_result(action, x, y, ms);
                 }
             }
         }
@@ -1907,7 +2066,67 @@ impl Scene {
         reaction: Option<&cast::Action>,
         ms: u64,
     ) {
-        let step = (ms / 650) as usize % 3;
+        if let Some(action) = action {
+            self.queue_cast_result(action);
+        }
+        let index = self
+            .guests
+            .iter()
+            .position(|guest| guest.role == Some(role))
+            .or_else(|| self.guests.iter().position(|guest| guest.role.is_none()));
+        let Some(index) = index else { return };
+        if self.guests[index].role.is_none() {
+            self.guests[index] = GuestTravel {
+                role: Some(role),
+                path: Travel::start(self.guest_gate(), ms),
+            };
+        }
+        let ((x, y, flip), motion, prop) = if let Some(leader) = reaction {
+            (self.partner_position(leader), Motion::Tilt, Prop::None)
+        } else if let Some(action) = action {
+            (self.cast_position(action), action.motion, action.prop)
+        } else if let Some(activity) = baseline {
+            let (x, y) = self.view.roaming(activity.x, activity.y);
+            ((x, y, true), activity.motion, activity.prop)
+        } else {
+            (
+                (self.view.width - 24, (self.view.height - 24).max(16), true),
+                Motion::Still,
+                Prop::None,
+            )
+        };
+        let speed = self.walk_speed(role);
+        let route = self.route(role);
+        let (dx, dy, turn) = self.actor_offset(motion, ms);
+        let anchor = (x, y);
+        let destination = self.limit_actor((x + dx, y + dy));
+        let step = self.guests[index]
+            .path
+            .advance(anchor, destination, ms, speed, route);
+        let (x, y) = step.point;
+        if step.walking {
+            self.guest_sprite(
+                role,
+                travel_motion(role),
+                (x, y, step.left.unwrap_or(flip)),
+                ms,
+            );
+        } else {
+            self.guest_sprite(role, motion, (x, y, flip ^ turn), ms);
+            self.actor_prop(prop, x, y, flip ^ turn, ms);
+            if let Some(action) = action {
+                self.draw_cast_result(action, x, y, ms);
+            }
+        }
+    }
+
+    fn guest_sprite(&mut self, role: Role, motion: Motion, point: (i32, i32, bool), ms: u64) {
+        let pace = if matches!(motion, Motion::Patrol | Motion::Hop) {
+            170
+        } else {
+            650
+        };
+        let step = (ms / pace) as usize % 3;
         let fallback: (&[u8], usize) = match role.0 {
             1..=9 => (EXTRA_CAST, usize::from(role.0 - 1) * 3 + step),
             11 => (GREY_CAT, step),
@@ -1920,36 +2139,85 @@ impl Scene {
             18..=29 => (EXTRA_CAST, usize::from(role.0 - 9) * 3 + step),
             _ => return,
         };
-        if let Some(leader) = reaction {
-            let position = self.partner_position(leader, ms);
-            self.role_animation(role, Motion::Tilt, position, ms, fallback);
-        } else if let Some(action) = action {
-            let (x, y, flip) = self.cast_position(action, ms);
-            self.role_animation(role, action.motion, (x, y, flip), ms, fallback);
-            if action.phase != cast::Phase::Approach {
-                self.actor_prop(action.prop, x, y, flip, ms);
+        self.role_animation(role, motion, point, ms, fallback);
+    }
+
+    fn departing_guests(&mut self, active: [Option<Role>; 2], ms: u64) {
+        let gate = self.guest_gate();
+        for index in 0..self.guests.len() {
+            let Some(role) = self.guests[index]
+                .role
+                .filter(|role| !active.contains(&Some(*role)))
+            else {
+                continue;
+            };
+            let speed = self.walk_speed(role);
+            let route = self.route(role);
+            let step = self.guests[index]
+                .path
+                .advance(gate, gate, ms, speed, route);
+            if step.walking {
+                let (x, y) = step.point;
+                self.guest_sprite(
+                    role,
+                    travel_motion(role),
+                    (x, y, step.left.unwrap_or(false)),
+                    ms,
+                );
+            } else {
+                self.guests[index] = GuestTravel::default();
             }
-            self.cast_result(action, x, y, ms);
-        } else if let Some(activity) = baseline {
-            let (x, y, flip) = pose(activity, ms);
-            let (x, y) = self.view.roaming(x, y);
-            self.role_animation(role, activity.motion, (x, y, !flip), ms, fallback);
-            self.actor_prop(activity.prop, x, y, !flip, ms);
-        } else {
-            let x = self.view.width - 24;
-            let y = (self.view.height - 24).max(16);
-            self.role_animation(role, Motion::Still, (x, y, true), ms, fallback);
         }
     }
 
-    fn partner_position(&self, action: &cast::Action, ms: u64) -> (i32, i32, bool) {
-        let (x, y, _) = self.cast_position(action, ms);
+    fn guest_gate(&self) -> Point {
+        (self.view.width + 24, (self.view.height - 19).max(16))
+    }
+
+    fn walk_speed(&self, role: Role) -> i32 {
+        let base = match role.0 {
+            0 => 25,
+            10..=12 => 34,
+            20 | 21 => 12,
+            _ => 28,
+        };
+        base + (self.view.width - WIDTH).clamp(0, 512) / 16
+    }
+
+    fn route(&self, role: Role) -> Route {
+        let grounded = travel_motion(role) != Motion::Hop;
+        [
+            grounded.then_some(Footprint {
+                near: self.view.fixed(29, 34),
+                far: self.view.fixed(72, 68),
+            }),
+            (grounded && !matches!(role.0, 17 | 19)).then_some(Footprint {
+                near: self.view.fixed(27, 79),
+                far: self.view.fixed(50, 91),
+            }),
+        ]
+    }
+
+    fn limit_actor(&self, (x, y): Point) -> Point {
+        (
+            x.clamp(9, self.view.width - 10),
+            y.clamp(12, self.view.height - 10),
+        )
+    }
+
+    fn actor_offset(&self, motion: Motion, ms: u64) -> (i32, i32, bool) {
+        let (dx, dy, flip) = motion_offset(motion, ms);
+        (dx, if self.detailed { 0 } else { dy }, flip)
+    }
+
+    fn partner_position(&self, action: &cast::Action) -> (i32, i32, bool) {
+        let (x, y, _) = self.cast_position(action);
         let on_right = x < self.view.width - 24;
         let neighbor = if on_right { x + 12 } else { x - 12 };
         (neighbor.clamp(9, self.view.width - 10), y, on_right)
     }
 
-    fn cast_position(&self, action: &cast::Action, ms: u64) -> (i32, i32, bool) {
+    fn cast_position(&self, action: &cast::Action) -> (i32, i32, bool) {
         let pond_pair = matches!(
             (action.role.0, action.partner.map(|role| role.0)),
             (17, Some(19)) | (7, Some(17 | 19 | 20))
@@ -1958,39 +2226,17 @@ impl Scene {
             self.view.fixed(32, 86)
         } else if action.plot.is_some() {
             (action.x, action.y)
-        } else if action.target == cast::Target::Pond && action.phase != cast::Phase::Approach {
+        } else if action.target == cast::Target::Pond {
             self.view.fixed(42, 85)
         } else {
             self.view.roaming(action.x, action.y)
         };
-        let (x, y, approaching_left) = if action.phase == cast::Phase::Approach {
-            let entry = match action.role.0 {
-                0 => self.view.fixed(50, 69),
-                10 => self.view.fixed(110, 78),
-                _ => (self.view.width - 10, (self.view.height - 19).min(y + 7)),
-            };
-            let progress = i32::from(action.phase_progress);
-            (
-                entry.0 + (x - entry.0) * progress / 100,
-                entry.1 + (y - entry.1) * progress / 100,
-                x < entry.0,
-            )
-        } else {
-            (x, y, action.role.0 >= 10)
-        };
-        let (dx, mut dy, patrol_flip) = motion_offset(action.motion, ms);
-        if self.detailed && matches!(action.motion, Motion::Hop | Motion::Bob) {
-            dy = 0;
-        }
-        (
-            (x + dx).clamp(9, self.view.width - 10),
-            (y + dy).clamp(12, self.view.height - 10),
-            approaching_left ^ (action.phase != cast::Phase::Approach && patrol_flip),
-        )
+        let (x, y) = self.limit_actor((x, y));
+        (x, y, action.role.0 >= 10)
     }
 
-    fn cast_result(&mut self, action: &cast::Action, x: i32, y: i32, ms: u64) {
-        if action.phase != cast::Phase::Result && !action.completes_now {
+    fn queue_cast_result(&mut self, action: &cast::Action) {
+        if !has_result(action) {
             return;
         }
         if let Some(slot) = self
@@ -2000,7 +2246,10 @@ impl Scene {
         {
             *slot = Some(*action);
         }
-        if action.prop == Prop::None {
+    }
+
+    fn draw_cast_result(&mut self, action: &cast::Action, x: i32, y: i32, ms: u64) {
+        if !has_result(action) || action.prop == Prop::None {
             return;
         }
         let (dx, dy) = match action.target {
@@ -2099,46 +2348,32 @@ impl Scene {
         reaction: Option<&cast::Action>,
     ) {
         let Some(activity) = activity else { return };
+        let door = self.view.fixed(50, 69);
+        let speed = self.walk_speed(Role(10));
+        let route = self.route(Role(10));
         if state.day_part == DayPart::Night && state.cat == CatAction::Sleep {
-            let door = self.view.fixed(50, 69);
-            if let Some(start) = self.cat_last {
-                let elapsed = ms.saturating_sub(*self.cat_entry.get_or_insert(ms));
-                if elapsed < 1_450 {
-                    let (x, y) = lerp(start, door, elapsed, 1_450);
-                    self.role_animation(
-                        Role(10),
-                        Motion::Patrol,
-                        (x, y, door.0 < start.0),
-                        ms,
-                        (CAT_WALK, (ms / 200) as usize),
-                    );
-                    return;
-                }
-                self.cat_last = None;
+            if let Some(action) = role_action {
+                self.queue_cast_result(action);
             }
+            let step = self.cat_path.advance(door, door, ms, speed, route);
+            if step.walking {
+                self.cat_walking(step, ms);
+                return;
+            }
+            self.cat_indoors = true;
             let (x, y) = self.view.fixed(43, 52 - ((ms / 950) % 3) as i32);
             self.sleep_mark(x, y);
             if let Some(action) = role_action {
-                self.cast_result(action, x, y, ms);
+                self.draw_cast_result(action, x, y, ms);
             }
             return;
         }
-        self.cat_entry = None;
-        let (mut x, mut y, mut flip) = pose(activity, ms);
-        (x, y) = self.view.roaming(x, y);
-        if let Some((moment, (pond_x, pond_y))) = fishing {
-            if moment.phase == Phase::Eating {
-                self.cat_last = Some((pond_x + 3, pond_y + 6));
-                self.role_animation(
-                    Role(10),
-                    Motion::Bob,
-                    (pond_x + 3, pond_y + 6, false),
-                    ms,
-                    (CAT_EAT, (ms / 320) as usize),
-                );
-                return;
-            }
+        if self.cat_indoors {
+            self.cat_indoors = false;
+            self.cat_path = Travel::start(door, ms);
         }
+        let (mut x, mut y) = self.view.roaming(activity.x, activity.y);
+        let mut flip = false;
         let (mut sheet, pace) = match state.cat {
             CatAction::Idle => (CAT_IDLE, 850),
             CatAction::Sleep => (CAT_SLEEP, 1_700),
@@ -2148,65 +2383,107 @@ impl Scene {
         };
         let mut motion = activity.motion;
         let mut prop = activity.prop;
-        if let Some(leader) =
+        let mut result = None;
+        let fish_meal = fishing.filter(|(moment, _)| moment.phase == Phase::Eating);
+        if let Some((_, (pond_x, pond_y))) = fish_meal {
+            (x, y) = (pond_x + 3, pond_y + 6);
+            sheet = CAT_EAT;
+            motion = Motion::Bob;
+            prop = Prop::None;
+        } else if let Some(leader) =
             reaction.filter(|_| matches!(state.cat, CatAction::Idle | CatAction::Walk))
         {
-            (x, y, flip) = self.partner_position(leader, ms);
+            (x, y, flip) = self.partner_position(leader);
             motion = Motion::Tilt;
             prop = Prop::None;
-        } else if let Some(action) = role_action.filter(|_| state.cat != CatAction::Treat) {
-            (x, y, flip) = self.cast_position(action, ms);
-            motion = action.motion;
-            prop = if action.phase == cast::Phase::Approach {
-                Prop::None
-            } else {
-                action.prop
-            };
-            self.cast_result(action, x, y, ms);
+        } else if let Some(action) = role_action {
+            if state.cat != CatAction::Treat {
+                (x, y, flip) = self.cast_position(action);
+                motion = action.motion;
+                prop = if action.phase == cast::Phase::Approach {
+                    Prop::None
+                } else {
+                    action.prop
+                };
+                result = Some(action);
+            } else if action.completes_now {
+                result = Some(action);
+            }
         }
-        if let Some(action) =
-            role_action.filter(|action| state.cat == CatAction::Treat && action.completes_now)
+        if fish_meal.is_none()
+            && state.cat == CatAction::Sleep
+            && (780..815).contains(&state.minutes_of_day)
         {
-            self.cast_result(action, x, y, ms);
-        }
-        if state.cat == CatAction::Sleep && (780..815).contains(&state.minutes_of_day) {
             let sheltered = matches!(state.weather, Weather::Rain | Weather::Snow);
             (x, y) = self.view.fixed(
                 if sheltered { 57 } else { 110 },
                 if sheltered { 73 } else { 78 },
             );
         }
-        if cat_heard_window(state, ms / 1000, actions) {
+        let heard_window = cat_heard_window(state, ms / 1_000, actions);
+        if heard_window {
             (x, y) = self.view.fixed(51, 75);
             flip = true;
             sheet = CAT_IDLE;
             motion = Motion::Tilt;
             let (bell_x, bell_y) = self.view.fixed(40, 57);
             self.prop(Prop::Bell, bell_x, bell_y, ms);
+        }
+        let sleeping = fish_meal.is_none() && state.cat == CatAction::Sleep;
+        let motion = if sleeping {
+            if self.detailed {
+                Motion::Nap
+            } else {
+                Motion::Still
+            }
+        } else if self.detailed && matches!(state.cat, CatAction::Eat | CatAction::Treat) {
+            Motion::Bob
         } else {
+            motion
+        };
+        let (dx, dy, turn) = self.actor_offset(motion, ms);
+        let destination = self.limit_actor((x + dx, y + dy));
+        let step = self.cat_path.advance((x, y), destination, ms, speed, route);
+        if let Some(action) = result {
+            self.queue_cast_result(action);
+        }
+        if step.walking {
+            self.cat_walking(step, ms);
+            return;
+        }
+        let (x, y) = step.point;
+        flip ^= turn;
+        if !heard_window && fish_meal.is_none() {
             self.actor_prop(prop, x, y, flip, ms);
             if state.cat == CatAction::Eat && !matches!(prop, Prop::Food | Prop::Water) {
                 self.prop(Prop::Food, x + 11, y + 1, ms);
             }
         }
-        if state.cat == CatAction::Sleep {
-            motion = Motion::Still;
+        if sleeping {
             let lift = ((ms / 1_400) % 3) as i32;
             let (side, above) = if self.detailed { (5, 8) } else { (9, 15) };
             self.sleep_mark(x + side + lift, y - above - lift);
         }
-        self.cat_last = Some((x, y));
-        let motion = match (self.detailed, state.cat) {
-            (true, CatAction::Sleep) => Motion::Nap,
-            (true, CatAction::Eat | CatAction::Treat) => Motion::Bob,
-            _ => motion,
-        };
+        if let Some(action) = result {
+            self.draw_cast_result(action, x, y, ms);
+        }
         self.role_animation(
             Role(10),
             motion,
             (x, y, flip),
             ms,
             (sheet, (ms / pace) as usize),
+        );
+    }
+
+    fn cat_walking(&mut self, step: Step, ms: u64) {
+        let (x, y) = step.point;
+        self.role_animation(
+            Role(10),
+            Motion::Patrol,
+            (x, y, step.left.unwrap_or(false)),
+            ms,
+            (CAT_WALK, (ms / 170) as usize),
         );
     }
 
@@ -2316,6 +2593,17 @@ fn pose(activity: &Activity, ms: u64) -> (i32, i32, bool) {
     (activity.x + x, activity.y + y, flip)
 }
 
+fn has_result(action: &cast::Action) -> bool {
+    action.phase == cast::Phase::Result || action.completes_now
+}
+
+fn travel_motion(role: Role) -> Motion {
+    match role.0 {
+        13 | 18 | 22..=26 | 29 => Motion::Hop,
+        _ => Motion::Patrol,
+    }
+}
+
 fn motion_offset(motion: Motion, ms: u64) -> (i32, i32, bool) {
     let phase = |duration, steps| ((ms / duration) % steps) as i32;
     match motion {
@@ -2419,29 +2707,86 @@ mod tests {
             ..garden
         };
         let mut wardrobe = Wardrobe::default();
-        assert!(wardrobe.pose(Some(garden), door, 10_000).is_none());
-        assert_eq!(
-            wardrobe.pose(Some(garden), door, 12_000).unwrap().outfit,
-            Outfit::Garden
-        );
-        assert_eq!(
-            wardrobe.pose(Some(apron), door, 13_000).unwrap().outfit,
-            Outfit::Garden
-        );
-        let midway = wardrobe.pose(Some(apron), door, 13_600).unwrap();
+        let mut pose = |goal, now| wardrobe.pose(goal, door, now, 25, [None; 2]);
+        assert!(pose(Some(garden), 10_000).is_none());
+        assert_eq!(pose(Some(garden), 10_500).unwrap().x, door.0);
+        pose(Some(garden), 11_500);
+        pose(Some(garden), 12_500);
+        assert_eq!(pose(Some(garden), 12_600).unwrap().outfit, Outfit::Garden);
+        let departure = pose(Some(apron), 13_000).unwrap();
+        assert_eq!((departure.x, departure.outfit), (garden.x, Outfit::Garden));
+        let midway = pose(Some(apron), 13_600).unwrap();
         assert!(midway.x < garden.x && midway.x > door.0);
-        assert!(wardrobe.pose(Some(apron), door, 14_500).is_none());
-        let emerging = wardrobe.pose(Some(apron), door, 15_100).unwrap();
+        assert!(pose(Some(apron), 14_600).is_some());
+        assert!(pose(Some(apron), 14_800).is_none());
+        assert!(pose(Some(apron), 15_500).is_none());
+        let emerging = pose(Some(apron), 15_600).unwrap();
         assert_eq!(emerging.outfit, Outfit::Apron);
-        assert!(emerging.x < apron.x);
-        assert_eq!(wardrobe.pose(Some(apron), door, 16_500).unwrap().x, apron.x);
-        assert!(!wardrobe.changing);
+        assert_eq!(emerging.x, door.0);
+        assert_eq!(pose(Some(apron), 16_600).unwrap().x, apron.x);
+        assert!(!wardrobe.in_transition());
+    }
+
+    #[test]
+    fn retargeting_preserves_position_and_uses_bounded_steps_around_water() {
+        let pond = Footprint {
+            near: (27, 79),
+            far: (50, 91),
+        };
+        let route = [None, Some(pond)];
+        let mut path = Travel::start((60, 84), 0);
+        let mut goal = (19, 84);
+        let mut previous = (60, 84);
+        let mut walked = 0;
+        for now in (0..=3_000).step_by(100) {
+            let step = path.advance(goal, goal, now, 25, route);
+            let (x, y) = step.point;
+            assert!(!pond.contains((x, y)), "crossed water at {:?}", step.point);
+            let delta = (x - previous.0).abs().max((y - previous.1).abs());
+            assert!(delta <= 3, "jumped from {previous:?} to {:?}", step.point);
+            walked += delta;
+            previous = (x, y);
+        }
+        assert_eq!(previous, goal);
+        assert!(walked >= 41);
+        goal = (35, 70);
+        let step = path.advance(goal, goal, 10_000, 25, route);
+        assert_eq!(step.point, previous);
+        assert!(step.walking);
+        assert_ne!(path.advance(goal, goal, 10_200, 25, route).point, previous);
+    }
+
+    #[test]
+    fn a_replaced_guest_walks_off_before_its_slot_is_reused() {
+        let mut scene = Scene::new();
+        scene.pixels.resize((WIDTH * HEIGHT * 4) as usize, 0);
+        let guests = [Role(11), Role(13), Role(19)];
+        for ms in (0..=5_000).step_by(125) {
+            scene.draw_guest(guests[0], None, None, None, ms);
+            scene.draw_guest(guests[1], None, None, None, ms);
+        }
+        let first = scene.guests[0].path.position.unwrap();
+        let second = scene.guests[1].path.position.unwrap();
+        let active = [Some(guests[2]), Some(guests[1])];
+        scene.departing_guests(active, 5_125);
+        scene.draw_guest(guests[2], None, None, None, 5_125);
+        assert_eq!(scene.guests[0].role, Some(guests[0]));
+        assert_eq!(scene.guests[0].path.position, Some(first));
+        assert_eq!(scene.guests[1].path.position, Some(second));
+        for ms in (5_250..=8_000).step_by(125) {
+            scene.departing_guests(active, ms);
+            scene.draw_guest(guests[2], None, None, None, ms);
+        }
+        assert_eq!(scene.guests[0].role, Some(guests[2]));
+        assert!(scene.guests[0].path.position.unwrap().0 < scene.guest_gate().0 * 1_000);
     }
 
     #[test]
     fn cat_stays_outdoors_for_a_noon_nap_and_walks_inside_at_night() {
         let mut state = sample();
         state.cat = CatAction::Sleep;
+        state.caretaker = CareAction::Away;
+        state.visitor = Visitor::None;
         state.minutes_of_day = 800;
         state.day_part = DayPart::Day;
         let mut scene = Scene::new();
@@ -2455,7 +2800,7 @@ mod tests {
             &NO_PROJECTS,
             &Effects::default(),
         );
-        assert_eq!(scene.cat_last, Some((110, 78)));
+        assert_eq!(scene.cat_path.position, Some((110_000, 78_000)));
         state.day_part = DayPart::Night;
         scene.render_view(
             &state,
@@ -2467,17 +2812,35 @@ mod tests {
             &Effects::default(),
         );
         assert!(scene.in_transition());
+        for ms in (1_000_225..=1_002_100).step_by(125) {
+            scene.render_view(
+                &state,
+                ms,
+                &manual,
+                (160, 100),
+                &UNLOCKS,
+                &NO_PROJECTS,
+                &Effects::default(),
+            );
+        }
+        assert!(scene.cat_indoors);
+        assert_eq!(scene.cat_path.position, Some((50_000, 69_000)));
+        assert!(!scene.cat_path.walking);
+        state.day_part = DayPart::Dawn;
+        state.cat = CatAction::Walk;
+        state.minutes_of_day = 340;
         scene.render_view(
             &state,
-            1_001_700,
+            1_002_225,
             &manual,
             (160, 100),
             &UNLOCKS,
             &NO_PROJECTS,
             &Effects::default(),
         );
-        assert_eq!(scene.cat_last, None);
-        assert!(!scene.in_transition());
+        assert!(!scene.cat_indoors);
+        assert_eq!(scene.cat_path.position, Some((50_000, 69_000)));
+        assert!(scene.cat_path.walking);
     }
 
     #[test]
@@ -2603,10 +2966,21 @@ mod tests {
                 visitor_invited_at: Some(1_000),
                 ..Default::default()
             };
+            for ms in (1_000_000..1_004_000).step_by(200) {
+                scene.render_view(
+                    &state,
+                    ms,
+                    &actions,
+                    (160, 100),
+                    &UNLOCKS,
+                    &NO_PROJECTS,
+                    &Effects::default(),
+                );
+            }
             let image = scene
                 .render_view(
                     &state,
-                    1_000_000,
+                    1_004_000,
                     &actions,
                     (160, 100),
                     &UNLOCKS,
@@ -2684,10 +3058,10 @@ mod tests {
             window: 1,
             plot: Some(original.id),
         };
-        scene.cast_result(&action, 24, 87, 1000);
+        scene.queue_cast_result(&action);
         assert_eq!(scene.take_results(), [None; 4]);
         action.phase = cast::Phase::Result;
-        scene.cast_result(&action, 24, 87, 1100);
+        scene.queue_cast_result(&action);
         assert!(apply_results(
             &state,
             size,

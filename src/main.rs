@@ -11,6 +11,7 @@ mod fishing;
 mod projects;
 mod renderer;
 mod simulation;
+mod startup;
 mod world;
 
 use std::{
@@ -58,6 +59,9 @@ const MAX_SIDECAR_BYTES: usize = 4096;
 const MENU_TREAT: usize = 1;
 const MENU_TOGGLE: usize = 2;
 const MENU_QUIT: usize = 3;
+const MENU_STARTUP: usize = 4;
+const MENU_SHOW: usize = 5;
+const MENU_SETTINGS: usize = 6;
 const MENU_SIZE: usize = 10;
 const MENU_WEATHER: usize = 20;
 const MENU_SEASON: usize = 30;
@@ -352,7 +356,7 @@ struct App {
     drag: Option<Drag>,
     user_hidden: bool,
     preview: bool,
-    visible: bool,
+    foreground: HWND,
 }
 
 thread_local! { static APP: RefCell<Option<App>> = const { RefCell::new(None) }; }
@@ -446,7 +450,7 @@ impl App {
             self.save_settings();
         }
         Ok(if self.scene.in_transition() {
-            180
+            110
         } else if animated {
             world::redraw_ms(&snapshot).min(220)
         } else {
@@ -467,27 +471,32 @@ impl App {
     }
 
     fn refresh(&mut self, hwnd: HWND) {
-        let should_show =
-            !self.user_hidden && (self.preview || self.drag.is_some() || desktop_foreground(hwnd));
-        if !should_show {
-            if self.visible {
-                unsafe { ShowWindow(hwnd, SW_HIDE) };
-                self.visible = false;
-            }
-            self.set_timer(hwnd, if self.user_hidden { 0 } else { 900 });
-            return;
-        }
-
-        let needs_show = !self.visible || unsafe { IsWindowVisible(hwnd) } == 0;
+        let needs_show = !self.user_hidden && unsafe { IsWindowVisible(hwnd) } == 0;
         if needs_show {
             self.position = clamp_position(self.position, self.renderer.size());
         }
         let interval = match self.render(hwnd) {
             Ok(interval) => {
-                if needs_show {
-                    unsafe { ShowWindow(hwnd, SW_SHOWNOACTIVATE) };
-                    self.visible = true;
+                let foreground = unsafe { GetForegroundWindow() };
+                if !self.user_hidden && (needs_show || foreground != self.foreground) {
+                    // Show Desktop can move the shell above ordinary windows.
+                    // Rejoin the desktop layer without making the widget topmost.
+                    if desktop_foreground(foreground) {
+                        show_home_window(hwnd, HWND_TOP);
+                    } else if needs_show {
+                        let after = if foreground == hwnd
+                            || unsafe { GetWindowLongW(foreground, GWL_EXSTYLE) } as u32
+                                & WS_EX_TOPMOST
+                                != 0
+                        {
+                            HWND_TOP
+                        } else {
+                            foreground
+                        };
+                        show_home_window(hwnd, after);
+                    }
                 }
+                self.foreground = foreground;
                 interval
             }
             Err(_) => 900,
@@ -499,8 +508,8 @@ impl App {
         if self.drag.is_some() {
             if unsafe { GetAsyncKeyState(VK_LBUTTON as i32) } >= 0 {
                 self.end_drag(hwnd);
-            } else {
-                self.apply_pointer(hwnd, false);
+            } else if !self.apply_pointer(hwnd, false) {
+                self.refresh(hwnd);
             }
         } else {
             self.refresh(hwnd);
@@ -598,12 +607,12 @@ impl App {
         true
     }
 
-    fn apply_pointer(&mut self, hwnd: HWND, force: bool) {
+    fn apply_pointer(&mut self, hwnd: HWND, force: bool) -> bool {
         let Some(drag) = &mut self.drag else {
-            return;
+            return false;
         };
         let Some(pointer) = cursor() else {
-            return;
+            return false;
         };
         let dx = pointer.x.saturating_sub(drag.pointer.x);
         let dy = pointer.y.saturating_sub(drag.pointer.y);
@@ -611,7 +620,7 @@ impl App {
             drag.moved = true;
         }
         if !drag.moved {
-            return;
+            return false;
         }
         match drag.kind {
             DragKind::Move => {
@@ -623,7 +632,7 @@ impl App {
                     self.renderer.size(),
                 );
                 if (position.x, position.y) == (self.position.x, self.position.y) {
-                    return;
+                    return false;
                 }
                 self.position = position;
                 unsafe {
@@ -644,7 +653,7 @@ impl App {
                         .last_resize
                         .is_some_and(|last| last.elapsed() < Duration::from_millis(32))
                 {
-                    return;
+                    return false;
                 }
                 drag.last_resize = Some(Instant::now());
                 let available = monitor_area(drag.origin).map_or((i32::MAX, i32::MAX), |area| {
@@ -659,9 +668,11 @@ impl App {
                 );
                 if self.change_size(requested) {
                     self.refresh(hwnd);
+                    return true;
                 }
             }
         }
+        false
     }
 
     fn end_drag(&mut self, hwnd: HWND) {
@@ -677,6 +688,8 @@ impl App {
                 self.refresh(hwnd);
             } else if matches!(drag.kind, DragKind::Move) {
                 self.treat(hwnd);
+            } else {
+                self.refresh(hwnd);
             }
         }
     }
@@ -697,10 +710,17 @@ fn cursor() -> Option<POINT> {
     (unsafe { GetCursorPos(&mut point) } != 0).then_some(point)
 }
 
-fn desktop_foreground(hwnd: HWND) -> bool {
-    let foreground = unsafe { GetForegroundWindow() };
+fn show_home_window(hwnd: HWND, after: HWND) {
+    let flags = SWP_SHOWWINDOW | SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE;
+    unsafe {
+        if SetWindowPos(hwnd, after, 0, 0, 0, 0, flags) == 0 {
+            SetWindowPos(hwnd, HWND_TOP, 0, 0, 0, 0, flags);
+        }
+    }
+}
+
+fn desktop_foreground(foreground: HWND) -> bool {
     if foreground.is_null()
-        || foreground == hwnd
         || foreground == unsafe { GetShellWindow() }
         || unsafe { IsIconic(foreground) } != 0
     {
@@ -843,8 +863,89 @@ fn append_group(parent: HMENU, label: &str, append_items: impl FnOnce(HMENU)) {
 fn toggle_home(hwnd: HWND) {
     with_app(|app| {
         app.user_hidden = !app.user_hidden;
-        app.refresh(hwnd);
+        if app.user_hidden {
+            unsafe { ShowWindow(hwnd, SW_HIDE) };
+        } else {
+            app.refresh(hwnd);
+            show_home_window(hwnd, HWND_TOP);
+        }
     });
+}
+
+fn reveal_home(hwnd: HWND) {
+    with_app(|app| {
+        app.user_hidden = false;
+        app.refresh(hwnd);
+        show_home_window(hwnd, HWND_TOP);
+    });
+}
+
+fn append_startup(menu: HMENU) {
+    let flags = match startup::enabled() {
+        Ok(true) => MF_CHECKED,
+        Ok(false) => 0,
+        Err(_) => MF_GRAYED,
+    };
+    append_label(menu, MF_STRING | flags, MENU_STARTUP, "登录 Windows 时启动");
+}
+
+fn toggle_startup(hwnd: HWND) {
+    if let Err(error) = startup::enabled().and_then(|enabled| startup::set_enabled(!enabled)) {
+        let message: Vec<u16> = format!("无法更改登录启动设置。\n{error}")
+            .encode_utf16()
+            .chain(std::iter::once(0))
+            .collect();
+        unsafe { MessageBoxW(hwnd, message.as_ptr(), TITLE, MB_OK | MB_ICONWARNING) };
+    }
+}
+
+fn pick_menu(hwnd: HWND, menu: HMENU, point: POINT) -> usize {
+    unsafe {
+        let previous_foreground = GetForegroundWindow();
+        SetForegroundWindow(hwnd);
+        let selected = TrackPopupMenu(
+            menu,
+            TPM_RETURNCMD | TPM_RIGHTBUTTON,
+            point.x,
+            point.y,
+            0,
+            hwnd,
+            ptr::null(),
+        ) as usize;
+        DestroyMenu(menu);
+        PostMessageW(hwnd, WM_NULL, 0, 0);
+        if GetForegroundWindow() == hwnd
+            && previous_foreground != hwnd
+            && !previous_foreground.is_null()
+        {
+            SetForegroundWindow(previous_foreground);
+        }
+        selected
+    }
+}
+
+fn tray_menu(hwnd: HWND) {
+    let Some(point) = cursor() else {
+        return;
+    };
+    let menu = unsafe { CreatePopupMenu() };
+    if menu.is_null() {
+        return;
+    }
+    append_label(menu, MF_STRING, MENU_SHOW, "显示小屋");
+    append_label(menu, MF_STRING, MENU_SETTINGS, "小屋设置…");
+    append_startup(menu);
+    unsafe { AppendMenuW(menu, MF_SEPARATOR, 0, ptr::null()) };
+    append_label(menu, MF_STRING, MENU_QUIT, "退出猫咪小屋");
+    match pick_menu(hwnd, menu, point) {
+        MENU_SHOW => reveal_home(hwnd),
+        MENU_SETTINGS => show_menu(hwnd),
+        MENU_STARTUP => toggle_startup(hwnd),
+        MENU_QUIT => unsafe {
+            DestroyWindow(hwnd);
+        },
+        _ => {}
+    }
 }
 
 fn show_notebook(hwnd: HWND) {
@@ -1061,30 +1162,13 @@ fn show_menu(hwnd: HWND) {
                 w!("隐藏小屋")
             },
         );
+        append_startup(menu);
         AppendMenuW(menu, MF_STRING, MENU_UNINSTALL_HELP, w!("卸载说明"));
-        AppendMenuW(menu, MF_STRING, MENU_QUIT, w!("退出"));
-        let previous_foreground = GetForegroundWindow();
-        SetForegroundWindow(hwnd);
-        let selected = TrackPopupMenu(
-            menu,
-            TPM_RETURNCMD | TPM_RIGHTBUTTON,
-            point.x,
-            point.y,
-            0,
-            hwnd,
-            ptr::null(),
-        ) as usize;
-        DestroyMenu(menu);
-        PostMessageW(hwnd, WM_NULL, 0, 0);
-        if GetForegroundWindow() == hwnd
-            && previous_foreground != hwnd
-            && !previous_foreground.is_null()
-        {
-            SetForegroundWindow(previous_foreground);
-        }
-        match selected {
+        AppendMenuW(menu, MF_STRING, MENU_QUIT, w!("退出猫咪小屋"));
+        match pick_menu(hwnd, menu, point) {
             MENU_TREAT => with_app(|app| app.treat(hwnd)),
             MENU_TOGGLE => toggle_home(hwnd),
+            MENU_STARTUP => toggle_startup(hwnd),
             MENU_WATER => with_app(|app| app.interact(hwnd, YardAction::ToggleWater)),
             MENU_SNACK => with_app(|app| app.interact(hwnd, YardAction::LeaveSnack)),
             MENU_KEEPER => with_app(|app| app.interact(hwnd, YardAction::CallKeeper)),
@@ -1094,7 +1178,7 @@ fn show_menu(hwnd: HWND) {
                 MessageBoxW(
                     hwnd,
                     w!(
-                        "猫咪小屋是便携版。先在此菜单点「退出」，再删除「猫咪小屋.exe」。\n\n同目录的 cat-home-settings.txt 和 cat-home-position.txt 是庭院存档和窗口位置。可保留它们，日后继续使用。"
+                        "先取消勾选「登录 Windows 时启动」，再点「退出猫咪小屋」，然后删除「猫咪小屋.exe」。\n\n同目录的 cat-home-settings.txt 和 cat-home-position.txt 是庭院存档和窗口位置。可保留它们，日后继续使用。"
                     ),
                     w!("卸载猫咪小屋"),
                     MB_OK | MB_ICONINFORMATION,
@@ -1159,7 +1243,9 @@ unsafe extern "system" fn window_proc(
     match message {
         WM_TIMER if wparam == UPDATE_TIMER => with_app(|app| app.tick(hwnd)),
         WM_LBUTTONDOWN => with_app(|app| app.start_drag(hwnd)),
-        WM_MOUSEMOVE => with_app(|app| app.apply_pointer(hwnd, false)),
+        WM_MOUSEMOVE => with_app(|app| {
+            app.apply_pointer(hwnd, false);
+        }),
         WM_LBUTTONUP => with_app(|app| app.end_drag(hwnd)),
         WM_RBUTTONUP => show_menu(hwnd),
         WM_MOUSEACTIVATE => return MA_NOACTIVATE as LRESULT,
@@ -1185,14 +1271,11 @@ unsafe extern "system" fn window_proc(
             app.refresh(hwnd);
         }),
         TRAY_MESSAGE => match lparam as u32 {
-            WM_RBUTTONUP | WM_CONTEXTMENU => show_menu(hwnd),
-            WM_LBUTTONDBLCLK => toggle_home(hwnd),
+            WM_RBUTTONUP | WM_CONTEXTMENU => tray_menu(hwnd),
+            WM_LBUTTONUP => reveal_home(hwnd),
             _ => {}
         },
-        RESTORE_MESSAGE => with_app(|app| {
-            app.user_hidden = false;
-            app.refresh(hwnd);
-        }),
+        RESTORE_MESSAGE => reveal_home(hwnd),
         WM_DESTROY => unsafe {
             KillTimer(hwnd, UPDATE_TIMER);
             PostQuitMessage(0);
@@ -1271,6 +1354,8 @@ fn run() -> io::Result<()> {
                 preview = true;
                 window_class = SMOKE_CLASS;
             }
+            "--enable-startup" => return startup::set_enabled(true),
+            "--disable-startup" => return startup::set_enabled(false),
             "--check-assets" => {
                 return if world::check_assets() {
                     Ok(())
@@ -1342,7 +1427,7 @@ fn run() -> io::Result<()> {
             drag: None,
             user_hidden: false,
             preview,
-            visible: false,
+            foreground: ptr::null_mut(),
         };
         app.unlock_visible_plots();
         app.save_settings();
