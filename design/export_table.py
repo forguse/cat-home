@@ -12,13 +12,43 @@ ROLES = {
     "keeper": "管理员",
     "visitor": "来访者",
     "yard": "庭院与天气",
+    "plant": "花木与作物",
+    "disaster": "受灾与修复",
     "interaction": "手动交互",
 }
 
 
 def read_rows(name):
     with (HERE / name).open(encoding="utf-8-sig", newline="") as source:
-        return [row for row in reader(source, delimiter="\t") if row]
+        return [row for row in reader(source, delimiter="\t") if row and not row[0].startswith("#")]
+
+
+def ecology_rows():
+    groups = {kind: [] for kind in "PSTD"}
+    for kind, *values in read_rows("variant-rules.tsv"):
+        groups[kind].append(values)
+    plots, species, stages, disasters = (groups[kind] for kind in "PSTD")
+    assert (len(plots), len(species), len(stages), len(disasters)) == (12, 12, 6, 4)
+    plant_kinds = {"flower": 0, "tree": 1, "crop": 2}
+    number = 1
+    for plot, unlock in plots:
+        for plant, kind, trait in species:
+            for stage, when, *visible in stages:
+                yield (
+                    f"E{number:03d}", "plant", stage, f"{plot} · {plant}",
+                    f"{unlock}。本地块轮种到{plant}，{when}。",
+                    f"{visible[plant_kinds[kind]]}。{trait}。",
+                )
+                number += 1
+    for disaster, cause, *visible in disasters:
+        for stage, when, result in zip(
+            ("受损", "修复", "恢复"),
+            ("发生后", "修复期间", "开始恢复后"),
+            visible,
+            strict=True,
+        ):
+            yield f"E{number:03d}", "disaster", stage, disaster, f"{cause}，{when}。", result
+            number += 1
 
 
 def main():
@@ -26,19 +56,20 @@ def main():
     for number, role, gate, motion, prop, x, y, name, trigger, result in (
         read_rows("animals.tsv") + read_rows("visitors-yard.tsv")
     ):
-        roles.append((number, role, name, trigger, result))
+        roles.append((number, role, "自主活动", name, trigger, result))
+    roles.extend(ecology_rows())
     for number, name, result in read_rows("interaction.tsv"):
-        roles.append((number, "interaction", name, "手动触发", result))
+        roles.append((number, "interaction", "手动交互", name, "手动触发", result))
     counts = Counter(role for _, role, *_ in roles)
-    assert len({row[0] for row in roles}) == len(roles) >= 100
+    assert len({row[0] for row in roles}) == len(roles) == 1_000
     tabs = '<button type="button" data-role="" aria-pressed="true">全部</button>' + "".join(
         f'<button type="button" data-role="{role}" aria-pressed="false">{label} {counts[role]}</button>'
         for role, label in ROLES.items()
     )
     body = "\n".join(
         f'<tr data-role="{role}"><td>{num}</td><td>{ROLES[role]}</td><th scope="row">{escape(name)}</th>'
-        f'<td>{escape(trigger)}</td><td>{escape(result)}</td></tr>'
-        for num, role, name, trigger, result in roles
+        f'<td>{escape(kind)}</td><td>{escape(trigger)}</td><td>{escape(result)}</td></tr>'
+        for num, role, kind, name, trigger, result in roles
     )
     html = f"""<!doctype html>
 <html lang="zh-CN">
@@ -54,6 +85,7 @@ p {{ color:#505b51; max-width: 76ch; }}
 button, input {{ font: inherit; padding: 7px 11px; border:1px solid #9aa89b; background:#fffefa; color:#2e3531; border-radius:7px; }}
 button {{ cursor:pointer; }}
 button[aria-pressed=true] {{ background:#365e49; color:white; border-color:#365e49; }}
+button:disabled {{ cursor:default; opacity:.55; }}
 input {{ flex:1; min-width:190px; }}
 .wrap {{ overflow-x:auto; background:#fffefa; border:1px solid #d7dbd2; border-radius:9px; }}
 table {{ border-collapse:collapse; width:100%; min-width:720px; }}
@@ -66,36 +98,51 @@ tbody tr:nth-child(even) {{ background:#f7f8f3; }}
 </style>
 <main>
   <h1>猫咪小屋的小世界</h1>
-  <p>昼夜跟随系统时间，天气是庭院模拟。管理员只在固定工时动工，施工结束后保留进度。桌宠关闭期间的建设按排班补算。</p>
-  <div class="controls" aria-label="筛选行为">{tabs}<input type="search" aria-label="搜索行为" placeholder="搜行为、天气或道具"></div>
+  <p>112 项角色与庭院活动，864 种地块上的种植进程，12 种灾害与恢复阶段，以及 12 项手动操作。植物从播种长到收获，庭院会逐步开放新的地块。昼夜跟随电脑时间，天气是院内模拟。</p>
+  <div class="controls" aria-label="筛选行为">{tabs}<input type="search" aria-label="搜索行为" placeholder="搜花木、地块、天气或动作"></div>
   <div class="wrap">
   <table>
-    <caption id="count" aria-live="polite">共 {len(roles)} 项，含 {counts["interaction"]} 项手动交互</caption>
-    <thead><tr><th>编号</th><th>角色或场景</th><th>行为</th><th>何时发生</th><th>你会看到什么</th></tr></thead>
+    <caption id="count" aria-live="polite">共 {len(roles)} 项</caption>
+    <thead><tr><th>编号</th><th>角色或场景</th><th>对象或行为</th><th>阶段</th><th>何时发生</th><th>你会看到什么</th></tr></thead>
     <tbody>{body}</tbody>
   </table>
+  </div>
+  <div class="controls" aria-label="翻页">
+    <button type="button" id="prev">上一页</button><button type="button" id="next">下一页</button>
   </div>
 </main>
 <script>
 const buttons = [...document.querySelectorAll("button[data-role]")];
 const rows = [...document.querySelectorAll("tbody tr")];
 const search = document.querySelector("input");
+const prev = document.querySelector("#prev");
+const next = document.querySelector("#next");
+const pageSize = 50;
 let role = "";
+let page = 0;
 function filter() {{
   const q = search.value.trim().toLowerCase();
-  let visible = 0;
+  let found = 0;
   for (const row of rows) {{
-    row.hidden = (role && row.dataset.role !== role) || !row.textContent.toLowerCase().includes(q);
-    if (!row.hidden) visible++;
+    const matches = (!role || row.dataset.role === role) && row.textContent.toLowerCase().includes(q);
+    const index = matches ? found++ : -1;
+    row.hidden = index < page * pageSize || index >= (page + 1) * pageSize;
   }}
-  document.querySelector("#count").textContent = "显示 " + visible + " / " + rows.length + " 项";
+  const pages = Math.max(1, Math.ceil(found / pageSize));
+  prev.disabled = page === 0;
+  next.disabled = page + 1 >= pages;
+  document.querySelector("#count").textContent = `匹配 ${{found}} 项 · 第 ${{page + 1}} / ${{pages}} 页`;
 }}
 for (const button of buttons) button.addEventListener("click", () => {{
   role = button.dataset.role;
   for (const other of buttons) other.setAttribute("aria-pressed", String(other === button));
+  page = 0;
   filter();
 }});
-search.addEventListener("input", filter);
+search.addEventListener("input", () => {{ page = 0; filter(); }});
+prev.addEventListener("click", () => {{ page--; filter(); }});
+next.addEventListener("click", () => {{ page++; filter(); }});
+filter();
 </script>
 </html>
 """

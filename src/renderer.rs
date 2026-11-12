@@ -3,19 +3,45 @@
 use std::{ffi::c_void, io, mem, ptr};
 
 use windows_sys::Win32::{
-    Foundation::{HWND, POINT, SIZE},
+    Foundation::{HWND, POINT, RECT, SIZE},
     Graphics::Gdi::*,
-    UI::WindowsAndMessaging::{ULW_ALPHA, UpdateLayeredWindow},
+    UI::WindowsAndMessaging::{ULW_ALPHA, UPDATELAYEREDWINDOWINFO, UpdateLayeredWindowIndirect},
 };
 
-pub const ART_WIDTH: usize = 160;
-pub const ART_HEIGHT: usize = 100;
 pub const DEFAULT_WIDTH: i32 = 480;
-pub const FRAME_BYTES: usize = ART_WIDTH * ART_HEIGHT * 4;
+pub const DEFAULT_HEIGHT: i32 = 300;
+const PIXEL: i32 = 3;
 
-pub fn dimensions(requested_width: i32) -> (i32, i32) {
-    let width = requested_width.clamp(240, 960) / 8 * 8;
-    (width, width * 5 / 8)
+pub fn dimensions(width: i32, height: i32) -> (i32, i32) {
+    (width.clamp(240, 3840), height.clamp(180, 2160))
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Damage {
+    pub left: i32,
+    pub top: i32,
+    pub right: i32,
+    pub bottom: i32,
+}
+
+impl Damage {
+    pub fn full((width, height): (i32, i32)) -> Self {
+        Self {
+            left: 0,
+            top: 0,
+            right: width,
+            bottom: height,
+        }
+    }
+
+    pub fn union(self, other: Self) -> Self {
+        Self {
+            left: self.left.min(other.left),
+            top: self.top.min(other.top),
+            right: self.right.max(other.right),
+            bottom: self.bottom.max(other.bottom),
+        }
+    }
 }
 
 pub struct Renderer {
@@ -26,6 +52,7 @@ pub struct Renderer {
     bits: *mut u8,
     width: i32,
     height: i32,
+    presented_at: Option<(i32, i32)>,
 }
 
 fn new_bitmap(dc: HDC, width: i32, height: i32) -> (HBITMAP, *mut u8) {
@@ -46,8 +73,8 @@ fn new_bitmap(dc: HDC, width: i32, height: i32) -> (HBITMAP, *mut u8) {
 }
 
 impl Renderer {
-    pub fn new(width: i32) -> io::Result<Self> {
-        let (width, height) = dimensions(width);
+    pub fn new(width: i32, height: i32) -> io::Result<Self> {
+        let (width, height) = dimensions(width, height);
         unsafe {
             let screen_dc = GetDC(ptr::null_mut());
             if screen_dc.is_null() {
@@ -82,6 +109,7 @@ impl Renderer {
                 bits,
                 width,
                 height,
+                presented_at: None,
             })
         }
     }
@@ -90,9 +118,16 @@ impl Renderer {
         (self.width, self.height)
     }
 
-    pub fn resize(&mut self, width: i32) -> io::Result<()> {
-        let (width, height) = dimensions(width);
-        if width == self.width {
+    pub fn logical_size(&self) -> (i32, i32) {
+        (
+            (self.width + PIXEL - 1) / PIXEL,
+            (self.height + PIXEL - 1) / PIXEL,
+        )
+    }
+
+    pub fn resize(&mut self, width: i32, height: i32) -> io::Result<()> {
+        let (width, height) = dimensions(width, height);
+        if (width, height) == self.size() {
             return Ok(());
         }
         unsafe {
@@ -116,37 +151,35 @@ impl Renderer {
         }
         self.width = width;
         self.height = height;
+        self.presented_at = None;
         Ok(())
     }
 
-    pub fn draw(&mut self, hwnd: HWND, position: POINT, pixels: &[u8]) -> io::Result<()> {
-        if pixels.len() != FRAME_BYTES {
+    pub fn draw(
+        &mut self,
+        hwnd: HWND,
+        position: POINT,
+        pixels: &[u8],
+        changed: Option<Damage>,
+    ) -> io::Result<()> {
+        let logical = self.logical_size();
+        if pixels.len() != (logical.0 * logical.1 * 4) as usize {
             return Err(io::Error::new(
                 io::ErrorKind::InvalidData,
                 "invalid world frame",
             ));
         }
-        let width = self.width as usize;
-        let height = self.height as usize;
-        let stride = width * 4;
-        let output = unsafe { std::slice::from_raw_parts_mut(self.bits, stride * height) };
-
-        // Write the first scaled row, then duplicate it for nearest-neighbor scaling.
-        for (y, source) in pixels.chunks_exact(ART_WIDTH * 4).enumerate() {
-            let first_row = y * height / ART_HEIGHT;
-            let end_row = (y + 1) * height / ART_HEIGHT;
-            let row = first_row * stride;
-            for (x, pixel) in source.chunks_exact(4).enumerate() {
-                let start = row + x * width / ART_WIDTH * 4;
-                let end = row + (x + 1) * width / ART_WIDTH * 4;
-                for copy in output[start..end].chunks_exact_mut(4) {
-                    copy.copy_from_slice(pixel);
-                }
-            }
-            for next_row in first_row + 1..end_row {
-                output.copy_within(row..row + stride, next_row * stride);
-            }
+        let new_surface = self.presented_at.is_none();
+        let moved = self.presented_at != Some((position.x, position.y));
+        let damage = if new_surface {
+            Some(Damage::full(logical))
+        } else {
+            changed
+        };
+        if !moved && damage.is_none() {
+            return Ok(());
         }
+        let physical_damage = damage.map(|region| self.write_pixels(pixels, logical.0, region));
 
         let source = POINT { x: 0, y: 0 };
         let size = SIZE {
@@ -159,23 +192,63 @@ impl Renderer {
             SourceConstantAlpha: 255,
             AlphaFormat: AC_SRC_ALPHA as u8,
         };
-        let result = unsafe {
-            UpdateLayeredWindow(
-                hwnd,
-                self.screen_dc,
-                &position,
-                &size,
-                self.memory_dc,
-                &source,
-                0,
-                &blend,
-                ULW_ALPHA,
-            )
+        let info = UPDATELAYEREDWINDOWINFO {
+            cbSize: mem::size_of::<UPDATELAYEREDWINDOWINFO>() as u32,
+            hdcDst: self.screen_dc,
+            pptDst: &position,
+            psize: &size,
+            hdcSrc: self.memory_dc,
+            pptSrc: &source,
+            crKey: 0,
+            pblend: &blend,
+            dwFlags: ULW_ALPHA,
+            prcDirty: if moved {
+                ptr::null()
+            } else {
+                physical_damage
+                    .as_ref()
+                    .map_or(ptr::null(), std::ptr::from_ref)
+            },
         };
+        let result = unsafe { UpdateLayeredWindowIndirect(hwnd, &info) };
         if result == 0 {
+            self.presented_at = None;
             Err(io::Error::last_os_error())
         } else {
+            self.presented_at = Some((position.x, position.y));
             Ok(())
+        }
+    }
+
+    fn write_pixels(&mut self, pixels: &[u8], logical_width: i32, region: Damage) -> RECT {
+        let left = (region.left * PIXEL) as usize;
+        let right = (region.right * PIXEL).min(self.width) as usize;
+        let width = self.width as usize;
+        let output = unsafe {
+            std::slice::from_raw_parts_mut(self.bits.cast::<u32>(), width * self.height as usize)
+        };
+        for y in region.top..region.bottom {
+            let first_row = (y * PIXEL) as usize;
+            let end_row = ((y + 1) * PIXEL).min(self.height) as usize;
+            let offset = ((y * logical_width + region.left) * 4) as usize;
+            let length = ((region.right - region.left) * 4) as usize;
+            let start = first_row * width + left;
+            let end = first_row * width + right;
+            for (copies, pixel) in output[start..end]
+                .chunks_mut(PIXEL as usize)
+                .zip(pixels[offset..offset + length].chunks_exact(4))
+            {
+                copies.fill(u32::from_ne_bytes(pixel.try_into().unwrap()));
+            }
+            for row in first_row + 1..end_row {
+                output.copy_within(start..end, row * width + left);
+            }
+        }
+        RECT {
+            left: left as i32,
+            right: right as i32,
+            top: region.top * PIXEL,
+            bottom: (region.bottom * PIXEL).min(self.height),
         }
     }
 }

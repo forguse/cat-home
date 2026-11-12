@@ -1,8 +1,10 @@
 //! Clock-based activity selection from the reviewed behavior table. The table
 //! is indexed once; selecting a frame uses borrowed data and no allocations.
 
+use std::fmt;
 use std::sync::OnceLock;
 
+use crate::ecology::Plot;
 use crate::simulation::{CareAction, CatAction, DayPart, Season, Snapshot, Visitor, Weather};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -60,6 +62,39 @@ pub struct Active {
     pub keeper: Option<&'static Activity>,
     pub visitor: Option<&'static Activity>,
     pub yard: Option<&'static Activity>,
+}
+
+const GROWING_PLOTS: usize = 12;
+const SPECIES_COUNT: usize = 12;
+const GROWTH_STAGES: usize = 6;
+const RESPONSE_STAGES: usize = 3;
+const PLANT_ENTRIES: usize = GROWING_PLOTS * SPECIES_COUNT * GROWTH_STAGES;
+
+#[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
+pub struct EcologyEntry(usize);
+
+impl fmt::Display for EcologyEntry {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(formatter, "E{:03}", self.0)
+    }
+}
+
+/// Locate the active plot state in the design table without storing a row per
+/// combination. Disaster states describe the plot until normal growth resumes.
+pub fn ecology_entry(plot: &Plot) -> Option<EcologyEntry> {
+    if let (Some(disaster), Some(response)) =
+        (plot.event.disaster_index(), plot.stage.response_index())
+    {
+        return Some(EcologyEntry(
+            PLANT_ENTRIES + disaster * RESPONSE_STAGES + response + 1,
+        ));
+    }
+
+    let site = usize::from(plot.id);
+    let species = plot.kind.species_index()?;
+    let stage = plot.stage.growth_index()?;
+    (site < GROWING_PLOTS)
+        .then(|| EcologyEntry((site * SPECIES_COUNT + species) * GROWTH_STAGES + stage + 1))
 }
 
 #[derive(Clone, Copy)]
@@ -337,6 +372,91 @@ mod tests {
             );
         }
         assert_eq!(ids.len(), 112);
+    }
+
+    #[test]
+    fn design_table_dimensions_match_live_ecology_entry_ranges() {
+        let rules = include_str!("../design/variant-rules.tsv");
+        let count = |prefix: &str| {
+            rules
+                .lines()
+                .filter(|line| line.starts_with(prefix))
+                .count()
+        };
+        assert_eq!(count("P\t"), GROWING_PLOTS);
+        assert_eq!(count("S\t"), SPECIES_COUNT);
+        assert_eq!(count("T\t"), GROWTH_STAGES);
+        assert_eq!(RESPONSE_STAGES, 3);
+
+        let events = count("D\t") * RESPONSE_STAGES;
+        let manual = include_str!("../design/interaction.tsv").lines().count();
+        let authored = ANIMALS.lines().count() + VISITORS_YARD.lines().count();
+        assert_eq!(authored + PLANT_ENTRIES + events + manual, 1_000);
+    }
+
+    #[test]
+    fn every_ecology_row_matches_a_reachable_garden_state() {
+        use crate::ecology::{SITE_COUNT, plots_with_unlocks};
+
+        let rules = include_str!("../design/variant-rules.tsv");
+        let names = |prefix: &str| {
+            rules
+                .lines()
+                .filter_map(|line| line.strip_prefix(prefix))
+                .filter_map(|line| line.split('\t').next())
+                .collect::<Vec<_>>()
+        };
+        let plots = names("P\t");
+        let species = names("S\t");
+        let growth = names("T\t");
+        let disasters = names("D\t");
+        let responses = ["受损", "修复", "恢复"];
+        let total = PLANT_ENTRIES + disasters.len() * RESPONSE_STAGES;
+        let mut seen = BTreeSet::new();
+        let started = 1_800_000_000;
+        let unlocked_at = [1; SITE_COUNT];
+
+        for hour in 0..3 * 365 * 24 {
+            let garden = plots_with_unlocks(
+                started + hour * 3_600,
+                started,
+                300,
+                200,
+                Season::Spring,
+                Weather::Clear,
+                &unlocked_at,
+            );
+            for plot in garden.plots() {
+                let Some(entry) = ecology_entry(plot) else {
+                    continue;
+                };
+                if !seen.insert(entry) {
+                    continue;
+                }
+                if entry.0 <= PLANT_ENTRIES {
+                    let index = entry.0 - 1;
+                    assert_eq!(
+                        plot.site_label(),
+                        plots[index / SPECIES_COUNT / GROWTH_STAGES]
+                    );
+                    assert_eq!(
+                        plot.kind.label(),
+                        species[index / GROWTH_STAGES % SPECIES_COUNT]
+                    );
+                    assert_eq!(plot.stage.label(), growth[index % GROWTH_STAGES]);
+                } else {
+                    let index = entry.0 - PLANT_ENTRIES - 1;
+                    assert_eq!(plot.event.label(), disasters[index / RESPONSE_STAGES]);
+                    assert_eq!(plot.stage.label(), responses[index % RESPONSE_STAGES]);
+                }
+            }
+            if seen.len() == total {
+                break;
+            }
+        }
+
+        let expected = (1..=total).map(EcologyEntry).collect::<BTreeSet<_>>();
+        assert_eq!(seen, expected);
     }
 
     #[test]

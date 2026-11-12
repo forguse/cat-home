@@ -3,19 +3,23 @@
 // Native window and tray lifecycle adapted from Nekodachi's window.rs and
 // tray.rs, Copyright (c) 2026 Yannick Herrero, MIT.
 mod activities;
+mod ecology;
 mod renderer;
 mod simulation;
 mod world;
 
 use std::{
     cell::RefCell,
-    io, mem,
+    fmt::Write as _,
+    fs::{self, File},
+    io::{self, Read, Write},
+    mem,
     path::PathBuf,
     ptr,
     time::{Duration, Instant},
 };
 
-use renderer::{DEFAULT_WIDTH, Renderer, dimensions};
+use renderer::{DEFAULT_HEIGHT, DEFAULT_WIDTH, Renderer, dimensions};
 use simulation::{Season, Snapshot, Visitor, WeatherMode};
 use windows_sys::{
     Win32::{
@@ -37,10 +41,12 @@ use windows_sys::{
 use world::ManualActions;
 
 const CLASS: *const u16 = w!("CodexCatHomeWorld");
+const SMOKE_CLASS: *const u16 = w!("CodexCatHomeSmoke");
 const TITLE: *const u16 = w!("猫咪小屋");
 const TRAY_MESSAGE: u32 = WM_APP + 1;
 const RESTORE_MESSAGE: u32 = WM_APP + 2;
 const UPDATE_TIMER: usize = 1;
+const MAX_SIDECAR_BYTES: usize = 4096;
 const MENU_TREAT: usize = 1;
 const MENU_TOGGLE: usize = 2;
 const MENU_QUIT: usize = 3;
@@ -54,7 +60,12 @@ const MENU_TAP: usize = 43;
 const MENU_NOTEBOOK: usize = 44;
 const MENU_LANTERN: usize = 50;
 const MENU_INVITE: usize = 60;
-const SIZES: [(i32, &str); 4] = [(360, "75%"), (480, "100%"), (600, "125%"), (720, "150%")];
+const SIZES: [((i32, i32), &str); 4] = [
+    ((360, 225), "360 × 225"),
+    ((480, 300), "480 × 300"),
+    ((600, 375), "600 × 375"),
+    ((720, 450), "720 × 450"),
+];
 const WEATHER: [(WeatherMode, &str, &str); 4] = [
     (WeatherMode::Auto, "auto", "自动变化"),
     (WeatherMode::Clear, "clear", "晴天"),
@@ -79,34 +90,40 @@ const VISITORS: [(Visitor, &str, &str); 3] = [
 
 struct Settings {
     width: i32,
+    height: i32,
     season: Season,
     weather: WeatherMode,
     started: u64,
     treat_at: Option<u64>,
     manual: ManualActions,
+    plot_unlocks: [u64; 16],
 }
 
 impl Settings {
     fn load(now: u64) -> Self {
         let mut settings = Self {
             width: DEFAULT_WIDTH,
+            height: DEFAULT_HEIGHT,
             season: Season::Spring,
             weather: WeatherMode::Auto,
             started: now,
             treat_at: None,
             manual: ManualActions::default(),
+            plot_unlocks: [0; 16],
         };
         let Some(raw) = read_sidecar("cat-home-settings.txt") else {
             return settings;
         };
+        let mut saved_height = None;
         for (key, value) in raw.lines().filter_map(|line| line.split_once('=')) {
             let value = value.trim();
             match key.trim() {
                 "width" => {
                     if let Ok(width) = value.parse() {
-                        settings.width = dimensions(width).0;
+                        settings.width = width;
                     }
                 }
+                "height" => saved_height = value.parse().ok(),
                 "season" => {
                     if let Some((season, _, _)) = SEASONS.iter().find(|(_, name, _)| *name == value)
                     {
@@ -155,9 +172,18 @@ impl Settings {
                 "window_tapped_at" => {
                     settings.manual.window_tapped_at = parse_timestamp(value, now)
                 }
+                "plot_unlocks" => {
+                    for (slot, encoded) in settings.plot_unlocks.iter_mut().zip(value.split(',')) {
+                        *slot = encoded.trim().parse().unwrap_or_default();
+                    }
+                }
                 _ => {}
             }
         }
+        (settings.width, settings.height) = dimensions(
+            settings.width,
+            saved_height.unwrap_or_else(|| legacy_height(settings.width)),
+        );
         settings
     }
 
@@ -178,22 +204,28 @@ impl Settings {
             .iter()
             .find(|(value, _, _)| *value == self.manual.invited_visitor)
             .map_or("none", |(_, name, _)| *name);
-        write_sidecar(
-            "cat-home-settings.txt",
-            format!(
-                "width={}\nseason={season}\nweather={weather}\nstarted={}\ntreat_at={}\n\
-                water_bowl={}\nlantern={lantern}\nkeeper_called_at={}\nvisitor_snack_at={}\n\
-                invited_visitor={visitor}\nvisitor_invited_at={}\nwindow_tapped_at={}\n",
-                self.width,
-                self.started,
-                self.treat_at.unwrap_or(0),
-                self.manual.water_bowl,
-                self.manual.keeper_called_at.unwrap_or(0),
-                self.manual.visitor_snack_at.unwrap_or(0),
-                self.manual.visitor_invited_at.unwrap_or(0),
-                self.manual.window_tapped_at.unwrap_or(0),
-            ),
+        let mut contents = format!(
+            "width={}\nheight={}\nseason={season}\nweather={weather}\nstarted={}\ntreat_at={}\n\
+            water_bowl={}\nlantern={lantern}\nkeeper_called_at={}\nvisitor_snack_at={}\n\
+            invited_visitor={visitor}\nvisitor_invited_at={}\nwindow_tapped_at={}\nplot_unlocks=",
+            self.width,
+            self.height,
+            self.started,
+            self.treat_at.unwrap_or(0),
+            self.manual.water_bowl,
+            self.manual.keeper_called_at.unwrap_or(0),
+            self.manual.visitor_snack_at.unwrap_or(0),
+            self.manual.visitor_invited_at.unwrap_or(0),
+            self.manual.window_tapped_at.unwrap_or(0),
         );
+        for (index, age) in self.plot_unlocks.iter().enumerate() {
+            if index > 0 {
+                contents.push(',');
+            }
+            let _ = write!(contents, "{age}");
+        }
+        contents.push('\n');
+        write_sidecar("cat-home-settings.txt", contents);
     }
 }
 
@@ -223,7 +255,7 @@ struct Drag {
     kind: DragKind,
     pointer: POINT,
     origin: POINT,
-    width: i32,
+    size: (i32, i32),
     moved: bool,
     last_resize: Option<Instant>,
 }
@@ -244,6 +276,34 @@ struct App {
 thread_local! { static APP: RefCell<Option<App>> = const { RefCell::new(None) }; }
 
 impl App {
+    fn unlock_visible_plots(&mut self) {
+        let (width, height) = self.renderer.logical_size();
+        let visible = ecology::visible_sites(width as usize, height as usize);
+        let age = (world::unix_millis() / 1_000)
+            .saturating_sub(self.settings.started)
+            .saturating_add(1);
+        for (index, slot) in self.settings.plot_unlocks.iter_mut().enumerate() {
+            if *slot == 0 && visible & (1 << index) != 0 {
+                *slot = age;
+            }
+        }
+    }
+
+    fn save_settings(&self) {
+        if !self.preview {
+            self.settings.save();
+        }
+    }
+
+    fn save_position(&self) {
+        if !self.preview {
+            write_sidecar(
+                "cat-home-position.txt",
+                format!("{},{}", self.position.x, self.position.y),
+            );
+        }
+    }
+
     fn snapshot(&self, now_ms: u64) -> Snapshot {
         let now = now_ms / 1_000;
         let base = simulation::snapshot(
@@ -260,16 +320,25 @@ impl App {
     fn render(&mut self, hwnd: HWND) -> io::Result<u32> {
         let now = world::unix_millis();
         let snapshot = self.snapshot(now);
-        let image = self
-            .scene
-            .render_with_actions(&snapshot, now, &self.settings.manual);
-        self.renderer.draw(hwnd, self.position, image)?;
+        let (image, dirty) = self.scene.render_view(
+            &snapshot,
+            now,
+            &self.settings.manual,
+            self.renderer.logical_size(),
+            &self.settings.plot_unlocks,
+        );
+        self.renderer.draw(hwnd, self.position, image, dirty)?;
         Ok(world::redraw_ms(&snapshot))
     }
 
     fn set_timer(&mut self, hwnd: HWND, interval: u32) {
-        if interval != self.timer_ms && unsafe { SetTimer(hwnd, UPDATE_TIMER, interval, None) } != 0
-        {
+        if interval == self.timer_ms {
+            return;
+        }
+        if interval == 0 {
+            unsafe { KillTimer(hwnd, UPDATE_TIMER) };
+            self.timer_ms = 0;
+        } else if unsafe { SetTimer(hwnd, UPDATE_TIMER, interval, None) } != 0 {
             self.timer_ms = interval;
         }
     }
@@ -282,7 +351,7 @@ impl App {
                 unsafe { ShowWindow(hwnd, SW_HIDE) };
                 self.visible = false;
             }
-            self.set_timer(hwnd, 900);
+            self.set_timer(hwnd, if self.user_hidden { 0 } else { 900 });
             return;
         }
 
@@ -300,12 +369,16 @@ impl App {
             }
             Err(_) => 900,
         };
-        self.set_timer(hwnd, interval);
+        self.set_timer(hwnd, if self.drag.is_some() { 32 } else { interval });
     }
 
     fn tick(&mut self, hwnd: HWND) {
-        if self.drag.is_some() && unsafe { GetAsyncKeyState(VK_LBUTTON as i32) } >= 0 {
-            self.end_drag(hwnd);
+        if self.drag.is_some() {
+            if unsafe { GetAsyncKeyState(VK_LBUTTON as i32) } >= 0 {
+                self.end_drag(hwnd);
+            } else {
+                self.apply_pointer(hwnd, false);
+            }
         } else {
             self.refresh(hwnd);
         }
@@ -313,7 +386,7 @@ impl App {
 
     fn treat(&mut self, hwnd: HWND) {
         self.settings.treat_at = Some(world::unix_millis() / 1_000);
-        self.settings.save();
+        self.save_settings();
         self.refresh(hwnd);
     }
 
@@ -331,15 +404,15 @@ impl App {
                 manual.visitor_invited_at = Some(now);
             }
         }
-        self.settings.save();
+        self.save_settings();
         self.refresh(hwnd);
     }
 
     fn in_resize_corner(&self, pointer: POINT) -> bool {
         let (width, height) = self.renderer.size();
-        let x = pointer.x - self.position.x;
-        let y = pointer.y - self.position.y;
-        (width * 7 / 8..width).contains(&x) && (height * 87 / 100..height).contains(&y)
+        let x = pointer.x.saturating_sub(self.position.x);
+        let y = pointer.y.saturating_sub(self.position.y);
+        (width - 48..width).contains(&x) && (height - 48..height).contains(&y)
     }
 
     fn start_drag(&mut self, hwnd: HWND) {
@@ -352,27 +425,30 @@ impl App {
                 },
                 pointer,
                 origin: self.position,
-                width: self.renderer.size().0,
+                size: self.renderer.size(),
                 moved: false,
                 last_resize: None,
             });
             unsafe { SetCapture(hwnd) };
+            self.set_timer(hwnd, 32);
         }
     }
 
-    fn change_size(&mut self, hwnd: HWND, requested_width: i32) -> bool {
-        let (width, _) = dimensions(requested_width);
-        if self.renderer.size().0 == width || self.renderer.resize(width).is_err() {
+    fn change_size(&mut self, requested: (i32, i32)) -> bool {
+        let (width, height) = fit_size_to_monitor(self.position, requested);
+        if self.renderer.size() == (width, height) || self.renderer.resize(width, height).is_err() {
             return false;
         }
-        self.settings.width = self.renderer.size().0;
+        (self.settings.width, self.settings.height) = self.renderer.size();
         self.position = clamp_position(self.position, self.renderer.size());
-        self.refresh(hwnd);
         true
     }
 
     fn apply_pointer(&mut self, hwnd: HWND, force: bool) {
-        let (Some(drag), Some(pointer)) = (&mut self.drag, cursor()) else {
+        let Some(drag) = &mut self.drag else {
+            return;
+        };
+        let Some(pointer) = cursor() else {
             return;
         };
         let dx = pointer.x.saturating_sub(drag.pointer.x);
@@ -385,13 +461,17 @@ impl App {
         }
         match drag.kind {
             DragKind::Move => {
-                self.position = clamp_position(
+                let position = clamp_position(
                     POINT {
                         x: drag.origin.x.saturating_add(dx),
                         y: drag.origin.y.saturating_add(dy),
                     },
                     self.renderer.size(),
                 );
+                if (position.x, position.y) == (self.position.x, self.position.y) {
+                    return;
+                }
+                self.position = position;
                 unsafe {
                     SetWindowPos(
                         hwnd,
@@ -413,16 +493,19 @@ impl App {
                     return;
                 }
                 drag.last_resize = Some(Instant::now());
-                // Project pointer movement onto the 8:5 diagonal to keep the original aspect.
-                let delta = (64 * i64::from(dx) + 40 * i64::from(dy)) / 89;
-                let available = monitor_area(drag.origin).map_or(960, |area| {
-                    let right = (area.right - drag.origin.x).max(0);
-                    let below = (area.bottom - drag.origin.y).max(0) * 8 / 5;
-                    (right.min(below) / 8 * 8).clamp(240, 960)
+                let available = monitor_area(drag.origin).map_or((i32::MAX, i32::MAX), |area| {
+                    (
+                        area.right.saturating_sub(drag.origin.x),
+                        area.bottom.saturating_sub(drag.origin.y),
+                    )
                 });
-                let requested =
-                    (i64::from(drag.width) + delta).clamp(240, i64::from(available)) as i32;
-                self.change_size(hwnd, requested);
+                let requested = (
+                    drag.size.0.saturating_add(dx).min(available.0),
+                    drag.size.1.saturating_add(dy).min(available.1),
+                );
+                if self.change_size(requested) {
+                    self.refresh(hwnd);
+                }
             }
         }
     }
@@ -432,9 +515,10 @@ impl App {
         if let Some(drag) = self.drag.take() {
             unsafe { ReleaseCapture() };
             if drag.moved {
-                save_position(self.position);
+                self.save_position();
                 if matches!(drag.kind, DragKind::Resize) {
-                    self.settings.save();
+                    self.unlock_visible_plots();
+                    self.save_settings();
                 }
                 self.refresh(hwnd);
             } else if matches!(drag.kind, DragKind::Move) {
@@ -473,11 +557,13 @@ fn desktop_foreground(hwnd: HWND) -> bool {
     if len <= 0 {
         return false;
     }
-    let name = String::from_utf16_lossy(&class[..len as usize]);
-    matches!(
-        name.as_str(),
-        "Progman" | "WorkerW" | "SHELLDLL_DefView" | "SysListView32"
-    ) || name.starts_with("PecoFence")
+    let name = &class[..len as usize];
+    ["Progman", "WorkerW", "SHELLDLL_DefView", "SysListView32"]
+        .into_iter()
+        .any(|known| name.iter().copied().eq(known.encode_utf16()))
+        || name
+            .get(.."PecoFence".len())
+            .is_some_and(|start| start.iter().copied().eq("PecoFence".encode_utf16()))
 }
 
 fn monitor_area(point: POINT) -> Option<RECT> {
@@ -516,6 +602,17 @@ fn clamp_position(point: POINT, (width, height): (i32, i32)) -> POINT {
         y: point
             .y
             .clamp(area.top, (area.bottom - height).max(area.top)),
+    }
+}
+
+fn fit_size_to_monitor(point: POINT, (width, height): (i32, i32)) -> (i32, i32) {
+    let (width, height) = dimensions(width, height);
+    match monitor_area(point) {
+        Some(area) => dimensions(
+            width.min(area.right - area.left),
+            height.min(area.bottom - area.top),
+        ),
+        None => (width, height),
     }
 }
 
@@ -599,7 +696,11 @@ fn toggle_home(hwnd: HWND) {
 fn show_notebook(hwnd: HWND) {
     let mut text = None;
     with_app(|app| {
-        text = Some(world::notebook(&app.snapshot(world::unix_millis())));
+        text = Some(world::notebook(
+            &app.snapshot(world::unix_millis()),
+            app.renderer.logical_size(),
+            &app.settings.plot_unlocks,
+        ));
     });
     if let Some(text) = text {
         let wide: Vec<u16> = text.encode_utf16().chain(std::iter::once(0)).collect();
@@ -622,7 +723,7 @@ fn show_menu(hwnd: HWND) {
     with_app(|app| {
         let status = world::status_line(&app.snapshot(world::unix_millis()));
         menu_state = Some((
-            app.settings.width,
+            (app.settings.width, app.settings.height),
             app.settings.weather,
             app.settings.season,
             app.settings.manual.water_bowl,
@@ -631,7 +732,7 @@ fn show_menu(hwnd: HWND) {
             status,
         ));
     });
-    let Some((width, weather, season, water_bowl, lantern, hidden, status)) = menu_state else {
+    let Some((size, weather, season, water_bowl, lantern, hidden, status)) = menu_state else {
         return;
     };
     unsafe {
@@ -679,7 +780,7 @@ fn show_menu(hwnd: HWND) {
             SIZES
                 .into_iter()
                 .enumerate()
-                .map(|(index, (value, text))| (MENU_SIZE + index, text, value == width)),
+                .map(|(index, (value, text))| (MENU_SIZE + index, text, value == size)),
         );
         append_options(
             menu,
@@ -740,19 +841,21 @@ fn show_menu(hwnd: HWND) {
                 DestroyWindow(hwnd);
             }
             id if (MENU_SIZE..MENU_SIZE + SIZES.len()).contains(&id) => with_app(|app| {
-                if app.change_size(hwnd, SIZES[id - MENU_SIZE].0) {
-                    app.settings.save();
-                    save_position(app.position);
+                if app.change_size(SIZES[id - MENU_SIZE].0) {
+                    app.unlock_visible_plots();
+                    app.save_settings();
+                    app.save_position();
+                    app.refresh(hwnd);
                 }
             }),
             id if (MENU_WEATHER..MENU_WEATHER + WEATHER.len()).contains(&id) => with_app(|app| {
                 app.settings.weather = WEATHER[id - MENU_WEATHER].0;
-                app.settings.save();
+                app.save_settings();
                 app.refresh(hwnd);
             }),
             id if (MENU_SEASON..MENU_SEASON + SEASONS.len()).contains(&id) => with_app(|app| {
                 app.settings.season = SEASONS[id - MENU_SEASON].0;
-                app.settings.save();
+                app.save_settings();
                 app.refresh(hwnd);
             }),
             id if (MENU_LANTERN..MENU_LANTERN + LANTERNS.len()).contains(&id) => with_app(|app| {
@@ -797,7 +900,9 @@ unsafe extern "system" fn window_proc(
             return unsafe { DefWindowProcW(hwnd, message, wparam, lparam) };
         }
         WM_DISPLAYCHANGE | WM_SETTINGCHANGE => with_app(|app| {
-            app.position = clamp_position(app.position, app.renderer.size());
+            if !app.change_size(app.renderer.size()) {
+                app.position = clamp_position(app.position, app.renderer.size());
+            }
             app.refresh(hwnd);
         }),
         TRAY_MESSAGE => match lparam as u32 {
@@ -829,37 +934,64 @@ fn position_arg(value: &str) -> Option<POINT> {
     })
 }
 
+fn legacy_height(width: i32) -> i32 {
+    (i64::from(width) * 5 / 8) as i32
+}
+
+fn size_arg(value: &str) -> Option<(i32, i32)> {
+    let value = value.trim();
+    if let Some((width, height)) = value.split_once([',', 'x', 'X', '×']) {
+        Some((width.trim().parse().ok()?, height.trim().parse().ok()?))
+    } else {
+        let width = value.parse().ok()?;
+        Some((width, legacy_height(width)))
+    }
+}
+
 fn sidecar(name: &str) -> Option<PathBuf> {
     Some(std::env::current_exe().ok()?.with_file_name(name))
 }
 
 fn read_sidecar(name: &str) -> Option<String> {
-    std::fs::read_to_string(sidecar(name)?).ok()
+    let mut contents = String::new();
+    File::open(sidecar(name)?)
+        .ok()?
+        .take((MAX_SIDECAR_BYTES + 1) as u64)
+        .read_to_string(&mut contents)
+        .ok()?;
+    (contents.len() <= MAX_SIDECAR_BYTES).then_some(contents)
 }
 
 fn write_sidecar(name: &str, contents: String) {
-    if let Some(path) = sidecar(name) {
-        let _ = std::fs::write(path, contents);
+    let Some(path) = sidecar(name) else {
+        return;
+    };
+    let temporary = path.with_extension("tmp");
+    let stage = || -> io::Result<()> {
+        let mut file = File::create(&temporary)?;
+        file.write_all(contents.as_bytes())?;
+        file.sync_all()
+    };
+    if stage().is_ok() {
+        let _ = fs::rename(temporary, path);
     }
-}
-
-fn save_position(position: POINT) {
-    write_sidecar(
-        "cat-home-position.txt",
-        format!("{},{}", position.x, position.y),
-    );
 }
 
 fn run() -> io::Result<()> {
     let mut args = std::env::args().skip(1);
     let mut position = None;
-    let mut requested_width = None;
+    let mut requested_size = None;
     let mut preview = false;
+    let mut window_class = CLASS;
     while let Some(arg) = args.next() {
         match arg.as_str() {
             "--position" => position = args.next().as_deref().and_then(position_arg),
-            "--size" => requested_width = args.next().and_then(|width| width.parse().ok()),
+            "--size" => requested_size = args.next().as_deref().and_then(size_arg),
             "--preview" => preview = true,
+            "--isolated-preview" => {
+                preview = true;
+                window_class = SMOKE_CLASS;
+            }
             "--check-assets" => {
                 return if world::check_assets() {
                     Ok(())
@@ -873,7 +1005,7 @@ fn run() -> io::Result<()> {
 
     unsafe {
         SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
-        let previous = FindWindowW(CLASS, ptr::null());
+        let previous = FindWindowW(window_class, ptr::null());
         if !previous.is_null() {
             PostMessageW(previous, RESTORE_MESSAGE, 0, 0);
             return Ok(());
@@ -884,7 +1016,7 @@ fn run() -> io::Result<()> {
         }
         let mut class: WNDCLASSW = mem::zeroed();
         class.hInstance = instance;
-        class.lpszClassName = CLASS;
+        class.lpszClassName = window_class;
         class.lpfnWndProc = Some(window_proc);
         class.hCursor = LoadCursorW(ptr::null_mut(), IDC_ARROW);
         if RegisterClassW(&class) == 0 {
@@ -892,21 +1024,21 @@ fn run() -> io::Result<()> {
         }
 
         let mut settings = Settings::load(world::unix_millis() / 1_000);
-        if let Some(width) = requested_width {
-            settings.width = dimensions(width).0;
+        if let Some((width, height)) = requested_size {
+            (settings.width, settings.height) = dimensions(width, height);
         }
-        let renderer = Renderer::new(settings.width)?;
+        let requested_position = position
+            .or_else(|| position_arg(&read_sidecar("cat-home-position.txt")?))
+            .unwrap_or_else(|| default_position(settings.width));
+        let (width, height) =
+            fit_size_to_monitor(requested_position, (settings.width, settings.height));
+        let renderer = Renderer::new(width, height)?;
         let (width, height) = renderer.size();
-        settings.width = width;
-        let position = clamp_position(
-            position
-                .or_else(|| position_arg(&read_sidecar("cat-home-position.txt")?))
-                .unwrap_or_else(|| default_position(width)),
-            (width, height),
-        );
+        (settings.width, settings.height) = (width, height);
+        let position = clamp_position(requested_position, (width, height));
         let hwnd = CreateWindowExW(
             WS_EX_LAYERED | WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE,
-            CLASS,
+            window_class,
             TITLE,
             WS_POPUP,
             position.x,
@@ -921,7 +1053,7 @@ fn run() -> io::Result<()> {
         if hwnd.is_null() {
             return Err(io::Error::last_os_error());
         }
-        let app = App {
+        let mut app = App {
             renderer,
             scene: world::Scene::new(),
             tray: Tray::add(hwnd),
@@ -933,9 +1065,8 @@ fn run() -> io::Result<()> {
             preview,
             visible: false,
         };
-        if !preview {
-            app.settings.save();
-        }
+        app.unlock_visible_plots();
+        app.save_settings();
         APP.with(|cell| {
             *cell.borrow_mut() = Some(app);
         });

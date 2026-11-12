@@ -23,11 +23,13 @@ FILES = (
     "package_source.py",
     "src/main.rs",
     "src/activities.rs",
+    "src/ecology.rs",
     "src/renderer.rs",
     "src/simulation.rs",
     "src/world.rs",
     "design/animals.tsv",
     "design/interaction.tsv",
+    "design/variant-rules.tsv",
     "design/visitors-yard.tsv",
     "design/export_table.py",
     "bake_scene.py",
@@ -48,6 +50,7 @@ FILES = (
     "assets/world/preview.png",
     "assets/world/scenes.bgra",
     "assets/world/sparrow.bgra",
+    "assets/world/terrain.bgra",
 )
 INCLUDE = re.compile(r'include_(?:bytes|str)!\(\s*"([^"]+)"\s*\)')
 MODULE = re.compile(r"^mod (\w+);", re.MULTILINE)

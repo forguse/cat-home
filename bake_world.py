@@ -9,7 +9,7 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw
 
-from bake_scene import CatSprites, NEAREST, SIZE, make_scene, tiles
+from bake_scene import CatSprites, NEAREST, SIZE, lawn_texture, make_scene, tiles
 
 
 OUTPUT = Path(__file__).resolve().parent / "assets" / "world"
@@ -34,6 +34,13 @@ def base_yard():
     return scene
 
 
+def lit_color(color, scale, lift, lamp, glow):
+    return tuple(
+        min(255, round((value * scale[channel] + lift[channel]) * (1 - glow) + lamp[channel] * glow))
+        for channel, value in enumerate(color)
+    )
+
+
 def lighting(scene, name):
     scale, lift, lamp, strength = LIGHT[name]
     frame = scene.copy()
@@ -48,10 +55,7 @@ def lighting(scene, name):
         glow = strength * max(0.0, 1.0 - distance) if alpha == 255 else 0
         if y < 56:
             glow *= 0.5
-        lit = tuple(
-            min(255, round((value * scale[channel] + lift[channel]) * (1 - glow) + lamp[channel] * glow))
-            for channel, value in enumerate((red, green, blue))
-        )
+        lit = lit_color((red, green, blue), scale, lift, lamp, glow)
         pixels.append((*lit, alpha))
     frame.putdata(pixels)
     if strength > 0:
@@ -67,6 +71,30 @@ def lighting(scene, name):
         ImageDraw.Draw(frame).point((100, 57), fill=(248, 215, 137, 185))
         ImageDraw.Draw(frame).point((17, 67), fill=(235, 228, 152, 176))
     return frame
+
+
+def terrain_frames():
+    """Clock phase first, then two lawn tiles, stepping stones and flowers."""
+    tile_set = tiles()
+    plain = lawn_texture(tile_set[0])
+    varied = lawn_texture(tile_set[1])
+    stones = plain.copy()
+    stones.alpha_composite(lawn_texture(tile_set[43]))
+    flowers = varied.copy()
+    art = ImageDraw.Draw(flowers)
+    art.point((5, 10), fill="#637d54")
+    art.line((4, 9, 6, 9), fill="#fff0aa")
+    art.point((5, 8), fill="#ffcc92")
+    art.point((12, 5), fill="#637d54")
+    art.point((12, 4), fill="#e6b2a3")
+    for scale, lift, lamp, _ in LIGHT.values():
+        for tile in (plain, varied, stones, flowers):
+            frame = tile.copy()
+            frame.putdata([
+                (*lit_color((red, green, blue), scale, lift, lamp, 0), alpha)
+                for red, green, blue, alpha in tile.getdata()
+            ])
+            yield frame
 
 
 def flower_bed(art):
@@ -384,6 +412,7 @@ def main():
     }
     atlases = {
         "scenes": day_scenes.values(),
+        "terrain": terrain_frames(),
         "builds": build_layers,
         "construction": (
             *flower_bed_snapshots(), *workbench_snapshots(), *pavilion_snapshots()

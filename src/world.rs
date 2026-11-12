@@ -1,11 +1,17 @@
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::activities::{self, Activity, Motion, Prop};
+use crate::ecology::{self, Event, Kind, Plot, Stage};
+use crate::renderer::Damage;
 use crate::simulation::{CareAction, CatAction, DayPart, Season, Snapshot, Visitor, Weather};
 
-const WIDTH: usize = 160;
-const HEIGHT: usize = 100;
-const FRAME_BYTES: usize = WIDTH * HEIGHT * 4;
+const WIDTH: i32 = 160;
+const HEIGHT: i32 = 100;
+const FRAME_BYTES: usize = (WIDTH * HEIGHT * 4) as usize;
+const WIDE_AT: i32 = 85;
+const TALL_AT: i32 = 90;
+const TILE_BYTES: usize = 16 * 16 * 4;
+const TERRAIN: &[u8] = include_bytes!("../assets/world/terrain.bgra");
 const SPRITE_W: usize = 48;
 const SPRITE_H: usize = 32;
 const SPRITE_BYTES: usize = SPRITE_W * SPRITE_H * 4;
@@ -114,6 +120,8 @@ pub fn check_assets() -> bool {
         && valid(BUILDS, FRAME_BYTES, 4)
         && CONSTRUCTION.len() == FRAME_BYTES * 9
         && valid(CONSTRUCTION, FRAME_BYTES, 9)
+        && TERRAIN.len() == TILE_BYTES * 16
+        && valid(TERRAIN, TILE_BYTES, 16)
         && [
             CAT_IDLE, CAT_SLEEP, CAT_WALK, CAT_EAT, CAT_TREAT, KEEPER, SPARROW, GREY_CAT, BLACK_CAT,
         ]
@@ -181,9 +189,15 @@ pub fn status_line(state: &Snapshot) -> String {
     format!("{time} · {weather} · {cat} · {activity} · {progress}{guest}")
 }
 
-pub fn notebook(state: &Snapshot) -> String {
+pub fn notebook(state: &Snapshot, size: (i32, i32), unlocks: &[u64; 16]) -> String {
     let active = activities::current(state);
-    let mut text = status_line(state).replace(" · ", "\n");
+    let garden = garden_at(state, unix_millis() / 1000, size, unlocks);
+    let job = plot_job(state, &garden);
+    let mut status = *state;
+    if job.is_some() {
+        status.caretaker = CareAction::Tending;
+    }
+    let mut text = status_line(&status).replace(" · ", "\n");
     for (label, activity) in [
         ("猫咪", active.cat),
         ("管理员", active.keeper),
@@ -191,87 +205,299 @@ pub fn notebook(state: &Snapshot) -> String {
         ("庭院", active.yard),
     ] {
         if let Some(activity) = activity {
-            text.push_str(&format!("\n\n{label}正在：{}", activity.name));
+            text.push_str(&format!("\n\n{label}正在{}", activity.name));
         }
     }
     if state.build_stage < 3 {
         text.push_str("\n\n施工时间  08:10–08:18  ·  17:05–17:15");
     }
+    text.push_str(&format!("\n\n当前可见地块 {}", garden.plots().len()));
+    for plot in garden.plots() {
+        text.push_str(&format!(
+            "\n  {}  {}  {}",
+            plot.site_label(),
+            plot.kind.label(),
+            plot.stage.label()
+        ));
+        if plot.event != Event::None {
+            text.push_str(&format!(" · {}", plot.event.label()));
+        }
+        if plot.id >= 12 && matches!(plot.stage, Stage::Groundwork | Stage::Framing) {
+            text.push_str(&format!(" {}%", plot.progress));
+        }
+        if let Some(entry) = activities::ecology_entry(plot) {
+            text.push_str(&format!(" · {entry}"));
+        }
+    }
+    if let Some(plot) = job {
+        text.push_str(&format!(
+            "\n管理员在第 {} 块地{} {}",
+            plot.id + 1,
+            plot.job_label(),
+            plot.kind.label()
+        ));
+    }
     text
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+struct View {
+    width: i32,
+    height: i32,
+}
+
+impl View {
+    fn new((width, height): (i32, i32)) -> Self {
+        Self { width, height }
+    }
+
+    fn x_growth(self) -> i32 {
+        (self.width - WIDTH).max(0)
+    }
+    fn y_growth(self) -> i32 {
+        (self.height - HEIGHT).max(0)
+    }
+    fn top(self) -> i32 {
+        (HEIGHT - self.height).max(0)
+    }
+
+    fn fixed(self, x: i32, y: i32) -> (i32, i32) {
+        (
+            x + i32::from(x >= WIDE_AT) * self.x_growth(),
+            y - self.top(),
+        )
+    }
+
+    fn roaming(self, x: i32, y: i32) -> (i32, i32) {
+        let extra = (x - 61).clamp(0, 72) * self.x_growth() / 72;
+        let x = (x + extra).clamp(9, self.width - 10);
+        let front = (y - 76).clamp(0, 13);
+        (x, y - self.top() + self.y_growth() * front / 13)
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+struct Backdrop {
+    view: View,
+    daylight: usize,
+    season: Season,
+    stage: usize,
+    scaffolding: Option<usize>,
+    lantern: Option<bool>,
+    water: bool,
+    plots: [Option<PlotVisual>; 16],
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+struct PlotVisual {
+    x: i32,
+    y: i32,
+    kind: Kind,
+    stage: Stage,
+    event: Event,
+}
+
+fn garden_at(state: &Snapshot, now: u64, size: (i32, i32), unlocks: &[u64; 16]) -> ecology::Garden {
+    ecology::plots_with_unlocks(
+        now,
+        now.saturating_sub(state.phase_seconds),
+        size.0 as usize,
+        size.1 as usize,
+        state.season,
+        state.weather,
+        unlocks,
+    )
+}
+
+fn plot_job<'a>(state: &Snapshot, garden: &'a ecology::Garden) -> Option<&'a Plot> {
+    if state.day_part == DayPart::Night || state.caretaker != CareAction::Away {
+        return None;
+    }
+    garden.job()
+}
+
 pub struct Scene {
-    pixels: Box<[u8]>,
+    pixels: Vec<u8>,
+    background: Vec<u8>,
+    backdrop: Option<Backdrop>,
+    view: View,
+    painted: Option<Damage>,
 }
 
 impl Scene {
     pub fn new() -> Self {
         Self {
-            pixels: vec![0; FRAME_BYTES].into_boxed_slice(),
+            pixels: Vec::new(),
+            background: Vec::new(),
+            backdrop: None,
+            view: View::new((WIDTH, HEIGHT)),
+            painted: None,
         }
     }
 
-    pub fn render_with_actions(
+    pub fn render_view(
         &mut self,
         state: &Snapshot,
         now_ms: u64,
         actions: &ManualActions,
-    ) -> &[u8] {
-        let daylight = match state.day_part {
-            DayPart::Dawn => 0,
-            DayPart::Day => 1,
-            DayPart::Dusk => 2,
-            DayPart::Night => 3,
+        size: (i32, i32),
+        unlocks: &[u64; 16],
+    ) -> (&[u8], Option<Damage>) {
+        let view = View::new(size);
+        let previous = self.painted.take();
+        let garden = garden_at(state, now_ms / 1000, size, unlocks);
+        let mut plots = [None; 16];
+        for plot in garden.plots() {
+            plots[usize::from(plot.id)] = Some(PlotVisual {
+                x: plot.x as i32,
+                y: plot.y as i32,
+                kind: plot.kind,
+                stage: plot.stage,
+                event: plot.event,
+            });
+        }
+        let backdrop = Backdrop {
+            view,
+            daylight: match state.day_part {
+                DayPart::Dawn => 0,
+                DayPart::Day => 1,
+                DayPart::Dusk => 2,
+                DayPart::Night => 3,
+            },
+            season: state.season,
+            stage: state.build_stage.min(3) as usize,
+            scaffolding: (state.build_in_progress && state.build_stage < 3).then(|| {
+                usize::from(state.build_stage) * 3
+                    + usize::from(state.build_percent.min(99)) * 3 / 100
+            }),
+            lantern: actions.lantern,
+            water: actions.water_bowl,
+            plots,
         };
-        self.pixels
-            .copy_from_slice(frame(SCENES, FRAME_BYTES, daylight));
-        self.overlay(frame(
-            BUILDS,
-            FRAME_BYTES,
-            state.build_stage.min(3) as usize,
-        ));
-        if state.build_in_progress && state.build_stage < 3 {
-            let progress = usize::from(state.build_stage) * 3
-                + usize::from(state.build_percent.min(99)) * 3 / 100;
-            self.overlay(frame(CONSTRUCTION, FRAME_BYTES, progress));
-        }
-        self.apply_season(state.season);
-        if let Some(lit) = actions.lantern {
-            self.porch_light(lit);
-        }
+        let dirty = if self.backdrop != Some(backdrop) {
+            self.view = view;
+            self.rebuild(backdrop);
+            self.backdrop = Some(backdrop);
+            Some(Damage::full(size))
+        } else {
+            if let Some(region) = previous {
+                let width = view.width as usize;
+                for y in region.top as usize..region.bottom as usize {
+                    let start = (y * width + region.left as usize) * 4;
+                    let end = (y * width + region.right as usize) * 4;
+                    self.pixels[start..end].copy_from_slice(&self.background[start..end]);
+                }
+            }
+            previous
+        };
         self.weather(state.weather, state.day_part, now_ms);
         let now = now_ms / 1000;
         let active = activities::current(state);
         if let Some(activity) = active.yard {
             let (x, y, _) = pose(activity, now_ms);
+            let (x, y) = view.roaming(x, y);
             self.prop(activity.prop, x, y, now_ms);
         }
-        if actions.water_bowl {
-            self.prop(Prop::Water, 86, 84, now_ms);
-        }
         if recent(actions.visitor_snack_at, now, 180) {
-            self.prop(Prop::Food, 140, 80, now_ms);
+            let (x, y) = view.roaming(140, 80);
+            self.prop(Prop::Food, x, y, now_ms);
         }
-        self.people(state, active.keeper, active.visitor, now_ms);
+        self.people(
+            state,
+            active.keeper,
+            active.visitor,
+            plot_job(state, &garden),
+            now_ms,
+        );
         self.cat(state, active.cat, now_ms, actions);
-        for (x, y) in [
-            (143, 92),
-            (146, 89),
-            (146, 92),
-            (149, 86),
-            (149, 89),
-            (149, 92),
-        ] {
-            self.point(x, y + 1, [59, 62, 67], 210);
-            self.point(x, y, [229, 213, 177], 235);
-        }
-        &self.pixels
+        (
+            &self.pixels,
+            match (dirty, self.painted) {
+                (Some(before), Some(after)) => Some(before.union(after)),
+                (before, after) => before.or(after),
+            },
+        )
     }
 
-    fn overlay(&mut self, layer: &[u8]) {
-        for (target, pixel) in self.pixels.chunks_exact_mut(4).zip(layer.chunks_exact(4)) {
-            over(target, pixel);
+    fn rebuild(&mut self, backdrop: Backdrop) {
+        let view = self.view;
+        let size = (view.width * view.height * 4) as usize;
+        self.pixels.resize(size, 0);
+        let base = frame(SCENES, FRAME_BYTES, backdrop.daylight);
+        let builds = frame(BUILDS, FRAME_BYTES, backdrop.stage);
+        let construction = backdrop
+            .scaffolding
+            .map(|index| frame(CONSTRUCTION, FRAME_BYTES, index));
+        let (wide, tall) = (view.x_growth(), view.y_growth());
+        for y in 0..view.height {
+            let line = y + view.top();
+            let extra_y = (TALL_AT..TALL_AT + tall).contains(&line);
+            let source_y = if line >= TALL_AT + tall {
+                line - tall
+            } else {
+                line
+            };
+            for x in 0..view.width {
+                let extra_x = (WIDE_AT..WIDE_AT + wide).contains(&x);
+                let source_x = if x >= WIDE_AT + wide {
+                    x - wide
+                } else {
+                    x.min(WIDE_AT)
+                };
+                let index = ((y * view.width + x) * 4) as usize;
+                let target = &mut self.pixels[index..index + 4];
+                let open_ground = extra_x && (53..90).contains(&source_y)
+                    || extra_y && (13..view.width - 13).contains(&x);
+                if open_ground {
+                    target.copy_from_slice(terrain(backdrop.daylight, x, y, extra_y));
+                } else if extra_y {
+                    target.fill(0);
+                } else {
+                    let source = ((source_y * WIDTH + source_x) * 4) as usize;
+                    target.copy_from_slice(&base[source..source + 4]);
+                    if !extra_x {
+                        over(target, &builds[source..source + 4]);
+                        if let Some(layer) = construction {
+                            over(target, &layer[source..source + 4]);
+                        }
+                    }
+                }
+            }
         }
+        self.apply_season(backdrop.season);
+        if let Some(lit) = backdrop.lantern {
+            self.porch_light(lit);
+        }
+        if backdrop.water {
+            let (x, y) = view.fixed(86, 84);
+            self.prop(Prop::Water, x.min(view.width - 10), y, 0);
+        }
+        for plot in backdrop.plots.into_iter().flatten() {
+            self.plot(plot);
+        }
+        // This solid handle is visible and receives mouse input even over empty sky.
+        for y in view.height - 14..view.height {
+            for x in view.width - 14..view.width {
+                if view.width - x + view.height - y <= 15 {
+                    self.point(x, y, [73, 64, 80], 218);
+                }
+            }
+        }
+        for (dx, dy) in [(8, 2), (5, 2), (2, 2), (5, 5), (2, 5), (2, 8)] {
+            self.point(
+                view.width - dx - 1,
+                view.height - dy - 1,
+                [237, 217, 170],
+                242,
+            );
+        }
+        self.background.resize(size, 0);
+        self.background.copy_from_slice(&self.pixels);
+        if self.pixels.capacity() > size * 4 {
+            self.pixels.shrink_to(size);
+            self.background.shrink_to(size);
+        }
+        self.painted = None;
     }
 
     fn apply_season(&mut self, season: Season) {
@@ -294,6 +520,188 @@ impl Scene {
         }
     }
 
+    fn plot(&mut self, plot: PlotVisual) {
+        let PlotVisual {
+            x,
+            y,
+            kind,
+            stage,
+            event,
+        } = plot;
+        let soil = [128, 90, 69];
+        let rim = [165, 124, 88];
+        let dark = [97, 73, 68];
+        if matches!(
+            kind,
+            Kind::Planter | Kind::ToolShed | Kind::Pond | Kind::Greenhouse
+        ) {
+            self.small_building(x, y, kind, stage);
+        } else {
+            for dy in -2..=1 {
+                let edge = if dy == -2 || dy == 1 { 3 } else { 5 };
+                for dx in -edge..=edge {
+                    let color = if (dx + dy) % 3 == 0 { rim } else { soil };
+                    self.point(x + dx, y + dy, color, 236);
+                }
+            }
+            let (color, fruit, tree, root) = match kind {
+                Kind::Daisy => ([106, 151, 97], [254, 232, 187], false, false),
+                Kind::Tulip => ([95, 154, 102], [217, 100, 131], false, false),
+                Kind::Lavender => ([116, 157, 123], [175, 131, 212], false, false),
+                Kind::Sunflower => ([114, 143, 80], [243, 191, 82], false, false),
+                Kind::Oak => ([95, 137, 87], [204, 172, 107], true, false),
+                Kind::Maple => ([171, 122, 82], [237, 162, 113], true, false),
+                Kind::Pine => ([78, 131, 113], [154, 183, 138], true, false),
+                Kind::Apple => ([105, 155, 98], [224, 112, 105], true, false),
+                Kind::Carrot => ([124, 161, 107], [236, 148, 85], false, true),
+                Kind::Radish => ([133, 161, 99], [226, 128, 145], false, true),
+                Kind::Lettuce => ([113, 161, 91], [174, 200, 108], false, true),
+                Kind::Pumpkin => ([110, 145, 99], [236, 149, 69], false, true),
+                _ => unreachable!(),
+            };
+            match stage {
+                Stage::Seed => {
+                    self.point(x - 2, y - 1, fruit, 255);
+                    self.point(x + 2, y, fruit, 255);
+                    self.point(x, y - if tree { 2 } else { 1 }, color, 255);
+                    if root {
+                        self.point(x + 1, y, fruit, 255);
+                    }
+                }
+                Stage::Harvest => {
+                    self.prop(Prop::Food, x - 1, y, 0);
+                    self.point(x - 2, y - 3, fruit, 255);
+                    self.point(x, y - 3, fruit, 255);
+                    if tree {
+                        self.point(x + 4, y - 3, rim, 255);
+                        self.point(x + 4, y - 2, rim, 255);
+                    }
+                }
+                Stage::Damaged | Stage::Repairing => {
+                    for dx in -4_i32..=4 {
+                        self.point(x + dx, y - dx.rem_euclid(2) - 1, dark, 255);
+                    }
+                    if stage == Stage::Repairing {
+                        self.prop(Prop::Tool, x + 3, y - 1, 0);
+                    }
+                }
+                _ => {
+                    let size = match stage {
+                        Stage::Sprout | Stage::Recovering => 2,
+                        Stage::Growing => {
+                            if tree {
+                                6
+                            } else {
+                                4
+                            }
+                        }
+                        Stage::Budding => {
+                            if tree {
+                                9
+                            } else {
+                                6
+                            }
+                        }
+                        _ => {
+                            if tree {
+                                12
+                            } else {
+                                7
+                            }
+                        }
+                    };
+                    let stem = if tree && size > 2 { rim } else { color };
+                    for dy in 1..=size {
+                        self.point(x, y - dy, stem, 255);
+                    }
+                    let crown = if tree { size / 3 } else { (size / 2).min(2) };
+                    for dx in -crown..=crown {
+                        self.point(x + dx, y - size + 1 + dx.abs(), color, 255);
+                        if tree && size >= 6 {
+                            self.point(x + dx, y - size + 2 + dx.abs() / 2, color, 255);
+                        }
+                    }
+                    if matches!(stage, Stage::Budding | Stage::Mature) {
+                        let fruit_y = if root { y - 2 } else { y - size };
+                        self.point(x, fruit_y, fruit, 255);
+                        if stage == Stage::Mature {
+                            self.point(x - 1, fruit_y + 1, fruit, 255);
+                            self.point(x + 1, fruit_y + 1, fruit, 255);
+                            self.point(x, fruit_y - 1, fruit, 255);
+                            if tree {
+                                self.point(x + 2, fruit_y + 3, fruit, 255);
+                                self.point(x - 2, fruit_y + 4, fruit, 255);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        if event != Event::None {
+            let prop = match event {
+                Event::Storm => Prop::Leaf,
+                Event::Frost => Prop::Snow,
+                Event::Drought => Prop::Stone,
+                Event::Flood => Prop::Puddle,
+                Event::None => unreachable!(),
+            };
+            self.prop(prop, x + 5, y + 1, 0);
+        }
+    }
+
+    fn small_building(&mut self, x: i32, y: i32, kind: Kind, stage: Stage) {
+        let wood = [142, 97, 76];
+        let trim = [195, 145, 105];
+        let fill = match kind {
+            Kind::Planter => [134, 103, 76],
+            Kind::ToolShed => [165, 114, 84],
+            Kind::Pond => [126, 182, 204],
+            Kind::Greenhouse => [141, 182, 163],
+            _ => unreachable!(),
+        };
+        for dx in -7..=7 {
+            self.point(x + dx, y, wood, 255);
+            self.point(x + dx, y - 1, trim, 255);
+        }
+        match stage {
+            Stage::Groundwork => self.prop(Prop::Wood, x + 2, y - 2, 0),
+            Stage::Framing | Stage::Repairing => {
+                for dy in 2..=8 {
+                    self.point(x - 6, y - dy, wood, 255);
+                    self.point(x + 6, y - dy, trim, 255);
+                    self.point(x + dy - 5, y - dy, trim, 255);
+                }
+            }
+            Stage::Damaged => self.prop(Prop::Stone, x, y - 2, 0),
+            _ => {
+                let height = match kind {
+                    Kind::Planter => 4,
+                    Kind::Pond => 5,
+                    _ => 10,
+                };
+                for dy in 2..=height {
+                    let edge = if dy == height { 4 } else { 6 };
+                    for dx in -edge..=edge {
+                        let color = if dx == -edge || dx == edge || dy == height {
+                            trim
+                        } else {
+                            fill
+                        };
+                        self.point(x + dx, y - dy, color, 255);
+                    }
+                }
+                let prop = match kind {
+                    Kind::Planter => Prop::Flower,
+                    Kind::Pond => Prop::Puddle,
+                    Kind::ToolShed => Prop::Tool,
+                    Kind::Greenhouse => Prop::Leaf,
+                    _ => unreachable!(),
+                };
+                self.prop(prop, x, y - 3, 0);
+            }
+        }
+    }
+
     fn sprite(
         &mut self,
         sheet: &[u8],
@@ -305,27 +713,41 @@ impl Scene {
         let left = x - 24;
         let top = y - 29;
         for sy in 0..SPRITE_H {
-            for sx in 0..SPRITE_W {
+            let lean = i32::from(motion == Motion::Tilt) * ((29 - sy as i32) / 6);
+            let crouch = if motion == Motion::Nap {
+                (29 - sy as i32) / 3
+            } else {
+                0
+            };
+            let row = top + sy as i32 + crouch;
+            if !(0..self.view.height).contains(&row) {
+                continue;
+            }
+            let left = left + lean;
+            let first = (-left).clamp(0, SPRITE_W as i32) as usize;
+            let last = (self.view.width - left).clamp(0, SPRITE_W as i32) as usize;
+            for sx in first..last {
                 let px = if flip { SPRITE_W - sx - 1 } else { sx };
                 let offset = (sy * SPRITE_W + px) * 4;
                 let pixel = &sprite[offset..offset + 4];
                 if pixel[3] != 0 {
-                    let lean = i32::from(motion == Motion::Tilt) * ((29 - sy as i32) / 6);
-                    let crouch = if motion == Motion::Nap {
-                        (29 - sy as i32) / 3
-                    } else {
-                        0
-                    };
-                    self.pixel(left + sx as i32 + lean, top + sy as i32 + crouch, pixel);
+                    self.pixel(left + sx as i32, row, pixel);
                 }
             }
         }
     }
 
     fn pixel(&mut self, x: i32, y: i32, color: &[u8]) {
-        if (0..WIDTH as i32).contains(&x) && (0..HEIGHT as i32).contains(&y) {
-            let offset = (y as usize * WIDTH + x as usize) * 4;
+        if (0..self.view.width).contains(&x) && (0..self.view.height).contains(&y) {
+            let offset = ((y * self.view.width + x) * 4) as usize;
             over(&mut self.pixels[offset..offset + 4], color);
+            let damage = Damage {
+                left: x,
+                top: y,
+                right: x + 1,
+                bottom: y + 1,
+            };
+            self.painted = Some(self.painted.map_or(damage, |prior| prior.union(damage)));
         }
     }
 
@@ -343,7 +765,7 @@ impl Scene {
             Weather::Clear => {}
             Weather::Clouds => {
                 let dim = if day == DayPart::Night { 65 } else { 125 };
-                let offset = ((ms / 9_000) % 12) as i32;
+                let offset = ((ms / 9_000) % 12) as i32 + self.view.width * 2 / 3 - 107;
                 for (line, (left, right)) in [(2, 10), (0, 17), (0, 20), (4, 17)].iter().enumerate()
                 {
                     for col in *left..*right {
@@ -353,9 +775,11 @@ impl Scene {
             }
             Weather::Rain => {
                 let tick = ms / 240;
+                let spread = (self.view.width - 18) as u64;
+                let depth = (self.view.height - 24) as u64;
                 for n in 0..16 {
-                    let x = 12 + ((n * 31 + n * n * 3 + tick / 4) % 142) as i32;
-                    let y = 27 + ((n * 19 + tick * 5) % 61) as i32;
+                    let x = 10 + ((n * 31 + n * n * 3 + tick / 4) % spread) as i32;
+                    let y = 12 + ((n * 19 + tick * 5) % depth) as i32;
                     self.point(x, y, [177, 213, 240], 107);
                     self.point(x - 1, y + 1, [177, 213, 240], 73);
                     self.point(x - 1, y + 2, [177, 213, 240], 44);
@@ -363,9 +787,11 @@ impl Scene {
             }
             Weather::Snow => {
                 let tick = ms / 300;
+                let spread = (self.view.width - 18) as u64;
+                let depth = (self.view.height - 24) as u64;
                 for n in 0..17 {
-                    let x = 14 + ((n * 31 + n * n + tick / 3) % 138) as i32;
-                    let y = 22 + ((n * 17 + tick * (n % 2 + 1)) % 65) as i32;
+                    let x = 10 + ((n * 31 + n * n + tick / 3) % spread) as i32;
+                    let y = 12 + ((n * 17 + tick * (n % 2 + 1)) % depth) as i32;
                     self.point(x, y, [233, 240, 255], 175);
                     if n % 4 == 0 {
                         self.point(x + 1, y, [233, 240, 255], 81);
@@ -380,10 +806,15 @@ impl Scene {
         let frame = if lit { [182, 120, 86] } else { [93, 75, 78] };
         for y in 58..64 {
             for x in 33..38 {
-                self.point(x, y, if y == 60 || x == 35 { frame } else { glass }, 255);
+                self.point(
+                    x,
+                    y - self.view.top(),
+                    if y == 60 || x == 35 { frame } else { glass },
+                    255,
+                );
             }
         }
-        self.point(35, 64, frame, 255);
+        self.point(35, 64 - self.view.top(), frame, 255);
     }
 
     fn people(
@@ -391,9 +822,28 @@ impl Scene {
         state: &Snapshot,
         keeper: Option<&Activity>,
         visitor: Option<&Activity>,
+        job: Option<&Plot>,
         ms: u64,
     ) {
-        if let Some(activity) = keeper {
+        if let Some(plot) = job {
+            let x = plot.x as i32;
+            let y = plot.y as i32;
+            let prop = match plot.stage {
+                Stage::Seed => Prop::Seed,
+                Stage::Sprout | Stage::Growing | Stage::Recovering => Prop::Water,
+                Stage::Budding => Prop::Flower,
+                Stage::Mature | Stage::Harvest => Prop::Food,
+                Stage::Groundwork | Stage::Framing | Stage::Complete => Prop::Wood,
+                Stage::Damaged | Stage::Repairing => Prop::Tool,
+            };
+            self.sprite(
+                KEEPER,
+                (ms / 650) as usize,
+                (x - 9, y + 3, false),
+                Motion::Tilt,
+            );
+            self.prop(prop, x + 5, y - 4 - ((ms / 950) % 2) as i32, ms);
+        } else if let Some(activity) = keeper {
             let (mut x, mut y, flip) = pose(activity, ms);
             if state.caretaker == CareAction::Building {
                 let (dx, dy) = match state.build_stage {
@@ -403,13 +853,23 @@ impl Scene {
                 };
                 x += dx;
                 y += dy;
+                (x, y) = self.view.fixed(x, y);
+                if x >= self.view.width {
+                    return self.draw_visitor(state, visitor, ms);
+                }
                 if activity.prop == Prop::Tool {
                     self.prop(Prop::Spark, x + 9, y - 13, ms);
                 }
+            } else {
+                (x, y) = self.view.roaming(x, y);
             }
             self.sprite(KEEPER, (ms / 560) as usize, (x, y, flip), activity.motion);
             self.actor_prop(activity.prop, x, y, flip, ms);
         }
+        self.draw_visitor(state, visitor, ms);
+    }
+
+    fn draw_visitor(&mut self, state: &Snapshot, visitor: Option<&Activity>, ms: u64) {
         if let Some(activity) = visitor {
             let guest = match state.visitor {
                 Visitor::None => return,
@@ -418,6 +878,7 @@ impl Scene {
                 Visitor::BlackCat => BLACK_CAT,
             };
             let (x, y, flip) = pose(activity, ms);
+            let (x, y) = self.view.roaming(x, y);
             self.sprite(guest, (ms / 680) as usize, (x, y, !flip), activity.motion);
             self.actor_prop(activity.prop, x, y, !flip, ms);
         }
@@ -432,6 +893,7 @@ impl Scene {
     ) {
         let Some(activity) = activity else { return };
         let (mut x, mut y, mut flip) = pose(activity, ms);
+        (x, y) = self.view.roaming(x, y);
         let (mut sheet, pace) = match state.cat {
             CatAction::Idle => (CAT_IDLE, 850),
             CatAction::Sleep => (CAT_SLEEP, 1_700),
@@ -441,10 +903,12 @@ impl Scene {
         };
         let mut motion = activity.motion;
         if cat_heard_window(state, ms / 1000, actions) {
-            (x, y, flip) = (51, 75, true);
+            (x, y) = self.view.fixed(51, 75);
+            flip = true;
             sheet = CAT_IDLE;
             motion = Motion::Tilt;
-            self.prop(Prop::Bell, 40, 57, ms);
+            let (bell_x, bell_y) = self.view.fixed(40, 57);
+            self.prop(Prop::Bell, bell_x, bell_y, ms);
         } else {
             self.actor_prop(activity.prop, x, y, flip, ms);
             if state.cat == CatAction::Eat && !matches!(activity.prop, Prop::Food | Prop::Water) {
@@ -461,7 +925,7 @@ impl Scene {
 
     fn actor_prop(&mut self, prop: Prop, x: i32, y: i32, flip: bool, ms: u64) {
         let side = if flip { -1 } else { 1 };
-        let x = (x + side * 10).clamp(5, 154);
+        let x = (x + side * 10).clamp(5, self.view.width - 5);
         let y = if matches!(
             prop,
             Prop::Bell | Prop::Heart | Prop::Note | Prop::Spark | Prop::Star
@@ -578,6 +1042,19 @@ fn pose(activity: &Activity, ms: u64) -> (i32, i32, bool) {
     (activity.x + x, activity.y + y, flip)
 }
 
+fn terrain(daylight: usize, x: i32, y: i32, front: bool) -> &'static [u8] {
+    let grid_x = x / 16;
+    let grid_y = y / 16;
+    let kind = match ((grid_x * 7 + grid_y * 11) % 13, front) {
+        (0, _) => 3,
+        (1..=2, true) => 2,
+        _ => (grid_x + grid_y) as usize % 2,
+    };
+    let tile = frame(TERRAIN, TILE_BYTES, daylight * 4 + kind);
+    let offset = (((y % 16) * 16 + x % 16) * 4) as usize;
+    &tile[offset..offset + 4]
+}
+
 fn frame(bytes: &[u8], size: usize, index: usize) -> &[u8] {
     let start = (index % (bytes.len() / size)) * size;
     &bytes[start..start + size]
@@ -599,6 +1076,7 @@ fn over(target: &mut [u8], pixel: &[u8]) {
 mod tests {
     use super::*;
     use crate::simulation::{WeatherMode, snapshot};
+    const UNLOCKS: [u64; 16] = [1; 16];
 
     fn sample() -> Snapshot {
         snapshot(
@@ -644,7 +1122,14 @@ mod tests {
         let mut scene = Scene::new();
         let ms = 1_000_000;
         let baseline = scene
-            .render_with_actions(&state, ms, &ManualActions::default())
+            .render_view(
+                &state,
+                ms,
+                &ManualActions::default(),
+                (WIDTH, HEIGHT),
+                &UNLOCKS,
+            )
+            .0
             .to_vec();
         for actions in [
             ManualActions {
@@ -664,7 +1149,12 @@ mod tests {
                 ..Default::default()
             },
         ] {
-            assert_ne!(&baseline, scene.render_with_actions(&state, ms, &actions));
+            assert_ne!(
+                &baseline,
+                scene
+                    .render_view(&state, ms, &actions, (WIDTH, HEIGHT), &UNLOCKS)
+                    .0
+            );
         }
     }
 
@@ -679,7 +1169,13 @@ mod tests {
             state.build_stage = stage;
             for percent in [0, 34, 67] {
                 state.build_percent = percent;
-                let image = scene.render_with_actions(&state, 1_000_000, &ManualActions::default());
+                let (image, _) = scene.render_view(
+                    &state,
+                    1_000_000,
+                    &ManualActions::default(),
+                    (WIDTH, HEIGHT),
+                    &UNLOCKS,
+                );
                 assert!(
                     image
                         .chunks_exact(4)
@@ -689,5 +1185,34 @@ mod tests {
                 frames.push(image.to_vec());
             }
         }
+    }
+
+    #[test]
+    fn large_view_adds_land_without_stretching_original_pixels() {
+        let mut state = sample();
+        state.weather = Weather::Clear;
+        let mut scene = Scene::new();
+        let manual = ManualActions::default();
+        let baseline = scene
+            .render_view(&state, 1_000_000, &manual, (160, 100), &UNLOCKS)
+            .0
+            .to_vec();
+        let (image, first_damage) =
+            scene.render_view(&state, 1_000_000, &manual, (240, 145), &UNLOCKS);
+        assert_eq!(image.len(), 240 * 145 * 4);
+        assert_eq!(first_damage, Some(Damage::full((240, 145))));
+        let pixel = |x, y, stride| ((y * stride + x) * 4) as usize;
+        for y in 20..50 {
+            for x in 27..73 {
+                let from = pixel(x, y, 160);
+                let to = pixel(x, y, 240);
+                assert_eq!(&baseline[from..from + 4], &image[to..to + 4]);
+            }
+        }
+        assert_eq!(image[pixel(101, 99, 240) + 3], 255);
+        let (_, damage) = scene.render_view(&state, 1_001_000, &manual, (240, 145), &UNLOCKS);
+        assert_ne!(damage, Some(Damage::full((240, 145))));
+        let (small, _) = scene.render_view(&state, 1_001_000, &manual, (80, 60), &UNLOCKS);
+        assert_eq!(small.len(), 80 * 60 * 4);
     }
 }
