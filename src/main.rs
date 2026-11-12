@@ -3,9 +3,11 @@
 // Native window and tray lifecycle adapted from Nekodachi's window.rs and
 // tray.rs, Copyright (c) 2026 Yannick Herrero, MIT.
 mod activities;
+mod cast;
 mod clock;
 mod ecology;
 mod fishing;
+mod projects;
 mod renderer;
 mod simulation;
 mod world;
@@ -22,6 +24,7 @@ use std::{
 };
 
 use clock::{Anchor, Clock, Speed, WorldTime};
+use projects::{BLUEPRINTS, Kind as ProjectKind, LOTS, Project};
 use renderer::{DEFAULT_HEIGHT, DEFAULT_WIDTH, Renderer, dimensions};
 use simulation::{Season, Snapshot, Visitor, WeatherMode};
 use windows_sys::{
@@ -64,6 +67,8 @@ const MENU_NOTEBOOK: usize = 44;
 const MENU_LANTERN: usize = 50;
 const MENU_INVITE: usize = 60;
 const MENU_SPEED: usize = 70;
+const MENU_PROJECT: usize = 100;
+const MENU_CAST_INVITE: usize = 140;
 const SIZES: [((i32, i32), &str); 4] = [
     ((360, 225), "360 × 225"),
     ((480, 300), "480 × 300"),
@@ -112,6 +117,7 @@ struct Settings {
     treat_at: Option<u64>,
     manual: ManualActions,
     plot_unlocks: [u64; 16],
+    projects: [Project; LOTS],
 }
 
 impl Settings {
@@ -126,6 +132,7 @@ impl Settings {
             treat_at: None,
             manual: ManualActions::default(),
             plot_unlocks: [0; 16],
+            projects: [Project::default(); LOTS],
         };
         let Some(raw) = read_sidecar("cat-home-settings.txt") else {
             return settings;
@@ -189,6 +196,9 @@ impl Settings {
                         .find(|(_, name, _)| *name == value)
                         .map_or(Visitor::None, |&(visitor, _, _)| visitor)
                 }
+                "invited_role" => {
+                    settings.manual.invited_role = value.parse().ok().and_then(cast_invite)
+                }
                 "visitor_invited_at" => {
                     settings.manual.visitor_invited_at = parse_timestamp(value, now)
                 }
@@ -198,6 +208,16 @@ impl Settings {
                 "plot_unlocks" => {
                     for (slot, encoded) in settings.plot_unlocks.iter_mut().zip(value.split(',')) {
                         *slot = encoded.trim().parse().unwrap_or_default();
+                    }
+                }
+                "projects" => {
+                    for (slot, encoded) in settings.projects.iter_mut().zip(value.split(',')) {
+                        if let Some((style, age)) = encoded.trim().split_once(':') {
+                            let kind = style.parse().ok().and_then(ProjectKind::from_style);
+                            if let (Some(kind), Ok(start_age)) = (kind, age.parse()) {
+                                *slot = Project { kind, start_age };
+                            }
+                        }
                     }
                 }
                 _ => {}
@@ -239,13 +259,14 @@ impl Settings {
             .iter()
             .find(|(value, _, _)| *value == self.manual.invited_visitor)
             .map_or("none", |(_, name, _)| *name);
+        let invited_role = self.manual.invited_role.map_or(0, |role| role.0);
         let anchor = self.clock.anchor(world::unix_millis() / 1_000);
         let mut contents = format!(
             "width={}\nheight={}\nseason={season}\nweather={weather}\nstarted={}\n\
             clock_anchor_real={}\nclock_anchor_world={}\nclock_anchor_local_seconds={}\nclock_speed={}\n\
             treat_at={}\n\
             water_bowl={}\nlantern={lantern}\nkeeper_called_at={}\nvisitor_snack_at={}\n\
-            invited_visitor={visitor}\nvisitor_invited_at={}\nwindow_tapped_at={}\nplot_unlocks=",
+            invited_visitor={visitor}\ninvited_role={invited_role}\nvisitor_invited_at={}\nwindow_tapped_at={}\nplot_unlocks=",
             self.width,
             self.height,
             self.started,
@@ -266,6 +287,13 @@ impl Settings {
             }
             let _ = write!(contents, "{age}");
         }
+        contents.push_str("\nprojects=");
+        for (index, project) in self.projects.iter().enumerate() {
+            if index > 0 {
+                contents.push(',');
+            }
+            let _ = write!(contents, "{}:{}", project.kind.style(), project.start_age);
+        }
         contents.push('\n');
         write_sidecar("cat-home-settings.txt", contents);
     }
@@ -278,6 +306,11 @@ fn parse_timestamp(value: &str, now: u64) -> Option<u64> {
         .filter(|&time| time > 0 && time <= now)
 }
 
+fn cast_invite(index: u8) -> Option<cast::Role> {
+    // The two residents stay home, and the seven familiar animals use their existing menu.
+    matches!(index, 1..=9 | 18..=29).then_some(cast::Role(index))
+}
+
 enum YardAction {
     ToggleWater,
     LeaveSnack,
@@ -285,6 +318,7 @@ enum YardAction {
     TapWindow,
     SetLantern(Option<bool>),
     Invite(Visitor),
+    InviteRole(cast::Role),
 }
 
 #[derive(Clone, Copy)]
@@ -387,6 +421,7 @@ impl App {
             &self.settings.manual,
             self.renderer.logical_size(),
             &self.settings.plot_unlocks,
+            &self.settings.projects,
         );
         self.renderer.draw(hwnd, self.position, image, dirty)?;
         Ok(if self.scene.in_transition() {
@@ -466,9 +501,32 @@ impl App {
             YardAction::SetLantern(lantern) => manual.lantern = lantern,
             YardAction::Invite(visitor) => {
                 manual.invited_visitor = visitor;
+                manual.invited_role = None;
+                manual.visitor_invited_at = Some(now);
+            }
+            YardAction::InviteRole(role) => {
+                manual.invited_visitor = Visitor::None;
+                manual.invited_role = Some(role);
                 manual.visitor_invited_at = Some(now);
             }
         }
+        self.save_settings();
+        self.refresh(hwnd);
+    }
+
+    fn start_project(&mut self, hwnd: HWND, kind: ProjectKind) {
+        let Some(lot) =
+            projects::first_available(self.renderer.logical_size(), &self.settings.projects)
+        else {
+            return;
+        };
+        let start_age = self
+            .settings
+            .clock
+            .time()
+            .seconds
+            .saturating_sub(self.settings.started);
+        self.settings.projects[lot] = Project { kind, start_age };
         self.save_settings();
         self.refresh(hwnd);
     }
@@ -762,16 +820,28 @@ fn show_notebook(hwnd: HWND) {
     let mut text = None;
     with_app(|app| {
         let time = app.settings.clock.time();
-        let snapshot = app.snapshot(world::unix_millis() / 1_000, time);
-        text = Some(format!(
+        let now = world::unix_millis() / 1_000;
+        let snapshot = app.snapshot(now, time);
+        let mut notebook = format!(
             "{}\n{}",
             app.world_time_label(time),
             world::notebook(
                 &snapshot,
                 app.renderer.logical_size(),
-                &app.settings.plot_unlocks
+                &app.settings.plot_unlocks,
+                &app.settings.projects,
             ),
-        ));
+        );
+        let manual = &app.settings.manual;
+        if let Some(role) = manual.invited_role.filter(|_| {
+            manual
+                .visitor_invited_at
+                .and_then(|at| now.checked_sub(at))
+                .is_some_and(|elapsed| elapsed < 90)
+        }) {
+            let _ = write!(notebook, "\n\n邀请的访客 {}", role.label());
+        }
+        text = Some(notebook);
     });
     if let Some(text) = text {
         let wide: Vec<u16> = text.encode_utf16().chain(std::iter::once(0)).collect();
@@ -794,6 +864,14 @@ fn show_menu(hwnd: HWND) {
     with_app(|app| {
         let time = app.settings.clock.time();
         let status = world::status_line(&app.snapshot(world::unix_millis() / 1_000, time));
+        let project_lot =
+            projects::first_available(app.renderer.logical_size(), &app.settings.projects);
+        let project_count = app
+            .settings
+            .projects
+            .iter()
+            .filter(|project| project.kind != ProjectKind::Empty)
+            .count();
         menu_state = Some((
             (app.settings.width, app.settings.height),
             app.settings.weather,
@@ -804,10 +882,23 @@ fn show_menu(hwnd: HWND) {
             app.user_hidden,
             app.world_time_label(time),
             status,
+            project_lot,
+            project_count,
         ));
     });
-    let Some((size, weather, season, speed, water_bowl, lantern, hidden, clock, status)) =
-        menu_state
+    let Some((
+        size,
+        weather,
+        season,
+        speed,
+        water_bowl,
+        lantern,
+        hidden,
+        clock,
+        status,
+        project_lot,
+        project_count,
+    )) = menu_state
     else {
         return;
     };
@@ -848,6 +939,31 @@ fn show_menu(hwnd: HWND) {
                     .enumerate()
                     .map(|(index, (_, _, text))| (MENU_INVITE + index, text, false)),
             );
+            append_group(yard, "邀请其他角色", |cast_menu| {
+                for (title, range) in [("人物", 1..=9), ("动物", 18..=29)] {
+                    append_options(
+                        cast_menu,
+                        title,
+                        range.filter_map(cast_invite).map(|role| {
+                            (MENU_CAST_INVITE + usize::from(role.0), role.label(), false)
+                        }),
+                    );
+                }
+            });
+        });
+        append_group(menu, "扩建工程", |projects_menu| {
+            let lot_status = match project_lot {
+                Some(lot) => format!("第 {} 号地块可开工", lot + 1),
+                None if project_count == LOTS => "8 个地块均已使用".to_owned(),
+                None => "向右或向下拉大庭院可露出空地".to_owned(),
+            };
+            append_label(projects_menu, MF_STRING | MF_GRAYED, 0, &lot_status);
+            AppendMenuW(projects_menu, MF_SEPARATOR, 0, ptr::null());
+            for (index, kind) in BLUEPRINTS.into_iter().enumerate() {
+                let flags = MF_STRING | if project_lot.is_none() { MF_GRAYED } else { 0 };
+                let label = format!("{} · {} 个小屋日", kind.label(), kind.days());
+                append_label(projects_menu, flags, MENU_PROJECT + index, &label);
+            }
         });
         AppendMenuW(menu, MF_STRING, MENU_NOTEBOOK, w!("观察手记"));
         AppendMenuW(menu, MF_SEPARATOR, 0, ptr::null());
@@ -955,6 +1071,16 @@ fn show_menu(hwnd: HWND) {
             id if (MENU_INVITE..MENU_INVITE + VISITORS.len()).contains(&id) => with_app(|app| {
                 app.interact(hwnd, YardAction::Invite(VISITORS[id - MENU_INVITE].0));
             }),
+            id if (MENU_PROJECT..MENU_PROJECT + BLUEPRINTS.len()).contains(&id) => {
+                with_app(|app| {
+                    app.start_project(hwnd, BLUEPRINTS[id - MENU_PROJECT]);
+                })
+            }
+            id if (MENU_CAST_INVITE..MENU_CAST_INVITE + 30).contains(&id) => {
+                if let Some(role) = cast_invite((id - MENU_CAST_INVITE) as u8) {
+                    with_app(|app| app.interact(hwnd, YardAction::InviteRole(role)));
+                }
+            }
             _ => {}
         }
     }

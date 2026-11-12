@@ -1,8 +1,10 @@
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::activities::{self, Activity, Motion, Prop};
+use crate::cast::{self, Role};
 use crate::ecology::{self, Event, Kind, Plot, Stage};
 use crate::fishing::{self, Moment, Phase};
+use crate::projects::{self, LOTS, Project};
 use crate::renderer::Damage;
 use crate::simulation::{CareAction, CatAction, DayPart, Season, Snapshot, Visitor, Weather};
 
@@ -33,6 +35,7 @@ const SQUIRREL: &[u8] = include_bytes!("../assets/world/squirrel.bgra");
 const HEDGEHOG: &[u8] = include_bytes!("../assets/world/hedgehog.bgra");
 const RABBIT: &[u8] = include_bytes!("../assets/world/rabbit.bgra");
 const FROG: &[u8] = include_bytes!("../assets/world/frog.bgra");
+const EXTRA_CAST: &[u8] = include_bytes!("../assets/world/extra-cast.bgra");
 
 #[repr(C)]
 #[derive(Default)]
@@ -72,6 +75,7 @@ pub struct ManualActions {
     pub keeper_called_at: Option<u64>,
     pub visitor_snack_at: Option<u64>,
     pub invited_visitor: Visitor,
+    pub invited_role: Option<Role>,
     pub visitor_invited_at: Option<u64>,
     pub window_tapped_at: Option<u64>,
 }
@@ -84,6 +88,7 @@ impl Default for ManualActions {
             keeper_called_at: None,
             visitor_snack_at: None,
             invited_visitor: Visitor::None,
+            invited_role: None,
             visitor_invited_at: None,
             window_tapped_at: None,
         }
@@ -129,6 +134,8 @@ pub fn check_assets() -> bool {
         && TERRAIN.len() == TILE_BYTES * 16
         && valid(TERRAIN, TILE_BYTES, 16)
         && KEEPER.len() == SPRITE_BYTES * OUTFIT_FRAMES * 5
+        && EXTRA_CAST.len() == SPRITE_BYTES * 3 * 21
+        && valid(EXTRA_CAST, SPRITE_BYTES, 3 * 21)
         && [
             CAT_IDLE, CAT_SLEEP, CAT_WALK, CAT_EAT, CAT_TREAT, KEEPER, SPARROW, GREY_CAT,
             BLACK_CAT, SQUIRREL, HEDGEHOG, RABBIT, FROG,
@@ -203,7 +210,12 @@ pub fn status_line(state: &Snapshot) -> String {
     format!("{time} · {weather} · {cat} · {activity} · {progress}{guest}")
 }
 
-pub fn notebook(state: &Snapshot, size: (i32, i32), unlocks: &[u64; 16]) -> String {
+pub fn notebook(
+    state: &Snapshot,
+    size: (i32, i32),
+    unlocks: &[u64; 16],
+    projects: &[Project; LOTS],
+) -> String {
     let active = activities::current(state);
     let garden = garden_at(state, size, unlocks);
     let job = plot_job(state, &garden);
@@ -272,7 +284,45 @@ pub fn notebook(state: &Snapshot, size: (i32, i32), unlocks: &[u64; 16]) -> Stri
             Phase::Disappointed => "\n这次没钓到鱼，园丁有点失落",
         });
     }
+    let context = cast_context(
+        state,
+        &garden,
+        &ManualActions::default(),
+        unix_millis() / 1000,
+        fishing.is_some(),
+    );
+    if let Some(role) = context.guest {
+        text.push_str(&format!("\n访客 {}", role.label()));
+        if let Some(action) = cast::action(role, &context) {
+            text.push_str(&format!(" · {} ({})", action.label, action.id));
+        }
+    }
+    for sample in projects::visible(state.phase_seconds, seconds_of_day(state), size, projects)
+        .filter(|sample| sample.kind != projects::Kind::Empty)
+    {
+        text.push_str(&format!(
+            "\n{} · {} {}%",
+            sample.kind.label(),
+            sample.stage.label(),
+            sample.percent
+        ));
+        if sample.stage != projects::Stage::Complete {
+            let (start, end) = sample.kind.shift();
+            text.push_str(&format!(
+                " · {:02}:{:02}–{:02}:{:02}",
+                start / 60,
+                start % 60,
+                end / 60,
+                end % 60
+            ));
+        }
+    }
     text
+}
+
+fn seconds_of_day(state: &Snapshot) -> u64 {
+    u64::from(state.minutes_of_day) * 60
+        + (state.world_start.saturating_add(state.phase_seconds) % 60)
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -321,6 +371,7 @@ struct Backdrop {
     lantern: Option<bool>,
     water: bool,
     plots: [Option<PlotVisual>; 16],
+    buildings: [Option<Structure>; LOTS],
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -330,6 +381,14 @@ struct PlotVisual {
     kind: Kind,
     stage: Stage,
     event: Event,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+struct Structure {
+    x: i32,
+    y: i32,
+    kind: projects::Kind,
+    stage: projects::Stage,
 }
 
 fn garden_at(state: &Snapshot, size: (i32, i32), unlocks: &[u64; 16]) -> ecology::Garden {
@@ -342,6 +401,33 @@ fn garden_at(state: &Snapshot, size: (i32, i32), unlocks: &[u64; 16]) -> ecology
         state.weather,
         unlocks,
     )
+}
+
+fn selected_guest(state: &Snapshot, actions: &ManualActions, now: u64) -> Option<Role> {
+    actions
+        .invited_role
+        .filter(|role| role.is_extra() && recent(actions.visitor_invited_at, now, 90))
+        .or_else(|| cast::guest(state))
+}
+
+fn cast_context<'a>(
+    state: &'a Snapshot,
+    garden: &'a ecology::Garden,
+    actions: &ManualActions,
+    now: u64,
+    fish: bool,
+) -> cast::Context<'a> {
+    let mut context = cast::Context::new(state, garden);
+    context.water = actions.water_bowl;
+    context.lamp = actions
+        .lantern
+        .unwrap_or(matches!(state.day_part, DayPart::Dusk | DayPart::Night));
+    context.food = recent(actions.visitor_snack_at, now, 180);
+    context.knock = recent(actions.window_tapped_at, now, 5);
+    context.fish = fish;
+    context.guest =
+        selected_guest(state, actions, now).or_else(|| Role::from_visitor(state.visitor));
+    context
 }
 
 fn plot_job<'a>(state: &Snapshot, garden: &'a ecology::Garden) -> Option<&'a Plot> {
@@ -487,6 +573,15 @@ pub struct Scene {
     wardrobe: Wardrobe,
     cat_last: Option<(i32, i32)>,
     cat_entry: Option<u64>,
+    traces: [Option<Trace>; 8],
+}
+
+#[derive(Clone, Copy)]
+struct Trace {
+    prop: Prop,
+    x: i32,
+    y: i32,
+    until_ms: u64,
 }
 
 impl Scene {
@@ -500,6 +595,7 @@ impl Scene {
             wardrobe: Wardrobe::default(),
             cat_last: None,
             cat_entry: None,
+            traces: [None; 8],
         }
     }
 
@@ -514,6 +610,7 @@ impl Scene {
         actions: &ManualActions,
         size: (i32, i32),
         unlocks: &[u64; 16],
+        projects: &[Project; LOTS],
     ) -> (&[u8], Option<Damage>) {
         let view = View::new(size);
         let previous = self.painted.take();
@@ -527,6 +624,21 @@ impl Scene {
                 stage: plot.stage,
                 event: plot.event,
             });
+        }
+        let mut buildings = [None; LOTS];
+        let mut working = None;
+        for site in projects::visible(state.phase_seconds, seconds_of_day(state), size, projects)
+            .filter(|site| site.kind != projects::Kind::Empty)
+        {
+            buildings[site.lot] = Some(Structure {
+                x: site.x,
+                y: site.y,
+                kind: site.kind,
+                stage: site.stage,
+            });
+            if working.is_none() && site.working {
+                working = Some((site.x + 11, site.y - 2));
+            }
         }
         let backdrop = Backdrop {
             view,
@@ -545,8 +657,12 @@ impl Scene {
             lantern: actions.lantern,
             water: actions.water_bowl,
             plots,
+            buildings,
         };
         let dirty = if self.backdrop != Some(backdrop) {
+            if self.view != view {
+                self.traces.fill(None);
+            }
             self.view = view;
             self.rebuild(backdrop);
             self.backdrop = Some(backdrop);
@@ -563,6 +679,14 @@ impl Scene {
             previous
         };
         self.weather(state.weather, state.day_part, now_ms);
+        for trace in self
+            .traces
+            .into_iter()
+            .flatten()
+            .filter(|trace| trace.until_ms > now_ms)
+        {
+            self.prop(trace.prop, trace.x, trace.y, now_ms);
+        }
         let now = now_ms / 1000;
         let active = activities::current(state);
         if let Some(activity) = active.yard {
@@ -582,21 +706,33 @@ impl Scene {
                 || view.fixed(38, 85),
                 |plot| (plot.x as i32, plot.y as i32 - 2),
             );
-        let fishing = fishing::moment(state);
+        let fishing = working.is_none().then(|| fishing::moment(state)).flatten();
+        let context = cast_context(state, &garden, actions, now, fishing.is_some());
+        let keeper_act = cast::action(Role(0), &context);
+        let cat_act = cast::action(Role(10), &context);
+        let visitor_act =
+            Role::from_visitor(state.visitor).and_then(|role| cast::action(role, &context));
         self.people(
             state,
             active.keeper,
             active.visitor,
             plot_job(state, &garden),
             fishing.map(|moment| (moment, pond)),
+            working,
+            keeper_act.as_ref(),
+            visitor_act.as_ref(),
             now_ms,
         );
+        if let Some(role) = context.guest.filter(|role| role.is_extra()) {
+            self.extra_guest(role, cast::action(role, &context).as_ref(), now_ms);
+        }
         self.cat(
             state,
             active.cat,
             now_ms,
             actions,
             fishing.map(|moment| (moment, pond)),
+            cat_act.as_ref(),
         );
         (
             &self.pixels,
@@ -664,6 +800,9 @@ impl Scene {
         }
         for plot in backdrop.plots.into_iter().flatten() {
             self.plot(plot);
+        }
+        for building in backdrop.buildings.into_iter().flatten() {
+            self.structure(building);
         }
         // This solid handle is visible and receives mouse input even over empty sky.
         for y in view.height - 14..view.height {
@@ -892,6 +1031,154 @@ impl Scene {
         }
     }
 
+    fn structure(&mut self, building: Structure) {
+        use projects::Stage as Work;
+        let Structure { x, y, kind, stage } = building;
+        let style = kind.style();
+        let (width, height, base, roof) = match style {
+            1 => (11, 12, [177, 123, 78], [121, 89, 95]),
+            2 => (12, 14, [153, 157, 171], [107, 110, 131]),
+            3 => (11, 13, [173, 99, 90], [119, 76, 88]),
+            4 => (10, 18, [182, 139, 93], [103, 145, 112]),
+            5 => (12, 11, [151, 192, 187], [218, 224, 203]),
+            6 => (11, 13, [130, 171, 178], [84, 119, 152]),
+            7 => (12, 12, [170, 128, 101], [119, 129, 156]),
+            8 => (13, 16, [164, 96, 85], [120, 78, 94]),
+            9 => (7, 24, [155, 122, 107], [101, 108, 138]),
+            10 => (12, 12, [212, 170, 123], [154, 94, 111]),
+            11 => (13, 11, [143, 185, 148], [97, 138, 116]),
+            _ => (12, 14, [142, 142, 135], [82, 132, 137]),
+        };
+        let dark = [83, 68, 82];
+        let timber = [180, 135, 93];
+        let trim = [225, 187, 129];
+        let glass = [164, 208, 206];
+        if stage == Work::Planned {
+            for dx in (-width..=width).step_by(3) {
+                self.point(x + dx, y, [211, 173, 111], 230);
+            }
+            for dx in [-width, width] {
+                for dy in 1..=4 {
+                    self.point(x + dx, y - dy, timber, 255);
+                }
+            }
+            return;
+        }
+        for dx in -width..=width {
+            self.point(x + dx, y, dark, 255);
+            self.point(
+                x + dx,
+                y - 1,
+                if style == 6 { [106, 160, 177] } else { trim },
+                255,
+            );
+        }
+        if stage == Work::Foundation {
+            self.prop(Prop::Wood, x - 4, y - 2, 0);
+            self.prop(Prop::Stone, x + 4, y - 2, 0);
+            return;
+        }
+        let lifted = if matches!(style, 4 | 6) {
+            if style == 4 { 6 } else { 3 }
+        } else {
+            2
+        };
+        for dy in 2..=height {
+            for dx in [-width + 1, width - 1] {
+                self.point(x + dx, y - dy, timber, 255);
+            }
+            if dy >= lifted && matches!(stage, Work::Finish | Work::Complete) && style != 7 {
+                for dx in -width + 2..width - 1 {
+                    let row_edge = matches!(style, 1..=3 | 6 | 8 | 12) && (dy + 1) % 4 == 0;
+                    let framing = matches!(style, 5 | 11) && (dx % 4 == 0 || dy % 5 == 0);
+                    let color = if framing {
+                        roof
+                    } else if row_edge {
+                        timber
+                    } else {
+                        base
+                    };
+                    self.point(x + dx, y - dy, color, 255);
+                }
+            }
+        }
+        if stage == Work::Frame {
+            for dx in -width..=width {
+                let dy = (dx + width) * (height - 3) / (width * 2);
+                self.point(x + dx, y - 2 - dy, trim, 255);
+            }
+            return;
+        }
+        for rise in 0..=6 {
+            let span = match style {
+                2 => width + 1 - i32::from(rise >= 3) * 2,
+                5 | 11 => width + 1 - (rise * rise / 4),
+                8 => width + 1 - rise / 2 - i32::from(rise > 3) * 2,
+                7 | 10 => width + 2 - rise / 3,
+                _ => width + 2 - rise * 2,
+            };
+            for dx in -span..=span {
+                let color = if rise == 0 {
+                    dark
+                } else if style == 10 && (dx + width + 2) / 2 % 2 == 0 {
+                    [244, 204, 154]
+                } else {
+                    roof
+                };
+                self.point(x + dx, y - height - rise, color, 255);
+            }
+        }
+        if stage == Work::Roof {
+            return;
+        }
+        let door = if style == 8 { 3 } else { 2 };
+        if !matches!(style, 5 | 7 | 11) {
+            for dy in lifted..(lifted + 6).min(height) {
+                for dx in -door..=door {
+                    self.point(
+                        x + dx,
+                        y - dy,
+                        if dx == 0 && style == 8 { trim } else { dark },
+                        255,
+                    );
+                }
+            }
+        }
+        if stage != Work::Complete {
+            return;
+        }
+        let window_height = height / 2 + 2;
+        for offset in [-(width / 2), width / 2] {
+            for dy in 0..3 {
+                for dx in -1..=1 {
+                    self.point(
+                        x + offset + dx,
+                        y - window_height - dy,
+                        if dy == 0 { trim } else { glass },
+                        255,
+                    );
+                }
+            }
+        }
+        match style {
+            4 | 9 => {
+                for dy in 1..height - 2 {
+                    self.point(x + width - 3, y - dy, timber, 255);
+                    if dy % 2 == 0 {
+                        self.point(x + width - 2, y - dy, trim, 255);
+                    }
+                }
+            }
+            5 | 11 => self.prop(Prop::Flower, x - width + 2, y - 2, 0),
+            6 => self.prop(Prop::Puddle, x + 4, y + 2, 0),
+            7 => self.prop(Prop::Lamp, x, y - height + 1, 0),
+            8 => self.prop(Prop::Seed, x - width, y - 3, 0),
+            10 => self.prop(Prop::Food, x + width - 2, y - 3, 0),
+            12 => self.prop(Prop::Tool, x + width - 2, y - 3, 0),
+            _ => {}
+        }
+    }
+
     fn sprite(
         &mut self,
         sheet: &[u8],
@@ -1100,9 +1387,14 @@ impl Scene {
         visitor: Option<&Activity>,
         job: Option<&Plot>,
         fishing: Option<(Moment, (i32, i32))>,
+        project: Option<(i32, i32)>,
+        role_action: Option<&cast::Action>,
+        guest_action: Option<&cast::Action>,
         ms: u64,
     ) {
         let outfit = keeper_outfit(state, job).unwrap_or(Outfit::Garden);
+        let role_action =
+            role_action.filter(|_| fishing.is_none() && project.is_none() && job.is_none());
         let desired = if let Some((moment, (x, y))) = fishing {
             Some(KeeperPose {
                 x: x + 16,
@@ -1119,6 +1411,20 @@ impl Scene {
                     Outfit::Garden
                 },
                 prop: Prop::None,
+            })
+        } else if let Some((x, y)) = project.filter(|_| {
+            matches!(
+                state.caretaker,
+                CareAction::Away | CareAction::Resting | CareAction::Tending
+            )
+        }) {
+            Some(KeeperPose {
+                x,
+                y,
+                outfit: Outfit::Helmet,
+                motion: Motion::Bob,
+                flip: true,
+                prop: Prop::Tool,
             })
         } else if let Some(plot) = job {
             let x = plot.x as i32;
@@ -1137,6 +1443,21 @@ impl Scene {
                 flip: false,
                 motion: Motion::Tilt,
                 outfit,
+                prop,
+            })
+        } else if let Some(action) = role_action {
+            let (x, y, flip) = self.cast_position(action, ms);
+            let prop = if action.phase == cast::Phase::Approach {
+                Prop::None
+            } else {
+                action.prop
+            };
+            Some(KeeperPose {
+                x,
+                y,
+                flip,
+                outfit,
+                motion: action.motion,
                 prop,
             })
         } else if let Some(activity) = keeper {
@@ -1184,15 +1505,23 @@ impl Scene {
             if !self.wardrobe.changing {
                 if let Some((moment, pond)) = fishing {
                     self.pond_event(moment, pond, ms);
-                } else if state.caretaker == CareAction::Building && prop == Prop::Tool {
+                } else if outfit == Outfit::Helmet && prop == Prop::Tool {
                     self.prop(Prop::Spark, x + 9, y - 13, ms);
+                } else if let Some(action) = role_action {
+                    self.cast_result(action, x, y, ms);
                 }
             }
         }
-        self.draw_visitor(state, visitor, ms);
+        self.draw_visitor(state, visitor, guest_action, ms);
     }
 
-    fn draw_visitor(&mut self, state: &Snapshot, visitor: Option<&Activity>, ms: u64) {
+    fn draw_visitor(
+        &mut self,
+        state: &Snapshot,
+        visitor: Option<&Activity>,
+        action: Option<&cast::Action>,
+        ms: u64,
+    ) {
         if let Some(activity) = visitor {
             let guest = match state.visitor {
                 Visitor::None => return,
@@ -1204,11 +1533,78 @@ impl Scene {
                 Visitor::Rabbit => RABBIT,
                 Visitor::Frog => FROG,
             };
-            let (x, y, flip) = pose(activity, ms);
-            let (x, y) = self.view.roaming(x, y);
-            self.sprite(guest, (ms / 680) as usize, (x, y, !flip), activity.motion);
-            self.actor_prop(activity.prop, x, y, !flip, ms);
+            if let Some(action) = action {
+                self.cast_sprite(guest, (ms / 680) as usize, action, ms);
+            } else {
+                let (x, y, flip) = pose(activity, ms);
+                let (x, y) = self.view.roaming(x, y);
+                self.sprite(guest, (ms / 680) as usize, (x, y, !flip), activity.motion);
+                self.actor_prop(activity.prop, x, y, !flip, ms);
+            }
         }
+    }
+
+    fn extra_guest(&mut self, role: Role, action: Option<&cast::Action>, ms: u64) {
+        let group = match role.0 {
+            1..=9 => role.0 - 1,
+            18..=29 => role.0 - 9,
+            _ => return,
+        };
+        let step = usize::from(group) * 3 + (ms / 650) as usize % 3;
+        if let Some(action) = action {
+            self.cast_sprite(EXTRA_CAST, step, action, ms);
+        } else {
+            let x = self.view.width - 24;
+            let y = (self.view.height - 24).max(16);
+            self.sprite(EXTRA_CAST, step, (x, y, true), Motion::Still);
+        }
+    }
+
+    fn cast_sprite(&mut self, atlas: &[u8], step: usize, action: &cast::Action, ms: u64) {
+        let (x, y, flip) = self.cast_position(action, ms);
+        self.sprite(atlas, step, (x, y, flip), action.motion);
+        if action.phase != cast::Phase::Approach {
+            self.actor_prop(action.prop, x, y, flip, ms);
+        }
+        self.cast_result(action, x, y, ms);
+    }
+
+    fn cast_position(&self, action: &cast::Action, ms: u64) -> (i32, i32, bool) {
+        let (x, y) = if action.plot.is_some() {
+            (action.x, action.y)
+        } else if action.target == cast::Target::Pond && action.phase != cast::Phase::Approach {
+            self.view.fixed(42, 85)
+        } else {
+            self.view.roaming(action.x, action.y)
+        };
+        let (dx, dy, patrol_flip) = motion_offset(action.motion, ms);
+        (
+            (x + dx).clamp(9, self.view.width - 10),
+            (y + dy).clamp(12, self.view.height - 10),
+            (action.role.0 >= 10) ^ patrol_flip,
+        )
+    }
+
+    fn cast_result(&mut self, action: &cast::Action, x: i32, y: i32, ms: u64) {
+        if action.phase != cast::Phase::Result || action.prop == Prop::None {
+            return;
+        }
+        let (dx, dy) = match action.target {
+            cast::Target::Sky => (8, -14),
+            cast::Target::Water | cast::Target::Pond => (9, 2),
+            cast::Target::Flower
+            | cast::Target::Tree
+            | cast::Target::Crop
+            | cast::Target::Garden => (-6, 3),
+            _ => (7, 1),
+        };
+        self.traces[usize::from(action.role.0) % self.traces.len()] = Some(Trace {
+            prop: action.prop,
+            x: x + dx,
+            y: y + dy,
+            until_ms: ms.saturating_add(12_000),
+        });
+        self.prop(action.prop, x + dx, y + dy, ms);
     }
 
     fn cat(
@@ -1218,6 +1614,7 @@ impl Scene {
         ms: u64,
         actions: &ManualActions,
         fishing: Option<(Moment, (i32, i32))>,
+        role_action: Option<&cast::Action>,
     ) {
         let Some(activity) = activity else { return };
         if state.day_part == DayPart::Night && state.cat == CatAction::Sleep {
@@ -1238,6 +1635,9 @@ impl Scene {
             }
             let (x, y) = self.view.fixed(43, 52 - ((ms / 950) % 3) as i32);
             self.sleep_mark(x, y);
+            if let Some(action) = role_action {
+                self.cast_result(action, x, y, ms);
+            }
             return;
         }
         self.cat_entry = None;
@@ -1263,6 +1663,17 @@ impl Scene {
             CatAction::Treat => (CAT_TREAT, 260),
         };
         let mut motion = activity.motion;
+        let mut prop = activity.prop;
+        if let Some(action) = role_action.filter(|_| state.cat != CatAction::Treat) {
+            (x, y, flip) = self.cast_position(action, ms);
+            motion = action.motion;
+            prop = if action.phase == cast::Phase::Approach {
+                Prop::None
+            } else {
+                action.prop
+            };
+            self.cast_result(action, x, y, ms);
+        }
         if state.cat == CatAction::Sleep && (780..815).contains(&state.minutes_of_day) {
             let sheltered = matches!(state.weather, Weather::Rain | Weather::Snow);
             (x, y) = self.view.fixed(
@@ -1278,8 +1689,8 @@ impl Scene {
             let (bell_x, bell_y) = self.view.fixed(40, 57);
             self.prop(Prop::Bell, bell_x, bell_y, ms);
         } else {
-            self.actor_prop(activity.prop, x, y, flip, ms);
-            if state.cat == CatAction::Eat && !matches!(activity.prop, Prop::Food | Prop::Water) {
+            self.actor_prop(prop, x, y, flip, ms);
+            if state.cat == CatAction::Eat && !matches!(prop, Prop::Food | Prop::Water) {
                 self.prop(Prop::Food, x + 11, y + 1, ms);
             }
         }
@@ -1394,8 +1805,13 @@ impl Scene {
 }
 
 fn pose(activity: &Activity, ms: u64) -> (i32, i32, bool) {
+    let (x, y, flip) = motion_offset(activity.motion, ms);
+    (activity.x + x, activity.y + y, flip)
+}
+
+fn motion_offset(motion: Motion, ms: u64) -> (i32, i32, bool) {
     let phase = |duration, steps| ((ms / duration) % steps) as i32;
-    let (x, y, flip) = match activity.motion {
+    match motion {
         Motion::Still | Motion::Tilt | Motion::Nap => (0, 0, false),
         Motion::Bob => (0, -phase(480_u64, 2_u64), false),
         Motion::Hop => (
@@ -1407,8 +1823,7 @@ fn pose(activity: &Activity, ms: u64) -> (i32, i32, bool) {
             let step = phase(230_u64, 28_u64);
             (step.min(28 - step) - 7, 0, step >= 14)
         }
-    };
-    (activity.x + x, activity.y + y, flip)
+    }
 }
 
 fn terrain(daylight: usize, x: i32, y: i32, front: bool) -> &'static [u8] {
@@ -1446,6 +1861,10 @@ mod tests {
     use super::*;
     use crate::simulation::{WeatherMode, snapshot};
     const UNLOCKS: [u64; 16] = [1; 16];
+    const NO_PROJECTS: [Project; LOTS] = [Project {
+        kind: projects::Kind::Empty,
+        start_age: 0,
+    }; LOTS];
 
     fn sample() -> Snapshot {
         snapshot(
@@ -1504,12 +1923,33 @@ mod tests {
         state.day_part = DayPart::Day;
         let mut scene = Scene::new();
         let manual = ManualActions::default();
-        scene.render_view(&state, 1_000_000, &manual, (160, 100), &UNLOCKS);
+        scene.render_view(
+            &state,
+            1_000_000,
+            &manual,
+            (160, 100),
+            &UNLOCKS,
+            &NO_PROJECTS,
+        );
         assert_eq!(scene.cat_last, Some((110, 78)));
         state.day_part = DayPart::Night;
-        scene.render_view(&state, 1_000_100, &manual, (160, 100), &UNLOCKS);
+        scene.render_view(
+            &state,
+            1_000_100,
+            &manual,
+            (160, 100),
+            &UNLOCKS,
+            &NO_PROJECTS,
+        );
         assert!(scene.in_transition());
-        scene.render_view(&state, 1_001_700, &manual, (160, 100), &UNLOCKS);
+        scene.render_view(
+            &state,
+            1_001_700,
+            &manual,
+            (160, 100),
+            &UNLOCKS,
+            &NO_PROJECTS,
+        );
         assert_eq!(scene.cat_last, None);
         assert!(!scene.in_transition());
     }
@@ -1553,6 +1993,7 @@ mod tests {
                 &ManualActions::default(),
                 (WIDTH, HEIGHT),
                 &UNLOCKS,
+                &NO_PROJECTS,
             )
             .0
             .to_vec();
@@ -1577,7 +2018,14 @@ mod tests {
             assert_ne!(
                 &baseline,
                 scene
-                    .render_view(&state, ms, &actions, (WIDTH, HEIGHT), &UNLOCKS)
+                    .render_view(
+                        &state,
+                        ms,
+                        &actions,
+                        (WIDTH, HEIGHT),
+                        &UNLOCKS,
+                        &NO_PROJECTS
+                    )
                     .0
             );
         }
@@ -1600,6 +2048,7 @@ mod tests {
                     &ManualActions::default(),
                     (WIDTH, HEIGHT),
                     &UNLOCKS,
+                    &NO_PROJECTS,
                 );
                 assert!(
                     image
@@ -1613,17 +2062,83 @@ mod tests {
     }
 
     #[test]
+    fn each_new_character_and_blueprint_has_distinct_visible_art() {
+        let mut state = sample();
+        state.phase_seconds = 90 * 86_400;
+        state.caretaker = CareAction::Away;
+        let mut frames: Vec<Vec<u8>> = Vec::new();
+        for role in (1..=9).chain(18..=29) {
+            let mut scene = Scene::new();
+            let actions = ManualActions {
+                invited_role: Some(Role(role)),
+                visitor_invited_at: Some(1_000),
+                ..Default::default()
+            };
+            let image = scene
+                .render_view(
+                    &state,
+                    1_000_000,
+                    &actions,
+                    (160, 100),
+                    &UNLOCKS,
+                    &NO_PROJECTS,
+                )
+                .0;
+            assert!(
+                !frames.iter().any(|previous| previous == image),
+                "role {role}"
+            );
+            frames.push(image.to_vec());
+        }
+        frames.clear();
+        for kind in projects::BLUEPRINTS {
+            let mut scene = Scene::new();
+            let mut plan = NO_PROJECTS;
+            plan[0].kind = kind;
+            let image = scene
+                .render_view(
+                    &state,
+                    1_000_000,
+                    &ManualActions::default(),
+                    (160, 100),
+                    &UNLOCKS,
+                    &plan,
+                )
+                .0;
+            assert!(
+                !frames.iter().any(|previous| previous == image),
+                "blueprint {}",
+                kind.label()
+            );
+            frames.push(image.to_vec());
+        }
+    }
+
+    #[test]
     fn large_view_adds_land_without_stretching_original_pixels() {
         let mut state = sample();
         state.weather = Weather::Clear;
         let mut scene = Scene::new();
         let manual = ManualActions::default();
         let baseline = scene
-            .render_view(&state, 1_000_000, &manual, (160, 100), &UNLOCKS)
+            .render_view(
+                &state,
+                1_000_000,
+                &manual,
+                (160, 100),
+                &UNLOCKS,
+                &NO_PROJECTS,
+            )
             .0
             .to_vec();
-        let (image, first_damage) =
-            scene.render_view(&state, 1_000_000, &manual, (240, 145), &UNLOCKS);
+        let (image, first_damage) = scene.render_view(
+            &state,
+            1_000_000,
+            &manual,
+            (240, 145),
+            &UNLOCKS,
+            &NO_PROJECTS,
+        );
         assert_eq!(image.len(), 240 * 145 * 4);
         assert_eq!(first_damage, Some(Damage::full((240, 145))));
         let pixel = |x, y, stride| ((y * stride + x) * 4) as usize;
@@ -1635,9 +2150,17 @@ mod tests {
             }
         }
         assert_eq!(image[pixel(101, 99, 240) + 3], 255);
-        let (_, damage) = scene.render_view(&state, 1_001_000, &manual, (240, 145), &UNLOCKS);
+        let (_, damage) = scene.render_view(
+            &state,
+            1_001_000,
+            &manual,
+            (240, 145),
+            &UNLOCKS,
+            &NO_PROJECTS,
+        );
         assert_ne!(damage, Some(Damage::full((240, 145))));
-        let (small, _) = scene.render_view(&state, 1_001_000, &manual, (80, 60), &UNLOCKS);
+        let (small, _) =
+            scene.render_view(&state, 1_001_000, &manual, (80, 60), &UNLOCKS, &NO_PROJECTS);
         assert_eq!(small.len(), 80 * 60 * 4);
     }
 }
