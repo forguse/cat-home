@@ -1023,6 +1023,9 @@ impl LivingWorld {
     pub fn new_village_wall_ms(wall_ms: u64) -> Self {
         let mut world = Self::new_wall_ms(wall_ms);
         world.install_village_layout();
+        if WILLOW_VILLAGE.map_revision >= village::DENSE_MAP_REVISION {
+            world.village.as_mut().unwrap().grant(village::DENSE_MAP_PHASE);
+        }
         world.village.as_mut().unwrap().memories = memories::State::new(Some(wall_ms));
         let start = 4 * DAY_MS + 6 * HOUR;
         world.now_ms = start;
@@ -1095,6 +1098,121 @@ impl LivingWorld {
         self.village
             .as_ref()
             .map_or(PhaseMask::DAY_ONE, village::State::phases)
+    }
+
+    /// Validate the previous additive geometry with its new collision phase
+    /// still disabled. This does not advance either clock or change custody.
+    pub fn accepts_village_map_revision(&self, revision: u16) -> bool {
+        self.village.as_ref().is_some_and(|state| state.revision == revision)
+            && (revision == WILLOW_VILLAGE.map_revision && self.validate()
+                || WILLOW_VILLAGE.map_revision == village::DENSE_MAP_REVISION
+                    && revision == village::BEFORE_DENSITY_REVISION
+                    && !self.map_density_active() && self.validate_at_map_revision(revision))
+    }
+
+    /// Keep the old physical state until it can enter the denser map at the
+    /// same coordinates. The absent phase bit is the persistent pending state.
+    pub fn migrate_village_map_revision(&mut self, revision: u16) -> bool {
+        if !self.accepts_village_map_revision(revision) {
+            return false;
+        }
+        self.village.as_mut().unwrap().revision = WILLOW_VILLAGE.map_revision;
+        true
+    }
+
+    pub fn map_density_active(&self) -> bool {
+        self.is_village() && WILLOW_VILLAGE.phase(village::DENSE_MAP_PHASE)
+            .is_some_and(|phase| self.phase_mask().contains(phase))
+    }
+
+    pub fn map_density_pending(&self) -> bool {
+        self.village.as_ref().is_some_and(|state| state.revision == village::DENSE_MAP_REVISION)
+            && !self.map_density_active()
+    }
+
+    /// Return the proposed mask only while every committed household step and
+    /// external visible occupant is safe to keep at its existing position.
+    pub fn ready_map_density(&self, external: &[TilePos], holdouts: &[TilePos]) -> Option<PhaseMask> {
+        let state = self.village.as_ref()?;
+        let density = WILLOW_VILLAGE.phase(village::DENSE_MAP_PHASE)?;
+        let phases = state.phases();
+        if state.revision != village::DENSE_MAP_REVISION || holdouts.len() > village::MAX_DENSITY_CUSTODY_TILES
+            || phases.contains(density) && holdouts == state.density_holdouts
+        {
+            return None;
+        }
+        let proposed = phases.with(density);
+        let open = |at| Self::map_density_tile(at, proposed, holdouts).is_some_and(|info| !info.blocked);
+        (external.iter().copied().all(open) && self.actors.iter().enumerate().all(|(i, actor)| {
+            open(actor.cell.tile())
+                && actor.route.get(actor.route_next).is_none_or(|&next| actor.waiting_edge || open(next.tile()))
+                && actor.route_goal.is_none_or(|goal| open(goal.tile()))
+                && actor.route.last().is_none_or(|goal| actor.route_goal.is_some() || open(goal.tile()))
+                && actor.passing.is_none_or(|pass| open(pass.approach.tile()) && open(pass.entrance.tile()))
+                && actor.task.is_none_or(|task| {
+                    let at = self.site(i, task).tile();
+                    open(at) || WILLOW_VILLAGE.tile(at, phases).is_some_and(|old| old.blocked)
+                })
+        })).then_some(proposed)
+    }
+
+    /// Publish the prepared geometry and invalidate only affected future route
+    /// tiles. A walking edge already in progress retains its duration and foot.
+    pub fn commit_map_density(&mut self, proposed: PhaseMask, holdouts: Vec<TilePos>) {
+        let now = self.now_ms;
+        let open = |at: Cell| Self::map_density_tile(at.tile(), proposed, &holdouts).is_some_and(|info| !info.blocked);
+        for actor in &mut self.actors {
+            if !actor.route.iter().skip(actor.route_next).copied().any(|at| !open(at)) {
+                continue;
+            }
+            let goal = actor.route_goal.or_else(|| actor.route.last().copied());
+            if !actor.waiting_edge && actor.route.get(actor.route_next).copied().is_some_and(open) {
+                let next = actor.route[actor.route_next];
+                actor.route.clear();
+                actor.route.push(next);
+                actor.route_next = 0;
+            } else {
+                actor.route.clear();
+                actor.route_next = 0;
+                actor.waiting_edge = false;
+                actor.waited_edges = 0;
+                actor.avoid_occupied = false;
+                actor.since = now;
+                actor.until = now;
+                actor.position = actor.cell.point();
+            }
+            actor.route_goal = goal;
+        }
+        let state = self.village.as_mut().expect("village map density");
+        state.region_flags = proposed.bits();
+        state.density_holdouts = holdouts;
+    }
+
+    pub fn map_density_holdouts(&self) -> &[TilePos] {
+        self.village.as_ref().map_or(&[], |state| state.density_holdouts.as_slice())
+    }
+
+    pub fn map_density_scenic_visible(&self, tile: TilePos) -> bool {
+        self.map_density_holdouts().binary_search(&tile).is_err()
+    }
+
+    pub fn map_density_adds_obstacle(&self, tile: TilePos) -> bool {
+        let Some(density) = WILLOW_VILLAGE.phase(village::DENSE_MAP_PHASE) else { return false; };
+        let phases = self.phase_mask();
+        WILLOW_VILLAGE.tile(tile, phases.with(density))
+            .zip(WILLOW_VILLAGE.tile(tile, phases.without(density)))
+            .is_some_and(|(new, old)| new.blocked && !old.blocked)
+    }
+
+    pub(crate) fn map_density_tile(
+        tile: TilePos, phases: PhaseMask, holdouts: &[TilePos],
+    ) -> Option<crate::map_data::TileInfo> {
+        let effective = if holdouts.binary_search(&tile).is_ok() {
+            WILLOW_VILLAGE.phase(village::DENSE_MAP_PHASE).map_or(phases, |phase| phases.without(phase))
+        } else {
+            phases
+        };
+        WILLOW_VILLAGE.tile(tile, effective)
     }
 
     pub fn navigation_view(&self) -> Option<MapView<'static>> {
@@ -2161,8 +2279,12 @@ impl LivingWorld {
 
     pub fn terrain_revision(&self) -> u32 {
         if self.is_village() {
+            let state = self.village.as_ref().unwrap();
+            let terrain = state.density_holdouts.iter().fold(u32::from(self.phase_mask().bits()), |digest, tile| {
+                digest.wrapping_mul(16_777_619) ^ tile.index().expect("valid density holdout").0
+            });
             return self.housing_sites().fold(
-                u32::from(self.phase_mask().bits()),
+                terrain,
                 |value, site| {
                     value.rotate_left(7)
                         ^ (site.lot_origin.x as u32).rotate_left(16)
@@ -2433,11 +2555,12 @@ impl LivingWorld {
 
     fn village_tile(&self, x: i32, y: i32) -> Option<crate::map_data::TileInfo> {
         let pos = TilePos::new(x.try_into().ok()?, y.try_into().ok()?);
-        WILLOW_VILLAGE.tile(pos, self.phase_mask())
+        Self::map_density_tile(pos, self.phase_mask(), self.map_density_holdouts())
     }
 
     fn village_map_view(&self) -> MapView<'static> {
         let mut view = MapView::new(&WILLOW_VILLAGE, self.phase_mask());
+        view.set_density_holdouts(self.map_density_holdouts());
         for &tile in self.market_lamp_tiles().get(3..).unwrap_or_default() {
             view.set_blocked(tile,true);
         }
@@ -2512,13 +2635,11 @@ impl LivingWorld {
             std::iter::once(actor.cell)
                 .chain(actor.route.iter().skip(actor.route_next).copied())
                 .all(|at| {
-                    WILLOW_VILLAGE
-                        .tile(at.tile(), phases)
+                    Self::map_density_tile(at.tile(), phases, self.map_density_holdouts())
                         .is_some_and(|tile| !tile.blocked)
                 })
         }) && self.external_occupied.iter().all(|at| {
-            WILLOW_VILLAGE
-                .tile(at, phases)
+            Self::map_density_tile(at, phases, self.map_density_holdouts())
                 .is_some_and(|tile| !tile.blocked)
         })
     }
@@ -6587,6 +6708,10 @@ impl LivingWorld {
 
     /// Validate before running a deserialized state. Plot and facility IDs are their array slots.
     pub fn validate(&self) -> bool {
+        self.validate_at_map_revision(WILLOW_VILLAGE.map_revision)
+    }
+
+    fn validate_at_map_revision(&self, revision: u16) -> bool {
         let village = self.is_village();
         let expected_plots = if village {
             WILLOW_VILLAGE.crops.len()
@@ -6595,7 +6720,15 @@ impl LivingWorld {
         };
         if self.plots.len() != expected_plots
             || self.village.as_ref().is_some_and(|state| {
-                state.revision != WILLOW_VILLAGE.map_revision
+                state.revision != revision
+                    || (!state.density_holdouts.is_empty() && !self.map_density_active())
+                    || state.density_holdouts.len() > village::MAX_DENSITY_CUSTODY_TILES
+                    || !state.density_holdouts.windows(2).all(|pair| pair[0] < pair[1])
+                    || !state.density_holdouts.iter().copied().all(|tile| {
+                        WILLOW_VILLAGE.phase(village::DENSE_MAP_PHASE).is_some_and(|density| {
+                            WILLOW_VILLAGE.scenic.iter().any(|scenery| scenery.tile == tile && scenery.phase == density && scenery.solid)
+                        })
+                    })
                     || (state.region_flags & !PhaseMask::ALL.bits()) != 0
                     || (state.region_flags & PhaseMask::DAY_ONE.bits()) == 0
                     || state.freight_shifts > 3
@@ -7943,7 +8076,11 @@ mod tests {
                 let (tx, ty) = (object.tile.x, object.tile.y);
                 let inside = (u16::from(x)..u16::from(x + width)).contains(&tx)
                     && (u16::from(y)..u16::from(y + height)).contains(&ty);
-                assert!(!inside, "legacy relocation site overlaps {}", object.id);
+                assert!(
+                    !inside || object.temporary_ground && !object.solid,
+                    "legacy relocation site overlaps {}",
+                    object.id
+                );
             }
             let door = TilePos::new(u16::from(x + width / 2), u16::from(y + height));
             assert!(view.can_walk(door), "legacy relocation door: {door:?}");
@@ -8159,6 +8296,79 @@ mod tests {
             world.story.completed() > 0 || world.story.active().is_some(),
             "no actual village project has gotten labor and material"
         );
+    }
+
+    #[test]
+    fn village_density_preserves_paid_in_flight_edge_and_replans_only_the_future() {
+        let Some(phase) = WILLOW_VILLAGE.phase(village::DENSE_MAP_PHASE) else {
+            assert_eq!(WILLOW_VILLAGE.map_revision, village::BEFORE_DENSITY_REVISION);
+            return;
+        };
+        let old = PhaseMask::DAY_ONE;
+        let new = old.with(phase);
+        let open = |at, mask| WILLOW_VILLAGE.tile(at, mask).is_some_and(|info| !info.blocked);
+        let pair = (-1..=1).flat_map(|dx| (-1..=1).map(move |dy| (dx, dy)))
+            .filter(|(dx, dy)| i32::abs(*dx) + i32::abs(*dy) == 1).collect::<Vec<_>>();
+        // Walkable land has both a legal saved route through new scenery and
+        // an alternate route on the same side of the river.
+        let (start, first, blocked, goal) = WILLOW_VILLAGE.scenic.iter().filter(|thing| thing.phase == phase)
+            .find_map(|thing| {
+                let blocked = thing.tile;
+                if !open(blocked, old) || open(blocked, new) || blocked.x >= 40 || blocked.y >= 49 { return None; }
+                let [first, goal] = pair.iter().filter_map(|&(dx, dy)| blocked.offset(dx, dy))
+                    .filter(|&at| open(at, new)).take(2).collect::<Vec<_>>().try_into().ok()?;
+                let start = pair.iter().filter_map(|&(dx, dy)| first.offset(dx, dy))
+                    .find(|&at| at != goal && at.x >= 5 && at.y >= 9 && open(at, new))?;
+                Some((start, first, blocked, goal))
+            }).expect("revision 3 contains a reachable home-area scenery tile with open approaches");
+
+        let mut world = LivingWorld::new_village_wall_ms(0);
+        let state = world.village.as_mut().unwrap();
+        state.revision = village::BEFORE_DENSITY_REVISION;
+        state.region_flags = old.bits();
+        let i = ActorKind::Xiaohe.index();
+        world.actors[i].cell = Cell::from(start);
+        world.actors[i].position = world.actors[i].cell.point();
+        world.actors[i].task = Some(Task::External(Cell::from(goal)));
+        world.carry(i, Item::Wood, 2);
+        for j in 1..world.actors.len() {
+            world.actors[j].until = world.now_ms + MINUTE;
+        }
+        world.walk(i, Stage::WalkToSite, vec![Cell::from(first), Cell::from(blocked), Cell::from(goal)]);
+        world.actors[i].route_goal = Some(Cell::from(goal));
+        world.now_ms += 10_000;
+        world.target_ms = world.now_ms;
+        update_position(&mut world.actors[i], world.now_ms);
+        let prior = world.actors[i].clone();
+        assert!(world.accepts_village_map_revision(village::BEFORE_DENSITY_REVISION));
+        assert!(world.migrate_village_map_revision(village::BEFORE_DENSITY_REVISION));
+        assert!(world.map_density_pending());
+        assert!(world.ready_map_density(&[blocked], &[]).is_none());
+
+        let mut trapped = world.clone();
+        trapped.actors[i].cell = Cell::from(blocked);
+        assert!(trapped.ready_map_density(&[], &[]).is_none());
+        let mut crossing = world.clone();
+        crossing.actors[i].cell = Cell::from(first);
+        crossing.actors[i].route_next = 1;
+        assert!(crossing.ready_map_density(&[], &[]).is_none());
+
+        let ready = world.ready_map_density(&[], &[]).unwrap();
+        let stock = world.stock.clone();
+        world.commit_map_density(ready, Vec::new());
+        assert!(world.map_density_active());
+        assert!(!world.can_walk(i32::from(blocked.x), i32::from(blocked.y)));
+        let actor = &world.actors[i];
+        assert_eq!((actor.task, actor.tool, actor.carried, actor.amount), (prior.task, prior.tool, prior.carried, prior.amount));
+        assert_eq!((actor.cell, actor.position, actor.since, actor.until), (prior.cell, prior.position, prior.since, prior.until));
+        assert_eq!(actor.route, vec![Cell::from(first)]);
+        assert_eq!(actor.route_goal, Some(Cell::from(goal)));
+        assert_eq!(world.stock, stock);
+        assert!(world.validate());
+        let saved = serde_json::to_vec(&world).unwrap();
+        let reopened: LivingWorld = serde_json::from_slice(&saved).unwrap();
+        assert_eq!(world, reopened);
+        assert!(reopened.validate());
     }
 
     #[test]

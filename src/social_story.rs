@@ -239,6 +239,11 @@ impl State {
         })
     }
 
+    pub(super) fn map_density_positions(&self) -> impl Iterator<Item = TilePos> + '_ {
+        self.active.iter().flat_map(|visit| [visit.host_site, visit.guest_site])
+            .chain(self.public_corner().map(|(tile, _)| tile))
+    }
+
     pub(super) fn carried_item(&self, id: usize) -> Option<Item> {
         let appointment = self.active.filter(|a| usize::from(a.resident) == id)?;
         appointment

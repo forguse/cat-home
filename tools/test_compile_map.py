@@ -9,7 +9,7 @@ import unittest
 from unittest.mock import Mock, patch
 
 import compile_map
-from compile_map import Layout, MapError, emit
+from compile_map import DENSITY_PHASE, Layout, MapError, R2_GEOMETRY_HASH, emit
 
 
 def item(data, collection, identifier):
@@ -110,6 +110,78 @@ class CompileMapTests(unittest.TestCase):
                 row['solid'] = not row['solid']
                 with self.assertRaisesRegex(MapError, f'wrong collision flag for {kind}'):
                     Layout(self.data)
+
+    def test_density_is_additive_and_keeps_runtime_working_anchors_free(self):
+        layout = Layout(self.data)
+        if layout.revision < 3:
+            self.skipTest('revision 2 has no density phase')
+        self.assertEqual(layout.collision_hash_without_density(), R2_GEOMETRY_HASH)
+        self.assertEqual(layout.phase_count, 62)
+        density = [row for row in layout.scenic if row['phase'] == DENSITY_PHASE]
+        self.assertGreater(len(density), 1000)
+        fixed = [row for row in density if not row.get('temporary_ground')]
+        self.assertFalse({tuple(row['tile']) for row in fixed} & layout.density_exclusions())
+        self.assertGreater(sum(row['kind'] in {'tree', 'rock', 'fence', 'shrub'} for row in fixed),
+                           len(fixed) * 3 // 4)
+
+    def test_rejects_a_density_tree_on_the_pantries_live_approach(self):
+        if self.data['map_revision'] < 3:
+            self.skipTest('revision 2 has no density phase')
+        # The pantry's second worker uses this walkable native apron tile.
+        row = next(row for row in self.data['scenic_objects'] if row['phase'] == DENSITY_PHASE)
+        row['tile'] = [36, 24]
+        with self.assertRaisesRegex(MapError, 'scenery overlaps protected native activity'):
+            Layout(self.data)
+
+    def test_rejects_a_foreground_tree_that_covers_legacy_house_construction(self):
+        if self.data['map_revision'] < 3:
+            self.skipTest('revision 2 has no density phase')
+        row = next(row for row in self.data['scenic_objects'] if row['phase'] == DENSITY_PHASE)
+        row.update(tile=[22, 9], kind='tree')
+        with self.assertRaisesRegex(MapError, 'foreground obscures a building or construction envelope'):
+            Layout(self.data)
+
+    def test_temporary_pasture_preserves_lots_and_cannot_become_a_blocker(self):
+        layout = Layout(self.data)
+        if layout.revision < 3:
+            self.skipTest('revision 2 has no density phase')
+        plants = {tuple(row['tile']) for row in layout.scenic if row.get('temporary_ground')}
+        self.assertTrue(plants)
+        for plot in layout.rows('lots'):
+            if plot['capability'] == 'bounded_building':
+                self.assertGreater(len(compile_map.cells(tuple(plot['rect'])) & plants), 20)
+        row = next(row for row in self.data['scenic_objects'] if row.get('temporary_ground'))
+        row.update(kind='tree', solid=True)
+        with self.assertRaisesRegex(MapError, 'temporary grass or reeds'):
+            Layout(self.data)
+
+    def test_temporary_meadow_is_bounded_to_inactive_sites_and_future_lane(self):
+        layout = Layout(self.data)
+        if layout.revision < 3:
+            self.skipTest('revision 2 has no density phase')
+        plants = {tuple(row['tile']) for row in layout.scenic if row.get('temporary_ground')}
+        footprints = layout.temporary_ground_footprints()
+        for name in ('stall_produce', 'stall_seed', 'stall_meal', 'stall_cloth',
+                     'stall_fish', 'stall_fruit_flower', 'commons_hall',
+                     'new_shared_home', 'new_single_home', 'compatible_single_home',
+                     'east_duplex_1', 'east_duplex_2', 'east_duplex_3',
+                     'east_duplex_4', 'east_duplex_5', 'future_lane'):
+            with self.subTest(name=name):
+                self.assertGreaterEqual(len(plants & footprints[name]), 6)
+        self.assertFalse(plants & set(layout.pois.values()))
+        self.assertFalse(plants & set(layout.outside_occupancy))
+        self.assertFalse(plants & {tile for _, _, path in layout.outdoor_slots for tile in path})
+        for road in layout.roads.values():
+            if road.id != 'future_lane':
+                self.assertFalse(plants & road.tiles, road.id)
+
+        for forbidden in (layout.pois['home_xiaohe.door'], (91, 48), (82, 72)):
+            with self.subTest(tile=forbidden):
+                rejected = deepcopy(self.source)
+                row = next(row for row in rejected['scenic_objects'] if row.get('temporary_ground'))
+                row['tile'] = list(forbidden)
+                with self.assertRaisesRegex(MapError, 'temporary grass or reeds'):
+                    Layout(rejected)
 
     def test_equivalent_row_order_produces_identical_outputs_at_a_fixed_source_digest(self):
         digest = '0' * 64

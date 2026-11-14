@@ -2,7 +2,8 @@
 use super::*;
 use crate::companionship::{REWARDS, RewardStyle};
 use crate::map_data::{
-    ArtRect, BuildingDef, ScenicKind, ScenicObject, SlotPos, TilePos, WILLOW_VILLAGE,
+    ArtRect, BuildingDef, PhaseMask, ScenicKind, ScenicObject, SlotPos, TilePos, TileRect,
+    WILLOW_VILLAGE,
 };
 use crate::visitors::{VisitorHeld, VisitorPose, VisitorTool};
 
@@ -54,10 +55,113 @@ pub(super) fn held_asset(held: VisitorHeld) -> Option<(&'static str, Scale)> {
     Some(result)
 }
 
+#[derive(Clone, Copy)]
+struct ScenicArt {
+    bank: Bank,
+    key: &'static str,
+    scale: Scale,
+    flip: bool,
+    root_offset: i32,
+    shadow_radii: (i32, i32),
+}
+
+impl ScenicArt {
+    fn position(self, (x, y): (i32, i32)) -> (i32, i32) {
+        (x * 2, (y + self.root_offset) * 2)
+    }
+
+    fn shadow_center(self, (x, y): (i32, i32)) -> (i32, i32) {
+        (x + 3, y + self.root_offset + 1)
+    }
+
+    fn shadow_bounds(self, foot: (i32, i32)) -> ArtRect {
+        let (x, y) = self.shadow_center(foot);
+        let (rx, ry) = self.shadow_radii;
+        ArtRect {
+            x: (x - rx) * 2,
+            y: (y - ry) * 2,
+            w: rx * 4,
+            h: ry * 4,
+        }
+    }
+}
+
+fn scenic_art(item: &ScenicObject) -> ScenicArt {
+    let (tx, ty) = (i32::from(item.tile.x), i32::from(item.tile.y));
+    let seed = terrain_hash(tx, ty);
+    let forest = item.kind == ScenicKind::Tree && item.id.contains(".forest");
+    let (bank, key, scale, shadow_radii) = match item.kind {
+        ScenicKind::Tree => {
+            let (bank, key) = if forest {
+                (Bank::Village, forest_crown(tx, ty, seed))
+            } else {
+                let trees = [
+                    "tree_oak",
+                    "tree_birch",
+                    "tree_maple",
+                    "tree_oak",
+                    "tree_cherry",
+                ];
+                (Bank::Core, trees[seed as usize % trees.len()])
+            };
+            (
+                bank,
+                key,
+                Scale::new(9 + ((seed >> 4) % 4) as i32, 12),
+                (12, 4),
+            )
+        }
+        ScenicKind::Shrub => (Bank::Village, "village_hedge", Scale::IDENTITY, (8, 3)),
+        ScenicKind::Rock => (Bank::Core, "rocks_moss", Scale::new(3, 4), (6, 2)),
+        ScenicKind::Fence => (
+            Bank::Village,
+            "village_garden_wall",
+            Scale::IDENTITY,
+            (8, 2),
+        ),
+        ScenicKind::Bench => (Bank::Village, "village_bench", Scale::IDENTITY, (8, 3)),
+        ScenicKind::Crate => (Bank::Village, "village_crate", Scale::IDENTITY, (7, 3)),
+        ScenicKind::Flowers => (Bank::Core, "flowers_wild", Scale::new(5, 8), (4, 2)),
+        ScenicKind::Grass if item.temporary_ground => (
+            Bank::Core,
+            "bush_herb",
+            Scale::new(3 + ((seed >> 5) & 1) as i32, 4),
+            (4, 2),
+        ),
+        ScenicKind::Grass => (Bank::Core, "bush_herb", Scale::new(2, 5), (3, 2)),
+        ScenicKind::Sign => (Bank::Village, "village_notice", Scale::new(4, 5), (6, 2)),
+        ScenicKind::Lamp => (Bank::Village, "village_lantern", Scale::IDENTITY, (5, 3)),
+        ScenicKind::Reeds if item.temporary_ground => (
+            Bank::Village,
+            "village_reeds",
+            Scale::new(4 + ((seed >> 5) & 1) as i32, 5),
+            (6, 3),
+        ),
+        ScenicKind::Reeds => (Bank::Village, "village_reeds", Scale::new(4, 5), (6, 3)),
+        ScenicKind::Log => (Bank::Core, "logs", Scale::new(4, 5), (7, 3)),
+        ScenicKind::WoodPile => (Bank::Village, "village_materials", Scale::new(4, 5), (8, 3)),
+    };
+    // Natural forest roots can vary within their blocking tile.
+    let root_offset = if forest {
+        ((seed >> 7) % 5) as i32 - 2
+    } else {
+        0
+    };
+    ScenicArt {
+        bank,
+        key,
+        scale,
+        flip: seed & 2 != 0,
+        root_offset,
+        shadow_radii,
+    }
+}
+
 pub(super) struct VillageIndex {
     chunks: [Vec<usize>; MAP_CHUNKS],
     bounds: Vec<Option<ArtRect>>,
     scenic: [Vec<usize>; MAP_CHUNKS],
+    scenic_bounds: Vec<ArtRect>,
 }
 
 impl VillageIndex {
@@ -94,20 +198,36 @@ impl VillageIndex {
             for_each_chunk(bounds, |chunk| chunks[chunk].push(id));
         }
         let mut scenic: [Vec<usize>; MAP_CHUNKS] = std::array::from_fn(|_| Vec::new());
-        for (id, obj) in WILLOW_VILLAGE.scenic.iter().enumerate() {
-            let p = point(obj.tile);
-            let bounds = ArtRect {
-                x: (p.x * 2.0) as i32 - 39,
-                y: (p.y * 2.0) as i32 - 86,
-                w: 84,
-                h: 102,
-            };
+        let scenic_bounds: Vec<_> = WILLOW_VILLAGE
+            .scenic
+            .iter()
+            .map(|item| {
+                let art = scenic_art(item);
+                let foot = local(point(item.tile), (0, 0));
+                let shadow = art.shadow_bounds(foot);
+                art.bank
+                    .atlas(core, village, None)
+                    .and_then(|atlas| atlas.metadata(art.key))
+                    .map_or(shadow, |frame| {
+                        let sprite = Sprite::new(
+                            frame.rect,
+                            frame.anchor,
+                            art.position(foot),
+                            art.flip,
+                            art.scale,
+                        );
+                        union(shadow, sprite_bounds(sprite))
+                    })
+            })
+            .collect();
+        for (id, &bounds) in scenic_bounds.iter().enumerate() {
             for_each_chunk(bounds, |chunk| scenic[chunk].push(id));
         }
         Self {
             chunks,
             bounds: envelopes,
             scenic,
+            scenic_bounds,
         }
     }
 
@@ -123,9 +243,14 @@ impl VillageIndex {
         result
     }
 
-    fn scenic_in_view(&self, view: ArtRect) -> Vec<usize> {
+    fn scenic_in_view(&self, view: ArtRect, phases: crate::map_data::PhaseMask) -> Vec<usize> {
         let mut out = Vec::with_capacity(64);
-        for_each_chunk(view, |chunk| out.extend_from_slice(&self.scenic[chunk]));
+        for_each_chunk(view, |chunk| {
+            out.extend(self.scenic[chunk].iter().copied().filter(|&id| {
+                intersects(self.scenic_bounds[id], view)
+                    && phases.contains(WILLOW_VILLAGE.scenic[id].phase)
+            }));
+        });
         out.sort_unstable();
         out.dedup();
         out
@@ -179,21 +304,46 @@ fn forest_crown(x: i32, y: i32, variation: u32) -> &'static str {
     }
 }
 
-fn forest_actor_regions(world: &LivingWorld, origin: (i32, i32)) -> [Option<ArtRect>; 2] {
+#[derive(Clone, Copy)]
+struct CanopySubject {
+    area: ArtRect,
+    depth: i32,
+}
+
+fn canopy_subjects(
+    world: &LivingWorld,
+    origin: (i32, i32),
+    view: ArtRect,
+    commands: &[FrameCommand],
+    store: Option<&PluginStore>,
+) -> [Option<CanopySubject>; 2] {
     [0, 1].map(|i| {
         let actor = &world.actors()[i];
-        if actor.inside()
-            || (actor.walking_segment().is_none()
-                && !matches!(actor.activity, Activity::FellTree | Activity::CarryWood))
-        {
+        if actor.inside() || actor.pose == Pose::Sleep {
             return None;
         }
-        let (x, y) = local(actor.position, origin);
-        Some(ArtRect {
-            x: (x - 7) * 2,
-            y: (y - 23) * 2,
-            w: 28,
-            h: 44,
+        let overlay = store.and_then(|_| {
+            commands
+                .iter()
+                .find(|c| c.actor_override == Some(actor.kind))
+        });
+        let p = overlay.map_or(actor.position, |c| c.point);
+        let (x, y) = local(p, origin);
+        let area = ArtRect {
+            x: x * 2 - 15,
+            y: y * 2 - 48,
+            w: 31,
+            h: 52,
+        };
+        let view = ArtRect {
+            x: 0,
+            y: 0,
+            w: view.w,
+            h: view.h,
+        };
+        intersects(area, view).then_some(CanopySubject {
+            area,
+            depth: overlay.map_or(p.y as i32, |c| c.depth),
         })
     })
 }
@@ -222,15 +372,95 @@ fn visible_character_motion(view: &LivingView, p: Point, origin: (i32, i32)) -> 
     clip(view, local(p, origin), (12, 30), 7)
 }
 
-fn intersects(a: ArtRect, b: ArtRect) -> bool {
-    a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h
+fn temporary_ground_visible(
+    world: &LivingWorld,
+    tile: TilePos,
+    phases: PhaseMask,
+    construction_sites: u64,
+    housing_footprints: &[TileRect],
+) -> bool {
+    if world.ground(i32::from(tile.x), i32::from(tile.y)) != Ground::Grass {
+        return false;
+    }
+    if WILLOW_VILLAGE
+        .buildings
+        .iter()
+        .enumerate()
+        .any(|(index, b)| {
+            b.footprint.contains(tile)
+                && (phases.contains(b.phase) || construction_sites & (1 << index) != 0)
+        })
+        || housing_footprints
+            .iter()
+            .any(|footprint| footprint.contains(tile))
+    {
+        return false;
+    }
+    WILLOW_VILLAGE
+        .crops
+        .iter()
+        .position(|crop| crop.rect.contains(tile))
+        .is_none_or(|index| {
+            !phases.contains(WILLOW_VILLAGE.crops[index].phase)
+                || world.plot_stage(index) == Some(PlotStage::Grass)
+        })
 }
 
-fn crown_has_ink(crown: ArtRect, actor: ArtRect, sprite: Sprite, page: &[u8]) -> bool {
+fn housing_footprint(site: HousingView) -> TileRect {
+    TileRect::new(
+        site.lot_origin.x as u16 / TILE_PX as u16,
+        site.lot_origin.y as u16 / TILE_PX as u16,
+        u16::from(site.footprint[0]),
+        u16::from(site.footprint[1]),
+    )
+}
+
+fn development_building(project: &Development) -> Option<&'static str> {
+    match project.kind {
+        DevelopmentKind::Market | DevelopmentKind::Stall => Some("stall_produce"),
+        DevelopmentKind::Guesthouse => Some("craft_inn"),
+        DevelopmentKind::Depot => Some("market_depot"),
+        _ => None,
+    }
+}
+
+fn intersects(a: ArtRect, b: ArtRect) -> bool {
+    intersection(a, b).is_some()
+}
+
+fn intersection(a: ArtRect, b: ArtRect) -> Option<ArtRect> {
+    let (x, y) = (a.x.max(b.x), a.y.max(b.y));
+    let (w, h) = (
+        (a.x + a.w).min(b.x + b.w) - x,
+        (a.y + a.h).min(b.y + b.h) - y,
+    );
+    (w > 0 && h > 0).then_some(ArtRect { x, y, w, h })
+}
+
+fn union(a: ArtRect, b: ArtRect) -> ArtRect {
+    let (x, y) = (a.x.min(b.x), a.y.min(b.y));
+    ArtRect {
+        x,
+        y,
+        w: (a.x + a.w).max(b.x + b.w) - x,
+        h: (a.y + a.h).max(b.y + b.h) - y,
+    }
+}
+
+fn sprite_bounds(sprite: Sprite) -> ArtRect {
+    ArtRect {
+        x: sprite.left,
+        y: sprite.top,
+        w: sprite.width,
+        h: sprite.height,
+    }
+}
+
+fn crown_has_ink(overlap: ArtRect, sprite: Sprite, page: &[u8]) -> bool {
     let [left, top, width, height] = sprite.rect.map(i32::from);
-    for y in crown.y.max(actor.y)..(crown.y + crown.h).min(actor.y + actor.h) {
+    for y in overlap.y..overlap.y + overlap.h {
         let sy = top + ((y - sprite.top) * 2 + 1) * height / (sprite.height * 2);
-        for x in crown.x.max(actor.x)..(crown.x + crown.w).min(actor.x + actor.w) {
+        for x in overlap.x..overlap.x + overlap.w {
             let dx = x - sprite.left;
             let local = if sprite.flip {
                 sprite.width - 1 - dx
@@ -244,6 +474,51 @@ fn crown_has_ink(crown: ArtRect, actor: ArtRect, sprite: Sprite, page: &[u8]) ->
         }
     }
     false
+}
+
+fn blit_canopy(
+    out: &mut [u8],
+    stride: i32,
+    page: &[u8],
+    sprite: Sprite,
+    visible: ArtRect,
+    roots: i32,
+    cutaways: [Option<ArtRect>; 2],
+) {
+    let [left, top, width, height] = sprite.rect.map(i32::from);
+    for y in visible.y..visible.y + visible.h {
+        let sy = top + ((y - sprite.top) * 2 + 1) * height / (sprite.height * 2);
+        for x in visible.x..visible.x + visible.w {
+            let sx = x - sprite.left;
+            let sx = if sprite.flip {
+                sprite.width - 1 - sx
+            } else {
+                sx
+            };
+            let sx = left + (sx * 2 + 1) * width / (sprite.width * 2);
+            let src = ((sy * 256 + sx) * 4) as usize;
+            let source = &page[src..src + 4];
+            if source[3] == 0 {
+                continue;
+            }
+
+            let opacity = if y >= roots {
+                255
+            } else {
+                cutaways.iter().flatten().fold(255, |opacity, area| {
+                    let dx = (area.x - x).max(x - (area.x + area.w - 1)).max(0);
+                    let dy = (area.y - y).max(y - (area.y + area.h - 1)).max(0);
+                    opacity.min(36 + (dx.max(dy) * 32).clamp(0, 219))
+                }) as u16
+            };
+            let dst = ((y * stride + x) * 4) as usize;
+            let alpha = 255 - u16::from(source[3]) * opacity / 255;
+            for (old, &incoming) in out[dst..dst + 4].iter_mut().zip(source) {
+                *old = (u16::from(incoming) * opacity / 255 + u16::from(*old) * alpha / 255)
+                    .min(255) as u8;
+            }
+        }
+    }
 }
 
 enum Visible<'a> {
@@ -299,22 +574,28 @@ impl LivingView {
             }
         }
         let phases = world.phase_mask();
-        let forest_actors = forest_actor_regions(world, origin);
         let rect = ArtRect {
             x: cx * 2,
             y: cy * 2,
             w: self.width,
             h: self.height,
         };
+        let canopy_subjects = canopy_subjects(world, origin, rect, commands, store);
         let spatial = self
             .village_index
             .get_or_insert_with(|| VillageIndex::new(self.art.as_ref(), self.village_art.as_ref()));
         let mut active = spatial.in_view(rect);
-        let scenic = spatial.scenic_in_view(rect);
-        let mut drawables = Vec::with_capacity(128);
+        let scenic = spatial.scenic_in_view(rect, phases);
+        let mut drawables = Vec::with_capacity(128 + scenic.len());
+        let mut dynamic_count = 0;
         let mut push = |depth, item| {
-            if drawables.len() < 512 {
+            // The scenery list is already finite and exactly viewport-clipped.
+            // Large windows may show hundreds of trees without exhausting the
+            // separate budget for actors, facilities and moving objects.
+            let fixed_scenery = matches!(item, Visible::Scenic(_));
+            if fixed_scenery || dynamic_count < 512 {
                 drawables.push((depth, item));
+                dynamic_count += usize::from(!fixed_scenery);
             }
         };
         if world.village_market_drained()
@@ -389,7 +670,9 @@ impl LivingView {
                 push(door.y as i32 + 1, Visible::DoorTrim("village_mill", p));
             }
         }
-        for site in world.housing_sites() {
+        let mut housing_footprints = [TileRect::new(0, 0, 0, 0); 3];
+        for (site, footprint) in world.housing_sites().zip(&mut housing_footprints) {
+            *footprint = housing_footprint(site);
             if clip(self, local(site.position, origin), (59, 58), 10) {
                 push(
                     site.position.y as i32 - 4,
@@ -397,29 +680,35 @@ impl LivingView {
                 );
             }
         }
+        let mut construction_sites = 0_u64;
         for project in world.developments() {
             if project.complete || project.progress == 0 {
                 continue;
             }
-            let (asset, site_id) = match project.kind {
-                DevelopmentKind::Road | DevelopmentKind::Bridge => continue,
-                DevelopmentKind::Market | DevelopmentKind::Stall => {
-                    ("village_public_frame", Some("stall_produce"))
-                }
-                DevelopmentKind::Guesthouse => ("village_public_frame", Some("craft_inn")),
-                DevelopmentKind::Depot => ("village_public_frame", Some("market_depot")),
-                DevelopmentKind::Well | DevelopmentKind::Garden => {
-                    ("village_public_foundation", None)
-                }
-            };
-            let asset = if asset == "village_public_frame" && project.phase < 2 {
-                "village_public_foundation"
+            if matches!(
+                project.kind,
+                DevelopmentKind::Road | DevelopmentKind::Bridge
+            ) {
+                continue;
+            }
+            let site = development_building(&project).and_then(|id| {
+                WILLOW_VILLAGE
+                    .buildings
+                    .iter()
+                    .enumerate()
+                    .find(|(_, b)| b.id == id)
+            });
+            let structure = if let Some((index, building)) = site {
+                construction_sites |= 1 << index;
+                structure_anchor(building)
             } else {
-                asset
+                project.position
             };
-            let structure = site_id
-                .and_then(|id| WILLOW_VILLAGE.building(id))
-                .map_or(project.position, structure_anchor);
+            let asset = if site.is_some() && project.phase >= 2 {
+                "village_public_frame"
+            } else {
+                "village_public_foundation"
+            };
             if clip(self, local(structure, origin), (34, 46), 6) {
                 push(structure.y as i32, Visible::Prop(asset, structure));
             }
@@ -601,8 +890,9 @@ impl LivingView {
         }
         for v in visitors.iter().take(36) {
             if clip(self, local(v.position, origin), (26, 30), 6) {
-                self.visible_motion |= matches!(v.pose, VisitorPose::Walking | VisitorPose::Carrying)
-                    && visible_character_motion(self, v.position, origin);
+                self.visible_motion |=
+                    matches!(v.pose, VisitorPose::Walking | VisitorPose::Carrying)
+                        && visible_character_motion(self, v.position, origin);
                 push(v.position.y as i32, Visible::Resident(v));
             }
         }
@@ -647,13 +937,21 @@ impl LivingView {
             );
         }
         let lamps = world.market_lamp_tiles();
+        let has_density_holdouts = !world.map_density_holdouts().is_empty();
         for id in scenic {
             let item = &WILLOW_VILLAGE.scenic[id];
             let pos = point(item.tile);
             let replaced = item.kind == ScenicKind::Lamp && lamps.contains(&item.tile);
             if !replaced
-                && phases.contains(item.phase)
-                && clip(self, local(pos, origin), (42, 45), 9)
+                && (!has_density_holdouts || world.map_density_scenic_visible(item.tile))
+                && (!item.temporary_ground
+                    || temporary_ground_visible(
+                        world,
+                        item.tile,
+                        phases,
+                        construction_sites,
+                        &housing_footprints,
+                    ))
             {
                 push(pos.y as i32, Visible::Scenic(item));
             }
@@ -759,7 +1057,7 @@ impl LivingView {
                         Palette::Unchanged,
                     );
                 }
-                Visible::Scenic(item) => self.village_scenic(item, origin, &forest_actors),
+                Visible::Scenic(item) => self.village_scenic(item, origin, &canopy_subjects),
                 Visible::Lamp(p) => self.market_lamp(p, origin, world.minute_of_day()),
                 Visible::Drain(p) => {
                     let (x, y) = local(p, origin);
@@ -797,18 +1095,25 @@ impl LivingView {
                         .orchard_phase(i)
                         .filter(|_| t.stage == TreeStage::Standing)
                     {
-                        self.village_orchard(phase, (x, y), i % 2 == 1);
+                        self.village_orchard(
+                            phase,
+                            (x, y),
+                            t.position.y as i32,
+                            i % 2 == 1,
+                            &canopy_subjects,
+                        );
                     } else if t.stage == TreeStage::Standing {
                         let (tx, ty) = (t.position.x as i32 / 8, t.position.y as i32 / 8);
                         let sprite = forest_crown(tx, ty, terrain_hash(tx, ty));
                         self.contact_shadow((x + 2, y + 1), (13, 4), 44);
-                        self.draw_forest_crown(
+                        self.draw_tree_canopy(
+                            Bank::Village,
                             sprite,
                             (x * 2, y * 2),
-                            y * 2,
+                            t.position.y as i32,
                             i % 2 == 1,
                             Scale::IDENTITY,
-                            &forest_actors,
+                            &canopy_subjects,
                         );
                     } else {
                         self.tree(i, x, y, t.stage);
@@ -1228,7 +1533,14 @@ impl LivingView {
         }
     }
 
-    fn village_orchard(&mut self, phase: OrchardPhase, (x, y): (i32, i32), flip: bool) {
+    fn village_orchard(
+        &mut self,
+        phase: OrchardPhase,
+        (x, y): (i32, i32),
+        depth: i32,
+        flip: bool,
+        subjects: &[Option<CanopySubject>; 2],
+    ) {
         let position = (x * 2, y * 2);
         self.contact_shadow((x + 4, y + 1), (12, 4), 42);
         let key = match phase {
@@ -1240,13 +1552,14 @@ impl LivingView {
             OrchardPhase::Ripe => "village_apple",
             OrchardPhase::AfterHarvest => "village_apple_after",
         };
-        self.draw_village_sprite(
+        self.draw_tree_canopy(
             Bank::Village,
             key,
             position,
+            depth,
             flip,
             Scale::IDENTITY,
-            Palette::Unchanged,
+            subjects,
         );
     }
 
@@ -1254,85 +1567,49 @@ impl LivingView {
         &mut self,
         item: &ScenicObject,
         origin: (i32, i32),
-        actors: &[Option<ArtRect>; 2],
+        subjects: &[Option<CanopySubject>; 2],
     ) {
-        let (x, y) = local(point(item.tile), origin);
-        let seed = terrain_hash(i32::from(item.tile.x), i32::from(item.tile.y));
-        let forest = item.id.contains(".forest");
-        let anchor_y = if forest && item.kind == ScenicKind::Tree {
-            // Sub-tile root placement varies along the natural edge while
-            // staying in the authoritative blocking tile.
-            y + ((seed >> 7) % 5) as i32 - 2
-        } else {
-            y
-        };
-        let (bank, key, scale, shadow) = match item.kind {
-            ScenicKind::Tree => {
-                let (bank, key) = if forest {
-                    let x = i32::from(item.tile.x);
-                    let y = i32::from(item.tile.y);
-                    (Bank::Village, forest_crown(x, y, seed))
-                } else {
-                    (
-                        Bank::Core,
-                        [
-                            "tree_oak",
-                            "tree_birch",
-                            "tree_maple",
-                            "tree_oak",
-                            "tree_cherry",
-                        ][seed as usize % 5],
-                    )
-                };
-                (
-                    bank,
-                    key,
-                    Scale::new(9 + ((seed >> 4) % 4) as i32, 12),
-                    (12, 4),
-                )
-            }
-            ScenicKind::Shrub => (Bank::Village, "village_hedge", Scale::IDENTITY, (8, 3)),
-            ScenicKind::Rock => (Bank::Core, "rocks_moss", Scale::new(3, 4), (6, 2)),
-            ScenicKind::Fence => (
-                Bank::Village,
-                "village_garden_wall",
-                Scale::IDENTITY,
-                (8, 2),
-            ),
-            ScenicKind::Bench => (Bank::Village, "village_bench", Scale::IDENTITY, (8, 3)),
-            ScenicKind::Crate => (Bank::Village, "village_crate", Scale::IDENTITY, (7, 3)),
-            ScenicKind::Flowers => (Bank::Core, "flowers_wild", Scale::new(5, 8), (4, 2)),
-            ScenicKind::Grass => (Bank::Core, "bush_herb", Scale::new(2, 5), (3, 2)),
-            ScenicKind::Sign => (Bank::Village, "village_notice", Scale::new(4, 5), (6, 2)),
-            ScenicKind::Lamp => (Bank::Village, "village_lantern", Scale::IDENTITY, (5, 3)),
-            ScenicKind::Reeds => (Bank::Village, "village_reeds", Scale::new(4, 5), (6, 3)),
-            ScenicKind::Log => (Bank::Core, "logs", Scale::new(4, 5), (7, 3)),
-            ScenicKind::WoodPile => (Bank::Village, "village_materials", Scale::new(4, 5), (8, 3)),
-        };
+        let p = point(item.tile);
+        let foot = local(p, origin);
+        let art = scenic_art(item);
         self.contact_shadow(
-            (x + 3, anchor_y + 1),
-            shadow,
+            art.shadow_center(foot),
+            art.shadow_radii,
             if item.solid { 38 } else { 20 },
         );
-        let position = (x * 2, anchor_y * 2);
-        let flip = seed & 2 != 0;
-        if forest && item.kind == ScenicKind::Tree {
-            self.draw_forest_crown(key, position, y * 2, flip, scale, actors);
+        let position = art.position(foot);
+        if item.kind == ScenicKind::Tree {
+            self.draw_tree_canopy(
+                art.bank, art.key, position, p.y as i32, art.flip, art.scale, subjects,
+            );
         } else {
-            self.draw_village_sprite(bank, key, position, flip, scale, Palette::Unchanged);
+            self.draw_village_sprite(
+                art.bank,
+                art.key,
+                position,
+                art.flip,
+                art.scale,
+                Palette::Unchanged,
+            );
         }
     }
 
-    fn draw_forest_crown(
+    #[allow(clippy::too_many_arguments)]
+    fn draw_tree_canopy(
         &mut self,
+        bank: Bank,
         key: &str,
         position: (i32, i32),
         depth: i32,
         flip: bool,
         scale: Scale,
-        actors: &[Option<ArtRect>; 2],
+        subjects: &[Option<CanopySubject>; 2],
     ) {
-        let Some(atlas) = &self.village_art else {
+        let Some(atlas) = bank.atlas(
+            self.art.as_ref(),
+            self.village_art.as_ref(),
+            self.wildlife_art.as_ref(),
+        ) else {
             return;
         };
         let Some(frame) = atlas.metadata(key) else {
@@ -1345,30 +1622,43 @@ impl LivingView {
         let page = atlas.page(frame);
         // Leave the bottom six world pixels and the contact shadow fully opaque.
         let roots = position.1 - 12;
+        let bounds = sprite_bounds(sprite);
         let crown = ArtRect {
-            x: sprite.left,
-            y: sprite.top,
-            w: sprite.width,
-            h: roots - sprite.top,
+            h: (roots - bounds.y).min(bounds.h),
+            ..bounds
         };
-        let overlaps = actors.iter().flatten().any(|actor| {
-            depth > actor.y + actor.h + 2
-                && intersects(crown, *actor)
-                && crown_has_ink(crown, *actor, sprite, page)
+        let visible = ArtRect {
+            x: 0,
+            y: 0,
+            w: self.width,
+            h: self.height,
+        };
+        let cutaways = subjects.map(|subject| {
+            let subject = subject.filter(|p| depth >= p.depth)?;
+            let overlap = intersection(intersection(crown, subject.area)?, visible)?;
+            crown_has_ink(overlap, sprite, page).then_some(subject.area)
         });
-        let palette = if overlaps {
-            Palette::ForestCanopy { roots_start: roots }
-        } else {
-            Palette::Unchanged
-        };
-        blit_into(
-            &mut self.pixels,
-            (self.width, self.height),
-            page,
-            256,
-            sprite,
-            palette,
-        );
+        let size = (self.width, self.height);
+        if cutaways.iter().all(Option::is_none) {
+            blit_into(
+                &mut self.pixels,
+                size,
+                page,
+                256,
+                sprite,
+                Palette::Unchanged,
+            );
+        } else if let Some(visible) = intersection(bounds, visible) {
+            blit_canopy(
+                &mut self.pixels,
+                self.width,
+                page,
+                sprite,
+                visible,
+                roots,
+                cutaways,
+            );
+        }
     }
 
     fn market_lamp(&mut self, p: Point, origin: (i32, i32), minute: u16) {
@@ -1438,12 +1728,11 @@ impl LivingView {
         scale: Scale,
         palette: Palette,
     ) -> bool {
-        let atlas = match bank {
-            Bank::Core => &self.art,
-            Bank::Village => &self.village_art,
-            Bank::Wildlife => &self.wildlife_art,
-        };
-        let Some(atlas) = atlas.as_ref() else {
+        let Some(atlas) = bank.atlas(
+            self.art.as_ref(),
+            self.village_art.as_ref(),
+            self.wildlife_art.as_ref(),
+        ) else {
             return false;
         };
         let Some(frame) = atlas.metadata(key) else {
@@ -1473,6 +1762,290 @@ mod tests {
     use super::*;
 
     #[test]
+    fn scenic_chunks_match_exact_screen_intersections_and_phase_gates() {
+        use crate::map_data::PhaseMask;
+        let (core, _, village) = art_assets::builtin().unwrap();
+        let index = VillageIndex::new(Some(&core), Some(&village));
+        let mut tested_offscreen_anchor = 0;
+        for (id, item) in WILLOW_VILLAGE.scenic.iter().enumerate() {
+            let art = scenic_art(item);
+            let atlas = art.bank.atlas(Some(&core), Some(&village), None).unwrap();
+            let frame = atlas
+                .metadata(art.key)
+                .unwrap_or_else(|| panic!("{} has no art", item.id));
+            let foot = local(point(item.tile), (0, 0));
+            let visible = sprite_bounds(Sprite::new(
+                frame.rect,
+                frame.anchor,
+                art.position(foot),
+                art.flip,
+                art.scale,
+            ));
+            let sliver = ArtRect {
+                x: visible.x,
+                y: visible.y,
+                w: 1,
+                h: 1,
+            };
+            let exact = index.scenic_in_view(sliver, PhaseMask::ALL);
+            assert!(
+                exact.contains(&id),
+                "{} became hidden at its viewport edge",
+                item.id
+            );
+            assert!(exact.len() < WILLOW_VILLAGE.scenic.len() / 8);
+            if !intersects(
+                sliver,
+                ArtRect {
+                    x: foot.0 * 2,
+                    y: foot.1 * 2,
+                    w: 1,
+                    h: 1,
+                },
+            ) {
+                tested_offscreen_anchor += 1;
+            }
+            assert_eq!(
+                index
+                    .scenic_in_view(sliver, PhaseMask::DAY_ONE)
+                    .contains(&id),
+                PhaseMask::DAY_ONE.contains(item.phase),
+            );
+        }
+        assert!(tested_offscreen_anchor > 100);
+
+        let large = ArtRect {
+            x: 6 * 16,
+            y: 77 * 16,
+            w: 1280,
+            h: 720,
+        };
+        let selected = index.scenic_in_view(large, PhaseMask::ALL);
+        let expected: Vec<_> = index
+            .scenic_bounds
+            .iter()
+            .enumerate()
+            .filter_map(|(id, &bounds)| intersects(bounds, large).then_some(id))
+            .collect();
+        assert!(selected.len() > 512 && selected.len() < WILLOW_VILLAGE.scenic.len());
+        assert_eq!(selected, expected);
+    }
+
+    #[test]
+    fn overlapping_tree_species_keep_a_stationary_awake_actor_readable() {
+        let mut world = LivingWorld::new_village_wall_ms(0);
+        let origin = (80, 80);
+        let p = Point { x: 130.0, y: 152.0 };
+        world.test_camera_actor(ActorKind::Xiaohe, p, Pose::Work, false);
+        world.test_camera_actor(ActorKind::Ayu, p, Pose::Sleep, true);
+        let view_rect = ArtRect {
+            x: 160,
+            y: 160,
+            w: 200,
+            h: 200,
+        };
+        let subjects = canopy_subjects(&world, origin, view_rect, &[], None);
+        assert!(subjects[0].is_some() && subjects[1].is_none());
+
+        // Place the same three real species in front of the worker. Pixels
+        // outside the narrow cutaway, and below the tree roots, must agree.
+        fn layered(subjects: &[Option<CanopySubject>; 2]) -> Vec<u8> {
+            let mut view = LivingView::new();
+            view.enable_builtin_premium().unwrap();
+            view.width = 200;
+            view.height = 200;
+            view.pixels = [25, 77, 145, 255].repeat(200 * 200);
+            for (bank, key, pos) in [
+                (Bank::Core, "tree_oak", (95, 164)),
+                (Bank::Village, "village_forest_laurel", (102, 161)),
+                (Bank::Village, "village_apple", (110, 169)),
+            ] {
+                view.draw_tree_canopy(bank, key, pos, 163, false, Scale::IDENTITY, subjects);
+            }
+            view.pixels
+        }
+        let full = layered(&[None, None]);
+        let cut = layered(&subjects);
+        let mut in_front = subjects;
+        in_front[0].as_mut().unwrap().depth = 164;
+        assert_eq!(full, layered(&in_front));
+        let mut read_back = 0;
+        for (index, (opaque, clear)) in full.chunks_exact(4).zip(cut.chunks_exact(4)).enumerate() {
+            let (x, y) = ((index % 200) as i32, (index / 200) as i32);
+            if x < 78 || x > 122 || y > 156 {
+                assert_eq!(opaque, clear, "outside the worker's canopy window: {x},{y}");
+            }
+            if (89..111).contains(&x) && (105..130).contains(&y) && opaque != clear {
+                read_back += 1;
+            }
+        }
+        assert!(
+            read_back > 140,
+            "only {read_back} source texels reveal the worker"
+        );
+    }
+
+    #[test]
+    fn market_ground_cover_survives_outside_active_paving() {
+        let patch = WILLOW_VILLAGE
+            .ground_cover
+            .iter()
+            .find(|p| p.region == "market")
+            .unwrap();
+        let (x, y) = (
+            i32::from(patch.center.x) * 16,
+            i32::from(patch.center.y) * 16,
+        );
+        let cover = crate::landscape::meadow_material("market", x, y).unwrap();
+        assert!(cover.1 > 190);
+        assert_eq!(
+            decorated_ground("market", Ground::Grass, x, y, 32, (false, false)),
+            None
+        );
+        assert_eq!(
+            decorated_ground("market", Ground::Soil, x, y, 32, (false, false)),
+            None
+        );
+        let paved =
+            decorated_ground("market", Ground::Grass, 90 * 16, 46 * 16, 32, (true, false)).unwrap();
+        assert_eq!(paved.1, 255);
+    }
+
+    #[test]
+    fn temporary_farm_cover_leaves_after_actual_plot_preparation() {
+        let world = LivingWorld::new_village_wall_ms(0);
+        let expansion = WILLOW_VILLAGE.phase("farm_expansion").unwrap();
+        let (item, plot) = WILLOW_VILLAGE
+            .scenic
+            .iter()
+            .filter(|p| p.temporary_ground)
+            .find_map(|item| {
+                WILLOW_VILLAGE
+                    .crops
+                    .iter()
+                    .position(|plot| plot.rect.contains(item.tile))
+                    .map(|plot| (item, plot))
+            })
+            .unwrap();
+        assert!(!item.solid && world.can_walk(i32::from(item.tile.x), i32::from(item.tile.y)));
+        assert!(temporary_ground_visible(
+            &world,
+            item.tile,
+            world.phase_mask(),
+            0,
+            &[],
+        ));
+        // Give the fixture just the expansion flag. Then use the same weeding
+        // operation as a resident, with no state written by the renderer.
+        let mut value = serde_json::to_value(&world).unwrap();
+        value["village"]["region_flags"] =
+            serde_json::json!(world.phase_mask().with(expansion).bits());
+        let mut expanded: LivingWorld = serde_json::from_value(value).unwrap();
+        assert!(expanded.phase_mask().contains(expansion));
+        assert!(expanded.village_local_work("weed", Some(plot as u8)));
+        assert_eq!(expanded.plot_stage(plot), Some(PlotStage::Cleared));
+        assert!(!temporary_ground_visible(
+            &expanded,
+            item.tile,
+            expanded.phase_mask(),
+            0,
+            &[],
+        ));
+    }
+
+    #[test]
+    fn temporary_cover_leaves_full_stall_on_start_or_opening_and_closed_lane_on_activation() {
+        let world = LivingWorld::new_village_wall_ms(0);
+        let (index, stall) = WILLOW_VILLAGE
+            .buildings
+            .iter()
+            .enumerate()
+            .find(|(_, b)| b.id == "stall_produce")
+            .unwrap();
+        let tile = (stall.footprint.y..stall.footprint.y + stall.footprint.h)
+            .flat_map(|y| {
+                (stall.footprint.x..stall.footprint.x + stall.footprint.w)
+                    .map(move |x| TilePos::new(x, y))
+            })
+            .find(|&p| {
+                !stall.solid.iter().any(|rect| rect.contains(p))
+                    && world.ground(p.x.into(), p.y.into()) == Ground::Grass
+            })
+            .unwrap();
+        assert!(temporary_ground_visible(
+            &world,
+            tile,
+            world.phase_mask(),
+            0,
+            &[],
+        ));
+        assert!(!temporary_ground_visible(
+            &world,
+            tile,
+            world.phase_mask(),
+            1 << index,
+            &[],
+        ));
+        let future_lane = TilePos::new(161, 110);
+        assert!(temporary_ground_visible(
+            &world,
+            future_lane,
+            world.phase_mask(),
+            0,
+            &[],
+        ));
+        let mut value = serde_json::to_value(&world).unwrap();
+        let late = WILLOW_VILLAGE.phase("late").unwrap();
+        value["village"]["region_flags"] =
+            serde_json::json!(world.phase_mask().with(stall.phase).with(late).bits());
+        let opened: LivingWorld = serde_json::from_value(value).unwrap();
+        assert_eq!(opened.ground(tile.x.into(), tile.y.into()), Ground::Grass);
+        assert!(opened.village_building_active(stall.id));
+        assert!(!temporary_ground_visible(
+            &opened,
+            tile,
+            opened.phase_mask(),
+            0,
+            &[],
+        ));
+        assert_eq!(
+            opened.ground(future_lane.x.into(), future_lane.y.into()),
+            Ground::Path
+        );
+        assert!(!temporary_ground_visible(
+            &opened,
+            future_lane,
+            opened.phase_mask(),
+            0,
+            &[],
+        ));
+    }
+
+    #[test]
+    fn temporary_cover_yields_as_soon_as_actual_house_site_is_cleared() {
+        let mut world = LivingWorld::new_village_wall_ms(0);
+        let tile = TilePos::new(19, 6);
+        assert!(temporary_ground_visible(
+            &world,
+            tile,
+            world.phase_mask(),
+            0,
+            &[]
+        ));
+        world.test_house_visual_stage(HousePlan::Single, HousingPhase::Clear);
+        let footprint = housing_footprint(world.housing_sites().next().unwrap());
+        assert!(footprint.contains(tile));
+        assert_eq!(world.ground(tile.x.into(), tile.y.into()), Ground::Grass);
+        assert!(!temporary_ground_visible(
+            &world,
+            tile,
+            world.phase_mask(),
+            0,
+            &[footprint]
+        ));
+    }
+
+    #[test]
     fn overscan_and_shifted_terrain_match_a_fresh_village_frame() {
         use crate::viewport::PixelOrigin;
         let world = LivingWorld::new_village_wall_ms(0);
@@ -1480,7 +2053,13 @@ mod tests {
         let map_world = (192 * 8, 128 * 8);
         let mut scrolled = LivingView::new();
         scrolled.enable_builtin_premium().unwrap();
-        for (x, y) in [(87.1, 118.8), (87.8, 117.8), (85.3, 120.1), (88.9, 122.8), (1500.0, 1000.0)] {
+        for (x, y) in [
+            (87.1, 118.8),
+            (87.8, 117.8),
+            (85.3, 120.1),
+            (88.9, 122.8),
+            (1500.0, 1000.0),
+        ] {
             let origin = PixelOrigin::new((x, y), physical, map_world);
             let mut fresh = LivingView::new();
             fresh.enable_builtin_premium().unwrap();
@@ -1495,7 +2074,11 @@ mod tests {
         use crate::visitors::Profession;
         let mut world = LivingWorld::new_village_wall_ms(0);
         let mut view = LivingView::new();
-        let camera = Camera { x: 60.0, y: 120.0, follow: None };
+        let camera = Camera {
+            x: 60.0,
+            y: 120.0,
+            follow: None,
+        };
         let size = (479, 301);
         for kind in [ActorKind::Xiaohe, ActorKind::Ayu, ActorKind::Orange] {
             world.test_camera_actor(kind, Point::at_tile(80, 80), Pose::Sleep, false);
@@ -1582,6 +2165,21 @@ enum Bank {
     Core,
     Village,
     Wildlife,
+}
+
+impl Bank {
+    fn atlas<'a>(
+        self,
+        core: Option<&'a ArtAtlas>,
+        village: Option<&'a ArtAtlas>,
+        wildlife: Option<&'a ArtAtlas>,
+    ) -> Option<&'a ArtAtlas> {
+        match self {
+            Self::Core => core,
+            Self::Village => village,
+            Self::Wildlife => wildlife,
+        }
+    }
 }
 
 fn structure(id: &str, kind: &str) -> (Bank, &'static str) {
@@ -1794,7 +2392,6 @@ pub(super) fn decorated_ground(
                 ));
             }
         }
-        return None;
     }
     if zone == "home" {
         let courtyards = [
@@ -1839,9 +2436,6 @@ pub(super) fn decorated_ground(
                 (weight / 6).clamp(0, 168) as u8,
             ));
         }
-    }
-    if ground == Ground::Grass {
-        return crate::landscape::ground_cover(zone, x, y);
     }
     None
 }

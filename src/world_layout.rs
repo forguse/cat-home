@@ -23,6 +23,10 @@ pub(super) const DEVELOPMENT_POIS: [&str; 8] = [
 pub(super) const TREE_COUNT: usize = 16;
 pub(super) const VILLAGE_CAT_SPOTS: usize = 6;
 pub(super) const COMPATIBLE_HOME_ORIGINS: [[u8; 2]; 3] = [[6, 4], [35, 32], [18, 5]];
+pub(super) const DENSE_MAP_REVISION: u16 = 3;
+pub(super) const BEFORE_DENSITY_REVISION: u16 = 2;
+pub(super) const DENSE_MAP_PHASE: &str = "map_dense_r3";
+pub(super) const MAX_DENSITY_CUSTODY_TILES: usize = 33 + 2 * 23;
 
 pub(super) fn is_false(value: &bool) -> bool {
     !value
@@ -102,6 +106,8 @@ impl PartialEq for SupplyRequests {
 #[serde(deny_unknown_fields)]
 pub(super) struct State {
     pub revision: u16,
+    #[serde(default, skip_serializing_if = "Vec::is_empty", deserialize_with = "read_density_holdouts")]
+    pub density_holdouts: Vec<TilePos>,
     #[serde(default, skip_serializing_if = "is_false")]
     pub imported_pedestrian_bridge: bool,
     #[serde(default, skip_serializing_if = "is_false")]
@@ -356,6 +362,7 @@ impl State {
     pub fn new() -> Self {
         Self {
             revision: WILLOW_VILLAGE.map_revision,
+            density_holdouts: Vec::new(),
             imported_pedestrian_bridge: false,
             freight_inspected: false,
             freight_material_paid: false,
@@ -478,6 +485,27 @@ impl State {
             tree.phase = phase;
         }
     }
+}
+
+fn read_density_holdouts<'de, D: serde::Deserializer<'de>>(input: D) -> Result<Vec<TilePos>, D::Error> {
+    struct Tiles;
+    impl<'de> serde::de::Visitor<'de> for Tiles {
+        type Value = Vec<TilePos>;
+        fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+            write!(formatter, "a list of at most {MAX_DENSITY_CUSTODY_TILES} scenery exceptions")
+        }
+        fn visit_seq<A: serde::de::SeqAccess<'de>>(self, mut input: A) -> Result<Self::Value, A::Error> {
+            let mut result = Vec::new();
+            while let Some(tile) = input.next_element()? {
+                if result.len() == MAX_DENSITY_CUSTODY_TILES {
+                    return Err(serde::de::Error::invalid_length(result.len() + 1, &self));
+                }
+                result.push(tile);
+            }
+            Ok(result)
+        }
+    }
+    input.deserialize_seq(Tiles)
 }
 
 pub(super) fn poi(id: &str) -> Cell {

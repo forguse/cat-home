@@ -141,19 +141,23 @@ impl HomeHost {
         Self::open_mode(root, now, preview, true)
     }
     fn open_mode(root: PathBuf, now: u64, preview: bool, compatibility: bool) -> io::Result<Self> {
+        if !compatibility && !VillageLife::map_density_preserves_wildlife() {
+            return Err(error("新版地图遮挡了固定动物路径，原存档已保留。"));
+        }
         fs::create_dir_all(&root)?;
         let mut receipt = None;
         let mut companionship_ms = 0;
+        let mut map_migration_source = None;
         let (mut world, scenes, camera, size, visitors, mut life, auto_camera) = if !preview
             && !compatibility
             && root.join(V4_FILE).try_exists()?
         {
-            let saved: SavedVillage = read_snapshot(&root.join(V4_FILE))?;
+            let bytes = read_bytes(&root.join(V4_FILE))?;
+            let mut saved: SavedVillage = serde_json::from_slice(&bytes)
+                .map_err(|e| error(format!("存档无法读取，原文件已保留：{e}")))?;
             if saved.schema != 4
                 || saved.layout_id != WILLOW_VILLAGE.layout_id
-                || saved.map_revision != WILLOW_VILLAGE.map_revision
-                || !saved.world.is_village()
-                || !saved.world.validate()
+                || !saved.world.accepts_village_map_revision(saved.map_revision)
                 || !saved.life.validate_for_world(&saved.world)
                 || !saved
                     .life
@@ -175,6 +179,12 @@ impl HomeHost {
                     .any(|actor| scenes.state().reserved_actors().contains(actor))
             {
                 return Err(error("村庄活动或角色预约无效，原存档已保留。"));
+            }
+            if saved.map_revision != WILLOW_VILLAGE.map_revision {
+                if !saved.world.migrate_village_map_revision(saved.map_revision) {
+                    return Err(error("无法迁移村庄地图修订，原存档已保留。"));
+                }
+                map_migration_source = Some((saved.map_revision, bytes));
             }
             receipt = saved.source_migration;
             companionship_ms = saved.companionship_ms;
@@ -301,7 +311,7 @@ impl HomeHost {
         let mut view = LivingView::new();
         view.enable_builtin_premium()
             .map_err(|e| error(e.to_string()))?;
-        Ok(Self {
+        let mut home = Self {
             world,
             scenes,
             camera,
@@ -322,7 +332,13 @@ impl HomeHost {
             active_clock: Instant::now(),
             companionship_ms,
             village_camera: VillageCamera::new(),
-        })
+        };
+        home.try_enable_map_density();
+        if let Some((revision, bytes)) = map_migration_source {
+            keep_map_revision_backup(&home.root, revision, &bytes)?;
+            home.save()?;
+        }
+        Ok(home)
     }
 
     pub fn tick(&mut self, now: u64) {
@@ -357,6 +373,9 @@ impl HomeHost {
                 break;
             }
         }
+        if !self.world.map_density_holdouts().is_empty() {
+            self.try_enable_map_density();
+        }
         if now.saturating_sub(self.last_save) >= 30_000 {
             self.last_save = now;
             self.last_error = self.save().err().map(|e| e.to_string());
@@ -367,6 +386,39 @@ impl HomeHost {
         self.world.is_village()
             && self.world.pending_world_target_ms().saturating_sub(self.world.world_ms())
                 >= OFFLINE_BACKLOG_MS
+    }
+
+    fn try_enable_map_density(&mut self) {
+        let pending = self.world.map_density_pending();
+        if !pending && self.world.map_density_holdouts().is_empty() {
+            return;
+        }
+        let mut occupied = [TilePos::new(0, 0); VILLAGE_OCCUPANCY];
+        let count = self.life.write_occupied_tiles(&mut occupied);
+        let mut holdouts: Vec<_> = self.scenes.map_density_positions()
+            .chain(self.life.map_density_positions())
+            .filter(|&tile| self.world.map_density_adds_obstacle(tile)
+                && (pending || self.world.map_density_holdouts().binary_search(&tile).is_ok()))
+            .collect();
+        if !pending {
+            // A prop may have been lifted while someone is still standing on
+            // its storage tile. Retire each vacated exception independently.
+            holdouts.extend(self.world.map_density_holdouts().iter().copied().filter(|tile| {
+                occupied[..count].contains(tile)
+                    || self.life.map_density_destinations().any(|target| target == *tile)
+                    || [cat_home::living_world::ActorKind::Xiaohe, cat_home::living_world::ActorKind::Ayu,
+                        cat_home::living_world::ActorKind::Orange].into_iter().any(|actor| {
+                        self.world.actor_tile(actor) == *tile || self.world.actor_next_tile(actor) == Some(*tile)
+                            || self.world.actor_destination(actor) == Some(*tile)
+                    })
+            }));
+        }
+        holdouts.sort_unstable();
+        holdouts.dedup();
+        let Some(proposed) = self.world.ready_map_density(&occupied[..count], &holdouts) else { return; };
+        if self.life.prepare_dense_map_activation(proposed, &holdouts) {
+            self.world.commit_map_density(proposed, holdouts);
+        }
     }
 
     fn pump_world_slice(
@@ -408,6 +460,9 @@ impl HomeHost {
                     self.scenes.basketball_active(),
                     &self.world,
                 );
+            }
+            if self.world.map_density_pending() {
+                self.try_enable_map_density();
             }
             let target = self.world.pending_world_target_ms();
             if self.world.world_ms() >= target || Instant::now() >= deadline {
@@ -790,12 +845,71 @@ fn read_bytes(path: &Path) -> io::Result<Vec<u8>> {
     }
     Ok(data)
 }
-fn read_snapshot<T: serde::de::DeserializeOwned>(path: &Path) -> io::Result<T> {
-    serde_json::from_slice(&read_bytes(path)?)
-        .map_err(|e| error(format!("存档无法读取，原文件已保留：{e}")))
+fn keep_map_revision_backup(root: &Path, revision: u16, bytes: &[u8]) -> io::Result<()> {
+    let digest = format!("{:x}", Sha3_256::digest(bytes));
+    let path = root.join(format!("world-v4-map-r{revision}-{digest}.json"));
+    if path.try_exists()? {
+        if read_bytes(&path)? != bytes {
+            return Err(error("旧地图迁移备份不一致，原存档已保留。"));
+        }
+        return Ok(());
+    }
+    let result = atomic_write_mode(&path, bytes, false);
+    if result.is_err() && path.try_exists()? && read_bytes(&path)? == bytes {
+        return Ok(());
+    }
+    result
 }
+
+#[cfg(test)]
+#[test]
+fn density_opens_around_an_old_ground_prop_without_moving_its_custody() {
+    let Some(phase) = WILLOW_VILLAGE.phase("map_dense_r3") else { return; };
+    let cell = WILLOW_VILLAGE.scenic.iter().find(|item| item.phase == phase && item.solid).unwrap().tile;
+    let anchor = cat_home::map_data::TilePos::new(35, 23);
+    let root = PathBuf::from("target").join(format!("density-prop-{}", std::process::id()));
+    fs::create_dir_all(&root).unwrap();
+    let mut host = HomeHost::open(root, 0, true).unwrap();
+    let mut pending = serde_json::to_value(&host.world).unwrap();
+    pending["village"]["region_flags"] = serde_json::json!(host.world.phase_mask().without(phase).bits());
+    host.world = serde_json::from_value(pending).unwrap();
+    let mut scenes = serde_json::to_value(host.scenes.state()).unwrap();
+    scenes["village"] = serde_json::json!(true);
+    scenes["owned"] = serde_json::json!([{
+        "id": "org.cat-home.community.basketball:ball",
+        "ground": {"x": cell.x, "y": cell.y},
+    }]);
+    host.scenes = SceneRuntime::from_state(serde_json::from_value(scenes.clone()).unwrap()).unwrap();
+    assert!(host.scenes.validate_for_world(&host.world));
+    host.try_enable_map_density();
+    assert!(host.world.map_density_active());
+    assert_eq!(host.world.map_density_holdouts(), &[cell]);
+    assert!(host.world.can_walk(cell.x.into(), cell.y.into()));
+    assert!(host.world.navigation_view().unwrap().can_walk(cell));
+    assert!(!host.world.map_density_scenic_visible(cell));
+    assert_eq!(serde_json::to_value(host.scenes.state()).unwrap(), scenes);
+    let payload = serde_json::to_vec(&host.world).unwrap();
+    host.world = serde_json::from_slice(&payload).unwrap();
+    assert!(host.world.validate());
+    scenes["owned"][0]["ground"] = serde_json::json!({"x":anchor.x,"y":anchor.y});
+    host.scenes = SceneRuntime::from_state(serde_json::from_value(scenes).unwrap()).unwrap();
+    host.try_enable_map_density();
+    assert!(host.world.map_density_holdouts().is_empty());
+    assert!(!host.world.can_walk(cell.x.into(), cell.y.into()));
+    assert!(!host.world.navigation_view().unwrap().can_walk(cell));
+    assert!(host.world.map_density_scenic_visible(cell));
+}
+
 fn atomic_write(path: &Path, data: &[u8]) -> io::Result<()> {
-    let tmp = path.with_extension("pending");
+    atomic_write_mode(path, data, true)
+}
+
+fn atomic_write_mode(path: &Path, data: &[u8], replace: bool) -> io::Result<()> {
+    let tmp = if replace {
+        path.with_extension("pending")
+    } else {
+        path.with_extension(format!("pending-{}", std::process::id()))
+    };
     {
         let mut f = File::create(&tmp)?;
         f.write_all(data)?;
@@ -808,7 +922,7 @@ fn atomic_write(path: &Path, data: &[u8]) -> io::Result<()> {
         MoveFileExW(
             a.as_ptr(),
             b.as_ptr(),
-            MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH,
+            MOVEFILE_WRITE_THROUGH | if replace { MOVEFILE_REPLACE_EXISTING } else { 0 },
         )
     } == 0
     {

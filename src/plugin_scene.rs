@@ -433,6 +433,18 @@ impl SceneRuntime {
                 }))
     }
 
+    /// The current custody and live landing of an activity object must
+    /// remain clear when the denser map takes effect.
+    pub fn map_density_positions(&self) -> impl Iterator<Item = crate::map_data::TilePos> + '_ {
+        self.state.owned.iter().map(|prop| prop.ground)
+            .chain(self.active.iter().filter_map(|active| match active.possession {
+                Possession::Loose(cell) => Some(cell),
+                Possession::Flight(flight) => Some(flight.landing),
+                _ => None,
+            }))
+            .map(|cell| crate::map_data::TilePos::new(cell.x.into(), cell.y.into()))
+    }
+
     fn basketball_fits(facility: &BuiltFacility, lot: &crate::map_data::LotDef) -> bool {
         facility.id.namespace() == BASKETBALL_PACK
             && facility.id.local() == "court"

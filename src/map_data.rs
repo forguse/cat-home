@@ -348,6 +348,7 @@ pub struct ScenicObject {
     pub tile: TilePos,
     pub kind: ScenicKind,
     pub solid: bool,
+    pub temporary_ground: bool,
     pub phase: PhaseId,
 }
 

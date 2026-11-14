@@ -410,6 +410,10 @@ impl ServiceLedger {
         self.assets.get(usize::from(asset))?.station
     }
 
+    pub fn map_density_positions(&self) -> impl Iterator<Item = TilePos> + '_ {
+        self.assets.iter().flat_map(|asset| [asset.station, asset.pickup].into_iter().flatten())
+    }
+
     pub fn assign_carrier(&mut self, asset: u8, owner: u8, carrier: u8, at: TilePos) -> bool {
         if !self.holds(asset, owner) || self.carried_asset(carrier).is_some() {
             return false;

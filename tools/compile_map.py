@@ -14,6 +14,7 @@ import hashlib
 import json
 from pathlib import Path
 import re
+import struct
 import sys
 
 
@@ -24,11 +25,14 @@ RUST = ROOT / 'src/map_data_generated.rs'
 WIDTH, HEIGHT, CHUNK = 192, 128, 16
 TILE_ART = 16
 NO_REGION = 255
-PHASES = (
+BASE_PHASES = (
     'day_1', 'farm_expansion', 'weekly_market', 'permanent_market',
     'resident_arrival', 'village_development', 'community', 'cooperative_farm',
     'late_shared_home', 'later_guest_home', 'late', 'main_bridge_freight',
 )
+DENSITY_PHASE = 'map_dense_r3'
+PHASES = (*BASE_PHASES, DENSITY_PHASE)
+R2_GEOMETRY_HASH = '0d80a48e12410f282e1022d50c106cf1f248d144fe65a66d62436a96932bab1f'
 LEGACY_BRIDGE_PHASE = 'day_1_pedestrian_then_upgrade'
 SCENIC_KINDS = {
     'tree': 'Tree', 'shrub': 'Shrub', 'rock': 'Rock', 'fence': 'Fence', 'bench': 'Bench',
@@ -36,6 +40,7 @@ SCENIC_KINDS = {
     'reeds': 'Reeds', 'log': 'Log', 'wood_pile': 'WoodPile',
 }
 WALKABLE_SCENIC_KINDS = {'flowers', 'grass', 'reeds'}
+COMPATIBLE_HOME_LOTS = ((6, 4, 6, 4), (35, 32, 4, 3), (18, 5, 4, 3))
 ID = re.compile(r'[a-z][a-z0-9_.-]*\Z')
 Point = tuple[int, int]
 Rect = tuple[int, int, int, int]
@@ -217,7 +222,8 @@ class Layout:
         require(revision is not None, 'layout_id: expected a positive -r revision suffix')
         self.revision = valid_int(d['map_revision'], 'map revision', int(revision[1]), 65_535)
         self.seed = valid_int(d['seed'], 'seed', 0, 2**64 - 1)
-        require(tuple(d['phase_ids']) == PHASES, 'phase_ids must match the frozen bit assignment')
+        self.phases = PHASES if self.revision >= 3 else BASE_PHASES
+        require(tuple(d['phase_ids']) == self.phases, 'phase_ids must match the frozen bit assignment')
         self.regions = {}
         region_cells = set()
         for row in self.rows('regions'):
@@ -485,17 +491,139 @@ class Layout:
                         and set(members) <= member_ids, f'{group_id}: invalid member references')
             self.sites[name] = row
 
-    def parse_scenic_objects(self):
+    def scenery_exclusions(self, include_temporary_ground=True):
         reserved = set(self.corridor_tiles) | set(self.pois.values()) | set(self.outside_occupancy)
         reserved.update(tile for _, _, path in self.outdoor_slots for tile in path)
         reserved.update(tile for feet in self.water_sites.values() for tile in feet)
         reserved.update(tuple(b['material_slot']) for b in self.buildings.values())
-        for footprint in (r.tiles for r in self.roads.values()):
-            reserved.update(footprint)
-        for row in (*self.buildings.values(), *self.rows('crops'), *self.rows('lots')):
-            reserved.update(cells(tuple(row['rect'])))
-        for footprint, _, _ in self.static_collision:
-            reserved.update(footprint)
+        temporary = {} if include_temporary_ground else self.temporary_ground_footprints()
+        for road in self.roads.values():
+            reserved.update(road.tiles - temporary.get(road.id, set()))
+        for name, row in self.buildings.items():
+            reserved.update(cells(tuple(row['rect'])) - temporary.get(name, set()))
+        if include_temporary_ground:
+            reserved.update(self.temporary_ground_sites())
+        reserved.update(tile for lot in self.rows('lots') if lot['capability'] != 'bounded_building'
+                        for tile in cells(tuple(lot['rect'])))
+        for footprint, _, label in self.static_collision:
+            # Only the actual owner of an authorized footprint may cover its wild grass.
+            reserved.update(footprint - temporary.get(label, set()))
+        return reserved
+
+    def temporary_ground_sites(self):
+        return set().union(*self.temporary_ground_footprints().values())
+
+    def temporary_ground_footprints(self):
+        footprints = {
+            row['id']: cells(tuple(row['rect']))
+            for row in self.rows('crops') if row['phase'] == 'farm_expansion'
+        }
+        footprints.update({
+            row['id']: cells(tuple(row['rect']))
+            for row in self.rows('lots') if row['capability'] == 'bounded_building'
+        })
+        # Existing building areas are meadow before their own activation.
+        # No exemption for an early house, the basketball court or an approach.
+        authorized_buildings = {
+            ('market', 'weekly_market'), ('market', 'permanent_market'),
+            ('east_homes', 'resident_arrival'), ('commons', 'community'),
+        }
+        footprints.update({
+            name: cells(tuple(row['rect']))
+            for name, row in self.buildings.items()
+            if ((row['region'], row['phase']) in authorized_buildings
+                or (name, row['phase']) in {('new_shared_home', 'late_shared_home'),
+                                            ('new_single_home', 'later_guest_home')})
+        })
+        # The first two compatible origins match those compiled house sites.
+        # The third exists only in saved housing orders and has no building row.
+        footprints['compatible_single_home'] = cells(COMPATIBLE_HOME_LOTS[2])
+        lane = self.roads.get('future_lane')
+        if lane is not None and lane.phase == 'late' and lane.id not in self.bridges:
+            footprints[lane.id] = lane.tiles & cells(self.regions['future'])
+        return footprints
+
+    def density_exclusions(self):
+        protected = set()
+        def margin(origins, radius):
+            for x, y in origins:
+                protected.update((x + dx, y + dy) for dx in range(-radius, radius + 1)
+                                 for dy in range(-radius, radius + 1) if abs(dx) + abs(dy) <= radius)
+
+        # Native task fallbacks and paired service/appointment approaches.
+        margin(self.pois.values(), 2)
+        margin((tuple(c['work']) for c in self.rows('crops')), 1)
+        margin((tuple(b['material_slot']) for b in self.buildings.values()), 1)
+        margin(self.outside_occupancy, 1)
+        margin(self.corridor_tiles, 2)
+        protected.update(cells((183, 54, 8, 6)))
+        protected.update(cells((81, 51, 4, 2)))
+        protected.update(cells((33, 22, 4, 3)))
+        protected.update(cells((13, 18, 8, 1)))  # Q33 household paving
+        protected.update(cells((56, 41, 4, 1)))  # bridge shoulder
+        protected.update(cells((97, 50, 6, 1)))  # public market resurfacing
+        protected.update(((80, 52), (107, 44), (106, 51), (79, 46), (93, 47), (95, 50)))
+        protected.update(((17, 16), (20, 17), (14, 22), (28, 19), (27, 21), (32, 69), (18, 16), (76, 52)))
+        for rect in COMPATIBLE_HOME_LOTS:
+            protected.update(cells(rect))
+        margin(((9, 8), (37, 35), (20, 8)), 2)  # legacy lot doors and work feet
+
+        ox, oy = self.pois['orchard_tools']
+        lx, ly = self.pois['forest_loading']
+        trees = [(ox + dx, oy + dy) for dx, dy in ((-5, 1), (1, 1), (2, 6), (-6, 7))]
+        trees += [(lx - 24 + i % 4 * 5, ly - 8 + i // 4 * 5) for i in range(16) if i not in range(8, 12)]
+        protected.update(trees)
+        margin(((x, y + 1) for x, y in trees), 1)
+
+        # Keep land on small native animal loops visible in isolated windows.
+        habitats = (
+            (90,17,3,3), (144,79,3,3), (32,72,3,2), (28,85,2,3), (13,63,3,2),
+            (13,30,2,4), (172,18,4,1), (14,21,3,2), (19,14,2,3), (64,39,4,3),
+            (180,20,4,1), (23,71,2,3), (108,78,3,2), (19,22,2,2), (20,18,1,4),
+            (18,34,2,2), (75,111,2,2), (128,118,3,2), (111,85,3,2),
+        )
+        for rect in habitats:
+            protected.update(cells(rect))
+        return protected
+
+    def density_foreground_overlaps(self, tile, kind):
+        # Conservative bounds in authored art pixels. Full tree crowns span up
+        # to 64 pixels across and 72 high. Short objects can still hide a door.
+        half, above, below = {
+            'tree': (37, 76, 8), 'rock': (16, 18, 3), 'shrub': (15, 11, 2),
+            'fence': (16, 12, 2), 'bench': (15, 17, 3), 'crate': (14, 19, 3),
+            'lamp': (10, 30, 3), 'log': (16, 20, 3), 'sign': (13, 25, 3),
+            'wood_pile': (18, 23, 3),
+        }.get(kind, (0, 0, 0))
+        if not half:
+            return False
+        x, y = (value * TILE_ART + TILE_ART // 2 for value in tile)
+        for left, top, right, baseline, depth in self.density_envelopes:
+            if (y >= depth and x + half > left and x - half < right
+                and y - above < baseline and y + below > top):
+                return True
+        return False
+
+    def construction_envelopes(self):
+        envelopes = []
+        for row in self.buildings.values():
+            left, top, width, height = valid_art_rect(row['render_envelope'], row['id'])
+            depth = row['door'][1] * TILE_ART + TILE_ART // 2
+            envelopes.append((left, top, left + width, top + height, depth))
+        # Legacy house construction has no building placement row. Use the
+        # maximum envelope across all atlas stages, including roof and move-in.
+        for x, y, w, h in COMPATIBLE_HOME_LOTS:
+            anchor_x = (x + w // 2) * TILE_ART + TILE_ART // 2
+            anchor_y = (y + h) * TILE_ART
+            left, right, top = (53, 55, 88) if w == 6 else (34, 42, 70)
+            envelopes.append((anchor_x - left, anchor_y - top, anchor_x + right, anchor_y, anchor_y))
+        return envelopes
+
+    def parse_scenic_objects(self):
+        reserved = self.scenery_exclusions()
+        temporary_sites = self.temporary_ground_sites() - self.scenery_exclusions(False)
+        density_protected = self.density_exclusions() if self.revision >= 3 else set()
+        self.density_envelopes = self.construction_envelopes()
 
         self.scenic = []
         assigned = set()
@@ -503,15 +631,26 @@ class Layout:
             name = self.register(row['id'], 'scenic object')
             tile = valid_tile(row['tile'], name)
             phase = self.phase(row['phase'], name)
+            require((phase == DENSITY_PHASE) == name.startswith('density.'),
+                    f'{name}: density objects must use the additive density phase')
             valid_id(row['cluster'], name + '.cluster')
             kind = row['kind']
             require(isinstance(kind, str) and kind in SCENIC_KINDS, f'{name}: unknown scenic kind {kind!r}')
             solid = kind not in WALKABLE_SCENIC_KINDS
             require(row['solid'] is solid, f'{name}: wrong collision flag for {kind}')
+            temporary = row.get('temporary_ground', False)
+            require(type(temporary) is bool, f'{name}: temporary_ground must be boolean')
+            if temporary:
+                require(phase == DENSITY_PHASE and kind in ('grass', 'reeds') and tile in temporary_sites,
+                        f'{name}: temporary grass or reeds must stay on an authorized inactive footprint')
             require(tile in self.interior and tile not in self.permanent_water,
                     f'{name}: scenery must be on dry land inside the boundary at {tile}')
             require(tile not in assigned, f'{name}: repeated scenery tile at {tile}')
-            require(tile not in reserved, f'{name}: scenery overlaps reserved map geometry at {tile}')
+            require(tile not in reserved or temporary, f'{name}: scenery overlaps reserved map geometry at {tile}')
+            require(phase != DENSITY_PHASE or temporary or tile not in density_protected,
+                    f'{name}: scenery overlaps protected native activity at {tile}')
+            require(phase != DENSITY_PHASE or not self.density_foreground_overlaps(tile, kind),
+                    f'{name}: foreground obscures a building or construction envelope at {tile}')
             assigned.add(tile)
             self.scenic.append(row)
             if solid:
@@ -552,19 +691,24 @@ class Layout:
 
         start = self.pois['home_xiaohe.door']
         market = self.pois['market_gate']
-        geo = PHASES[:-1]
+        geo = BASE_PHASES[:-1]
+        profiles = []
         for i, milestone in enumerate(geo):
             for freight in (False, True):
                 flags = set(geo[:i + 1])
                 if freight:
                     flags.add('main_bridge_freight')
                 label = f'{milestone} ({"freight" if freight else "pedestrian"})'
-                self.validate_phase(flags, label, start, market)
+                profiles.append((flags, label))
         for capability in geo[2:]:
-            self.validate_phase({'day_1', capability}, f'independent {capability}', start, market)
-        self.phase_count = 2 * len(geo) + len(geo[2:])
+            profiles.append(({'day_1', capability}, f'independent {capability}'))
+        for flags, label in profiles:
+            self.validate_phase(flags, label, start, market)
+            if self.revision >= 3:
+                self.validate_phase(flags | {DENSITY_PHASE}, label + ' with density', start, market)
+        self.phase_count = len(profiles) * (2 if self.revision >= 3 else 1)
 
-        flags = set(PHASES)
+        flags = set(self.phases)
         _, network, walk = self.geometry(flags)
         filled = set().union(*(footprint for _, footprint in self.fields))
         require(not filled & network, f'planned lots block public roads: {sample(filled & network)}')
@@ -580,6 +724,10 @@ class Layout:
                     f'{name}: invalid sample trip')
             require(len(path) - 1 == trip['tiles'] and (len(path) - 1) * 10 == trip['world_seconds'],
                     f'{name}: sample trip duration does not match edge count')
+
+        if self.revision == 3:
+            require(self.collision_hash_without_density() == R2_GEOMETRY_HASH,
+                    'revision 3 must preserve revision 2 terrain and collisions while density is disabled')
 
     def geometry(self, flags):
         deck = self.active_deck(flags)
@@ -603,6 +751,10 @@ class Layout:
             require(pos in reached, f'{label}: active {name} cannot be reached through exported approaches')
         require(self.spawn in reached, f'{label}: external boundary entrance is disconnected')
         reached_on_land = flood(start, walk)
+        if DENSITY_PHASE in flags:
+            _, _, previous = self.geometry(flags - {DENSITY_PHASE})
+            stranded = (flood(start, previous) & walk) - reached_on_land
+            require(not stranded, f'{label}: density encloses walkable land at {sample(stranded)}')
         require(market not in flood(start, walk - deck), f'{label}: river can be bypassed without a bridge')
         for slot_id, phase, path in self.outdoor_slots:
             if phase in flags:
@@ -647,6 +799,16 @@ class Layout:
                 require(key < 256, 'tile rule palette exceeds compact tile format')
                 packed.extend((areas.get(tile, NO_REGION), key))
         return bytes(packed), list(rules)
+
+    def collision_hash_without_density(self):
+        packed, rules = self.pack()
+        mask = self.phase_bits[DENSITY_PHASE] - 1
+        fingerprint = hashlib.sha256()
+        for region, index in zip(packed[0::2], packed[1::2]):
+            base, *flags = rules[index]
+            fingerprint.update(struct.pack('<BB4H', region, ('Boundary', 'Water', 'Grass').index(base),
+                                           *(bits & mask for bits in flags)))
+        return fingerprint.hexdigest()
 
 
 def literal(value):
@@ -697,7 +859,7 @@ def emit(layout, source_digest, packed_name):
         return sorted(d[name], key=lambda row: row['id'])
 
     packed, rules = layout.pack()
-    table('PHASES', '&str', map(literal, PHASES))
+    table('PHASES', '&str', map(literal, layout.phases))
     table('RULES', 'TileRule', (
         rust_struct('TileRule', base=f'Terrain::{base}', road=road, bridge=bridge, solid=solid, scenic=scenic)
         for base, road, bridge, solid, scenic in rules
@@ -751,6 +913,7 @@ def emit(layout, source_digest, packed_name):
     table('SCENIC_OBJECTS', 'ScenicObject', (
         rust_struct('ScenicObject', id=literal(row['id']), tile=tile_expr(row['tile']),
                     kind=f'ScenicKind::{SCENIC_KINDS[row["kind"]]}', solid=str(row['solid']).lower(),
+                    temporary_ground=str(row.get('temporary_ground', False)).lower(),
                     phase=phase_expr(row['phase']))
         for row in sorted(layout.scenic, key=lambda row: row['id'])
     ), visibility='pub')

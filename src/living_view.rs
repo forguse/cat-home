@@ -1088,17 +1088,10 @@ impl LivingView {
                         continue;
                     }
                 }
-                let apron = if let Some(courts) = market_courts {
-                    village_tiles[cell]
-                        .and_then(|info| info.region)
-                        .and_then(|zone| {
-                            village_render::decorated_ground(
-                                zone.id, ground, art_x, art_y, edge, courts,
-                            )
-                        })
-                } else {
-                    None
-                };
+                let zone = market_courts.and_then(|_| village_tiles[cell].and_then(|tile| tile.region));
+                let apron = zone.zip(market_courts).and_then(|(zone, courts)| {
+                    village_render::decorated_ground(zone.id, ground, art_x, art_y, edge, courts)
+                });
                 if let Some(([r, g, b], 255)) = apron {
                     pixel.copy_from_slice(&[b, g, r, 255]);
                     continue;
@@ -1158,6 +1151,15 @@ impl LivingView {
                     && ground == Ground::Water
                     && visible_ground == Ground::Grass
                     && edge <= -5;
+                let meadow = if self.terrain[cell] == Ground::Grass
+                    && visible_ground == Ground::Grass
+                    && !shore
+                    && apron.is_none()
+                {
+                    zone.and_then(|zone| crate::landscape::meadow_material(zone.id, art_x, art_y))
+                } else {
+                    None
+                };
                 if village
                     && density == 2
                     && ground == Ground::Path
@@ -1261,7 +1263,26 @@ impl LivingView {
                         *channel = value;
                     }
                 }
-                if let Some(([r, g, b], weight)) = apron {
+                let meadow = meadow.map(|(mut ink, weight, material)| {
+                    use crate::landscape::GroundMaterial;
+                    let (index, reference) = match material {
+                        GroundMaterial::Grass => (0, [126, 149, 89]),
+                        GroundMaterial::Dry => (1, [148, 122, 83]),
+                        GroundMaterial::Stone => (4, [142, 141, 117]),
+                    };
+                    if let Some((frame, page)) = textures[index] {
+                        let [left, top, w, h] = frame.rect.map(i32::from);
+                        let x = left + mirrored_tile_coordinate(art_x, w);
+                        let y = top + mirrored_tile_coordinate(art_y, h);
+                        let at = ((y * 256 + x) * 4) as usize;
+                        for i in 0..3 {
+                            let detail = (i32::from(page[at + 2 - i]) - reference[i]).clamp(-38, 38);
+                            ink[i] = (i32::from(ink[i]) + detail / 2).clamp(0, 255) as u8;
+                        }
+                    }
+                    (ink, weight)
+                });
+                if let Some(([r, g, b], weight)) = apron.or(meadow) {
                     let blend = u16::from(weight);
                     for (dst, ink) in pixel.iter_mut().zip([b, g, r]) {
                         *dst = ((u16::from(*dst) * (255 - blend) + u16::from(ink) * blend) / 255)
@@ -2878,9 +2899,6 @@ enum Palette {
         color: [[u8; 3]; 3],
     },
     LitWindow,
-    ForestCanopy {
-        roots_start: i32,
-    },
     IndoorCutaway {
         feet: [Option<(i32, i32)>; 2],
         lit: bool,
@@ -3027,10 +3045,6 @@ fn blit_rows(
         sprite.top.max(rows.start).max(0)..(sprite.top + sprite.height).min(rows.end).min(height)
     {
         let sy = source_y + ((dy - sprite.top) * 2 + 1) * source_height / (sprite.height * 2);
-        let row_opacity = match palette {
-            Palette::ForestCanopy { roots_start } if dy < roots_start => 89,
-            _ => 255,
-        };
         for dx in sprite.left.max(0)..(sprite.left + sprite.width).min(width) {
             let local_x = dx - sprite.left;
             let local_x = if sprite.flip {
@@ -3058,7 +3072,7 @@ fn blit_rows(
                         }
                     })
                 }
-                _ => row_opacity,
+                _ => 255,
             };
             let d = ((dy * width + dx) * 4) as usize;
             if opacity == 255 {

@@ -839,6 +839,28 @@ const ANIMALS: [Animal; 19] = [
     },
 ];
 
+fn keeps_existing_terrain(tile: TilePos, before: PhaseMask, after: PhaseMask) -> bool {
+    WILLOW_VILLAGE.tile(tile, after).zip(WILLOW_VILLAGE.tile(tile, before))
+        .is_some_and(|(new, old)| new.terrain == old.terrain && (!new.blocked || old.blocked))
+}
+
+fn wildlife_keeps_density_paths(before: PhaseMask, after: PhaseMask) -> bool {
+    let refuge = [TilePos::new(28, 87), TilePos::new(14, 31), TilePos::new(72, 40),
+                   TilePos::new(19, 23)];
+    let pigeon = WILLOW_VILLAGE.building("commons_hall").and_then(|hall| hall.door.offset(0, -4));
+    if !refuge.into_iter().chain(pigeon).all(|tile| keeps_existing_terrain(tile, before, after)) {
+        return false;
+    }
+    ANIMALS.iter().enumerate().all(|(id, animal)| {
+        let clear = |(x, y)| keeps_existing_terrain(TilePos::new(x, y), before, after)
+            && (id != 16 || keeps_existing_terrain(TilePos::new(x + 57, y + 77), before, after));
+        animal.path.windows(2).all(|edge| {
+            let [(x0, y0), (x1, y1)] = [edge[0], edge[1]];
+            (x0.min(x1)..=x0.max(x1)).all(|x| (y0.min(y1)..=y0.max(y1)).all(|y| clear((x, y))))
+        })
+    })
+}
+
 fn animal_visible(id: usize, a: Animal, world: &LivingWorld) -> bool {
     use crate::living_world::YardSeason;
     let minute = world.world_ms() % DAY_MS / MINUTE;
@@ -2099,6 +2121,53 @@ impl VillageLife {
         let mut tiles = [TilePos::new(0, 0); VILLAGE_OCCUPANCY];
         let len = self.write_occupied_tiles(&mut tiles);
         tiles[..len].to_vec()
+    }
+
+    /// Validate every physical commitment before dropping any planned tail.
+    /// The next edge and its existing clock survive a map phase change.
+    pub fn prepare_dense_map_activation(&mut self, dense: PhaseMask, holdouts: &[TilePos]) -> bool {
+        let open = |tile| LivingWorld::map_density_tile(tile, dense, holdouts).is_some_and(|info| !info.blocked);
+        let Some(density) = WILLOW_VILLAGE.phase("map_dense_r3") else { return false; };
+        let before = dense.without(density);
+        let protected = |tile| holdouts.binary_search(&tile).is_ok() || keeps_existing_terrain(tile, before, dense);
+        let walkers = self.people.iter().map(|r| &r.walk)
+            .chain(self.guests.iter().flatten().map(|g| &g.walk));
+        if !walkers.filter(|walk| !walk.hidden()).all(|walk| {
+            open(walk.at) && (!walk.moving() || open(walk.target))
+                && walk.edge.is_none_or(|edge| open(edge.to))
+        }) || !self.trip.is_none_or(|trip| open(trip.target))
+            || !self.social.map_density_positions().all(open)
+            || !self.services.map_density_positions().all(protected)
+        {
+            return false;
+        }
+        for walk in self.people.iter_mut().map(|r| &mut r.walk)
+            .chain(self.guests.iter_mut().flatten().map(|g| &mut g.walk))
+        {
+            let next = usize::from(walk.next);
+            if walk.segment.iter().skip(next).copied().any(|tile| !open(tile)) {
+                walk.segment.truncate(next + usize::from(walk.edge.is_some()));
+            }
+        }
+        self.routing = RouteWork::default();
+        true
+    }
+
+    pub fn map_density_positions(&self) -> impl Iterator<Item = TilePos> + '_ {
+        self.services.map_density_positions()
+    }
+
+    pub fn map_density_destinations(&self) -> impl Iterator<Item = TilePos> + '_ {
+        self.people.iter().map(|r| &r.walk).chain(self.guests.iter().flatten().map(|g| &g.walk))
+            .filter(|walker| walker.moving()).map(|walker| walker.target)
+            .chain(self.trip.iter().map(|trip| trip.target)).chain(self.social.map_density_positions())
+    }
+
+    pub fn map_density_preserves_wildlife() -> bool {
+        WILLOW_VILLAGE.phase("map_dense_r3").is_none_or(|phase| {
+            wildlife_keeps_density_paths(PhaseMask::DAY_ONE, PhaseMask::DAY_ONE.with(phase))
+                && wildlife_keeps_density_paths(PhaseMask::ALL.without(phase), PhaseMask::ALL)
+        })
     }
 
     pub fn write_occupied_tiles(&self, tiles: &mut [TilePos; VILLAGE_OCCUPANCY]) -> usize {
@@ -6552,3 +6621,12 @@ impl RouteWork {
         }
     }
 }
+    #[test]
+    fn map_density_preserves_all_wildlife_routes_and_refuges() {
+        let Some(phase) = WILLOW_VILLAGE.phase("map_dense_r3") else {
+            assert_eq!(WILLOW_VILLAGE.map_revision, 2);
+            return;
+        };
+        assert!(wildlife_keeps_density_paths(PhaseMask::DAY_ONE, PhaseMask::DAY_ONE.with(phase)));
+        assert!(wildlife_keeps_density_paths(PhaseMask::ALL.without(phase), PhaseMask::ALL));
+    }

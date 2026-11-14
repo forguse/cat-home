@@ -33,6 +33,7 @@ pub struct MapView<'a> {
     phases: PhaseMask,
     // One fixed 6 KiB overlay, never one bitmap for every resident/search.
     blocked: [u64; MAX_TILES.div_ceil(64)],
+    density_holdouts: Vec<TilePos>,
     revision: u64,
     instance_id: u64,
 }
@@ -52,6 +53,7 @@ impl<'a> MapView<'a> {
             map,
             phases,
             blocked: [0; MAX_TILES.div_ceil(64)],
+            density_holdouts: Vec::new(),
             revision: 1,
             instance_id,
         }
@@ -83,9 +85,22 @@ impl<'a> MapView<'a> {
 
     pub fn tile(&self, pos: TilePos) -> Option<TileInfo> {
         let index = self.index(pos)?;
-        let mut info = self.map.tile(pos, self.phases)?;
+        let phases = if self.density_holdouts.binary_search(&pos).is_ok() {
+            self.map.phase("map_dense_r3").map_or(self.phases, |phase| self.phases.without(phase))
+        } else {
+            self.phases
+        };
+        let mut info = self.map.tile(pos, phases)?;
         info.blocked |= self.blocked[index / 64] & (1u64 << (index % 64)) != 0;
         Some(info)
+    }
+
+    pub(crate) fn set_density_holdouts(&mut self, tiles: &[TilePos]) {
+        if self.density_holdouts != tiles {
+            self.density_holdouts.clear();
+            self.density_holdouts.extend_from_slice(tiles);
+            self.bump_revision();
+        }
     }
 
     pub fn can_walk(&self, pos: TilePos) -> bool {
