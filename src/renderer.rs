@@ -133,6 +133,8 @@ pub struct Renderer {
     width: i32,
     height: i32,
     presented_at: Option<(i32, i32)>,
+    presented_premium: bool,
+    presented_phase: Option<(i32, i32)>,
 }
 
 fn new_bitmap(dc: HDC, width: i32, height: i32) -> (HBITMAP, *mut u8) {
@@ -190,6 +192,8 @@ impl Renderer {
                 width,
                 height,
                 presented_at: None,
+                presented_premium: false,
+                presented_phase: None,
             })
         }
     }
@@ -250,7 +254,7 @@ impl Renderer {
                 "invalid world frame",
             ));
         }
-        let new_surface = self.presented_at.is_none();
+        let new_surface = self.presented_at.is_none() || self.presented_premium;
         let moved = self.presented_at != Some((position.x, position.y));
         let damage = if new_surface {
             Some(Damage::full(logical))
@@ -279,6 +283,86 @@ impl Renderer {
             }
         }
 
+        self.present(hwnd, position, physical_damage, moved, false)
+    }
+
+    /// Submit the art-texel frame at the shared integer presentation scale.
+    pub fn draw_premium(
+        &mut self,
+        hwnd: HWND,
+        position: POINT,
+        pixels: &[u8],
+        changed: Option<Damage>,
+        phase: Option<(i32, i32)>,
+    ) -> io::Result<()> {
+        let physical = self.size();
+        let source = if phase.is_some() {
+            cat_home::viewport::overscan_source_size(physical)
+        } else {
+            cat_home::viewport::source_size(physical)
+        };
+        if pixels.len() != (source.0 * source.1 * 4) as usize {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                "invalid premium frame",
+            ));
+        }
+        let fresh =
+            self.presented_at.is_none() || !self.presented_premium || self.presented_phase != phase;
+        let pixel_shift = phase.unwrap_or_default();
+        let moved = self.presented_at != Some((position.x, position.y));
+        let damage = if fresh {
+            Some(Damage::full(source))
+        } else {
+            changed
+        };
+        if !moved && damage.is_none() {
+            return Ok(());
+        }
+        let physical_damage = damage.and_then(|damage| {
+            let damage = premium_physical_damage(damage, physical, pixel_shift)?;
+            let out = unsafe {
+                std::slice::from_raw_parts_mut(
+                    self.bits.cast::<u32>(),
+                    (physical.0 * physical.1) as usize,
+                )
+            };
+            write_premium_pixels(
+                out,
+                physical.0 as usize,
+                pixels,
+                source.0 as usize,
+                damage,
+                pixel_shift,
+            );
+            cat_home::widget_frame::decorate(
+                out,
+                physical,
+                [damage.left, damage.top, damage.right, damage.bottom],
+            );
+            Some(RECT {
+                left: damage.left,
+                top: damage.top,
+                right: damage.right,
+                bottom: damage.bottom,
+            })
+        });
+        if !moved && physical_damage.is_none() {
+            return Ok(());
+        }
+        self.present(hwnd, position, physical_damage, moved, true)?;
+        self.presented_phase = phase;
+        Ok(())
+    }
+
+    fn present(
+        &mut self,
+        hwnd: HWND,
+        position: POINT,
+        physical_damage: Option<RECT>,
+        moved: bool,
+        premium: bool,
+    ) -> io::Result<()> {
         let source = POINT { x: 0, y: 0 };
         let size = SIZE {
             cx: self.width,
@@ -314,6 +398,7 @@ impl Renderer {
             Err(io::Error::last_os_error())
         } else {
             self.presented_at = Some((position.x, position.y));
+            self.presented_premium = premium;
             Ok(())
         }
     }
@@ -351,6 +436,64 @@ impl Renderer {
     }
 }
 
+fn premium_source_coordinate(physical: i32) -> i32 {
+    cat_home::viewport::source_coordinate(physical)
+}
+
+fn premium_physical_damage(
+    source: Damage,
+    (width, height): (i32, i32),
+    phase: (i32, i32),
+) -> Option<Damage> {
+    let extent = |edge: i32, limit: i32, shift: i32| {
+        (edge.clamp(-1, limit + 2) * cat_home::viewport::ART_PIXEL - shift).clamp(0, limit)
+    };
+    let damage = Damage {
+        left: extent(source.left, width, phase.0),
+        top: extent(source.top, height, phase.1),
+        right: extent(source.right, width, phase.0),
+        bottom: extent(source.bottom, height, phase.1),
+    };
+    (damage.left < damage.right && damage.top < damage.bottom).then_some(damage)
+}
+
+fn write_premium_pixels(
+    out: &mut [u32],
+    dest_stride: usize,
+    source: &[u8],
+    source_stride: usize,
+    rect: Damage,
+    phase: (i32, i32),
+) {
+    use cat_home::viewport::ART_PIXEL;
+    let mut y = rect.top;
+    while y < rect.bottom {
+        let source_y = premium_source_coordinate(y + phase.1);
+        let source_row = source_y as usize * source_stride;
+        let dest_row = y as usize * dest_stride;
+        let left = dest_row + rect.left as usize;
+        let right = dest_row + rect.right as usize;
+        let mut x = rect.left;
+        let mut source_x = premium_source_coordinate(x + phase.0);
+        while x < rect.right {
+            let end_x = ((source_x + 1) * ART_PIXEL - phase.0).min(rect.right);
+            let offset = (source_row + source_x as usize) * 4;
+            let pixel = u32::from_ne_bytes(source[offset..offset + 4].try_into().unwrap());
+            out[dest_row + x as usize..dest_row + end_x as usize].fill(pixel);
+            x = end_x;
+            source_x += 1;
+        }
+        let end_y = ((source_y + 1) * ART_PIXEL - phase.1).min(rect.bottom);
+        for copy_y in y + 1..end_y {
+            out.copy_within(
+                left..right,
+                copy_y as usize * dest_stride + rect.left as usize,
+            );
+        }
+        y = end_y;
+    }
+}
+
 impl Drop for Renderer {
     fn drop(&mut self) {
         unsafe {
@@ -365,6 +508,129 @@ impl Drop for Renderer {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn premium_damage_matches_nearest_neighbor_footprint_for_odd_viewports() {
+        for width in 1..=19 {
+            let (source, _) = cat_home::living_view::premium_source_size((width, 1));
+            for a in 0..=source {
+                for b in a..=source {
+                    let rect = premium_physical_damage(
+                        Damage {
+                            left: a,
+                            top: 0,
+                            right: b,
+                            bottom: 1,
+                        },
+                        (width, 1),
+                        (0, 0),
+                    );
+                    for x in 0..width {
+                        assert_eq!(
+                            (a..b).contains(&premium_source_coordinate(x)),
+                            rect.is_some_and(|r| (r.left..r.right).contains(&x))
+                        );
+                    }
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn premium_dirty_write_erases_alpha_and_leaves_outside_pixels_unchanged() {
+        let mut source = vec![0; 4 * 4 * 4];
+        for (i, pixel) in source.chunks_exact_mut(4).enumerate() {
+            pixel.copy_from_slice(&[i as u8, 0, 0, 255]);
+        }
+        source[5 * 4..6 * 4].fill(0);
+        let mut incremental = vec![0xFF_55_55_55; 5 * 5];
+        let dirty = premium_physical_damage(
+            Damage {
+                left: 1,
+                top: 1,
+                right: 2,
+                bottom: 2,
+            },
+            (5, 5),
+            (0, 0),
+        )
+        .unwrap();
+        write_premium_pixels(&mut incremental, 5, &source, 4, dirty, (0, 0));
+        for y in 0..5 {
+            for x in 0..5 {
+                let expected = if (dirty.left..dirty.right).contains(&x)
+                    && (dirty.top..dirty.bottom).contains(&y)
+                {
+                    0
+                } else {
+                    0xFF_55_55_55
+                };
+                assert_eq!(incremental[(y * 5 + x) as usize], expected);
+            }
+        }
+        let full = premium_physical_damage(Damage::full((4, 4)), (5, 5), (0, 0)).unwrap();
+        write_premium_pixels(&mut incremental, 5, &source, 4, full, (0, 0));
+        assert_eq!(
+            incremental
+                .iter()
+                .map(|value| value.to_ne_bytes()[0])
+                .collect::<Vec<_>>(),
+            [
+                0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 4, 4, 4, 0, 0, 4, 4, 4, 0, 0
+            ]
+        );
+    }
+
+    #[test]
+    fn premium_phase_scrolls_one_physical_pixel_without_resampling_art() {
+        use cat_home::viewport::{PixelOrigin, overscan_source_size};
+        let size = (17, 13);
+        let source_size = overscan_source_size(size);
+        let mut prior: Option<Vec<u32>> = None;
+        for p in 0..24 {
+            let origin = PixelOrigin::new((p as f32 / 6.0, p as f32 / 6.0), size, (100, 100));
+            let mut source = Vec::new();
+            for y in 0..source_size.1 {
+                for x in 0..source_size.0 {
+                    source.extend([
+                        (x + 2 * origin.world.0) as u8,
+                        (y + 2 * origin.world.1) as u8,
+                        50,
+                        255,
+                    ]);
+                }
+            }
+            let mut frame = vec![0; (size.0 * size.1) as usize];
+            let full =
+                premium_physical_damage(Damage::full(source_size), size, origin.phase).unwrap();
+            assert_eq!(full, Damage::full(size));
+            write_premium_pixels(
+                &mut frame,
+                size.0 as usize,
+                &source,
+                source_size.0 as usize,
+                full,
+                origin.phase,
+            );
+            if let Some(prior) = prior {
+                for y in 0..size.1 - 1 {
+                    for x in 0..size.0 - 1 {
+                        assert_eq!(
+                            frame[(y * size.0 + x) as usize],
+                            prior[((y + 1) * size.0 + x + 1) as usize]
+                        );
+                    }
+                }
+            }
+            for y in 0..size.1 {
+                for x in 0..size.0 {
+                    let pixel = frame[(y * size.0 + x) as usize].to_ne_bytes();
+                    assert_eq!(pixel, [((x + p) / 3) as u8, ((y + p) / 3) as u8, 50, 255]);
+                }
+            }
+            prior = Some(frame);
+        }
+    }
 
     #[test]
     fn detailed_sprite_preserves_native_pixels_and_clips_at_surface_edge() {

@@ -1,0 +1,2944 @@
+{
+  "pages": [
+    {
+      "id": "page_00",
+      "file": "page_00.bgra",
+      "sha3_256": "78609fc6249a49000af39860c4f4391b979a19d3c746c031bcd7faea80898819",
+      "width": 128,
+      "height": 128
+    },
+    {
+      "id": "page_01",
+      "file": "page_01.bgra",
+      "sha3_256": "849c1b8d3f867e7f5f564d78911753704997a375859fc0d6bb4851358de6e96f",
+      "width": 128,
+      "height": 128
+    },
+    {
+      "id": "page_02",
+      "file": "page_02.bgra",
+      "sha3_256": "a20b5574cdcd39b3e64af94ad6faf18e2b75d61fa6f49dfdc57c2cd35d0f40fd",
+      "width": 128,
+      "height": 128
+    },
+    {
+      "id": "page_03",
+      "file": "page_03.bgra",
+      "sha3_256": "e8844e06c7bb8623e3f2e7e0f41df1bc5242c51009821c28926736e065155a8a",
+      "width": 128,
+      "height": 128
+    },
+    {
+      "id": "page_04",
+      "file": "page_04.bgra",
+      "sha3_256": "7de89c223bc3320e1b48e9da867963afdb4f9ea962c65aedb17fb026678e80c4",
+      "width": 128,
+      "height": 128
+    },
+    {
+      "id": "page_05",
+      "file": "page_05.bgra",
+      "sha3_256": "5a24127dff93b571278246354718deb8e7cdf103735227deb74fce74f6d517ba",
+      "width": 128,
+      "height": 128
+    },
+    {
+      "id": "page_06",
+      "file": "page_06.bgra",
+      "sha3_256": "ea6e704fe7682cd5ac0ceaacfc209bac175fa1ec2fb8a32e36a35327afdcce07",
+      "width": 128,
+      "height": 128
+    },
+    {
+      "id": "page_07",
+      "file": "page_07.bgra",
+      "sha3_256": "b6e734f3503de8f1f7bfc0fa6ffa59b8e47983f855031b2c0797e99dfdfe0a47",
+      "width": 128,
+      "height": 128
+    },
+    {
+      "id": "page_08",
+      "file": "page_08.bgra",
+      "sha3_256": "83f8e88151b7e3bedac9783c1801f0cd24a9f66bf15671b86a6b9f70ae29964f",
+      "width": 128,
+      "height": 128
+    },
+    {
+      "id": "page_09",
+      "file": "page_09.bgra",
+      "sha3_256": "21fece8c33938f826d0d021ccdb342f9debbda65bef282ce77daa924ad0f204f",
+      "width": 128,
+      "height": 128
+    },
+    {
+      "id": "page_10",
+      "file": "page_10.bgra",
+      "sha3_256": "6fb8a6e3764178b2368e9a488e128af0022e14eee53239f4ae00ca1143783e84",
+      "width": 128,
+      "height": 128
+    },
+    {
+      "id": "page_11",
+      "file": "page_11.bgra",
+      "sha3_256": "e40e70e946cb7baa6198361a083d400258c0606ed1dc708a925245a18848d24b",
+      "width": 128,
+      "height": 128
+    },
+    {
+      "id": "page_12",
+      "file": "page_12.bgra",
+      "sha3_256": "6b19f16259be26298e67b343f7a424331525fc2eb014ee848551a1675ea061f5",
+      "width": 128,
+      "height": 128
+    },
+    {
+      "id": "page_13",
+      "file": "page_13.bgra",
+      "sha3_256": "8df423e763a88c1a6f55275b8d34003f9fb2c85d6ade88b0a1cbca1375e6ef6f",
+      "width": 128,
+      "height": 128
+    },
+    {
+      "id": "page_14",
+      "file": "page_14.bgra",
+      "sha3_256": "e238b4f60b3a342cb90c8fc9f329bffd7aefef0188dbeff14a16949ac381e21f",
+      "width": 128,
+      "height": 128
+    },
+    {
+      "id": "page_15",
+      "file": "page_15.bgra",
+      "sha3_256": "443026f9ddc033d355b519f23d786bb1a413e80e21935ea4a043f974a46962d6",
+      "width": 128,
+      "height": 128
+    }
+  ],
+  "frames": [
+    {
+      "id": "female_idle_0",
+      "page": "page_00",
+      "rect": [
+        0,
+        0,
+        16,
+        27
+      ],
+      "anchor": [
+        8,
+        24
+      ],
+      "body": "human_female",
+      "hand_anchor": [
+        13,
+        16
+      ]
+    },
+    {
+      "id": "male_idle_0",
+      "page": "page_00",
+      "rect": [
+        17,
+        0,
+        16,
+        28
+      ],
+      "anchor": [
+        8,
+        25
+      ],
+      "body": "human_male",
+      "hand_anchor": [
+        13,
+        17
+      ]
+    },
+    {
+      "id": "female_idle_1",
+      "page": "page_00",
+      "rect": [
+        34,
+        0,
+        16,
+        27
+      ],
+      "anchor": [
+        8,
+        24
+      ],
+      "body": "human_female",
+      "hand_anchor": [
+        13,
+        15
+      ]
+    },
+    {
+      "id": "male_idle_1",
+      "page": "page_00",
+      "rect": [
+        51,
+        0,
+        16,
+        27
+      ],
+      "anchor": [
+        8,
+        24
+      ],
+      "body": "human_male",
+      "hand_anchor": [
+        13,
+        15
+      ]
+    },
+    {
+      "id": "female_idle_2",
+      "page": "page_00",
+      "rect": [
+        68,
+        0,
+        16,
+        27
+      ],
+      "anchor": [
+        8,
+        24
+      ],
+      "body": "human_female",
+      "hand_anchor": [
+        13,
+        16
+      ]
+    },
+    {
+      "id": "male_idle_2",
+      "page": "page_00",
+      "rect": [
+        85,
+        0,
+        17,
+        28
+      ],
+      "anchor": [
+        8,
+        25
+      ],
+      "body": "human_male",
+      "hand_anchor": [
+        13,
+        17
+      ]
+    },
+    {
+      "id": "female_walk_0",
+      "page": "page_00",
+      "rect": [
+        103,
+        0,
+        16,
+        27
+      ],
+      "anchor": [
+        8,
+        24
+      ],
+      "body": "human_female",
+      "hand_anchor": [
+        12,
+        18
+      ]
+    },
+    {
+      "id": "male_walk_0",
+      "page": "page_00",
+      "rect": [
+        0,
+        29,
+        16,
+        28
+      ],
+      "anchor": [
+        8,
+        25
+      ],
+      "body": "human_male",
+      "hand_anchor": [
+        12,
+        19
+      ]
+    },
+    {
+      "id": "female_walk_1",
+      "page": "page_00",
+      "rect": [
+        17,
+        29,
+        17,
+        28
+      ],
+      "anchor": [
+        8,
+        25
+      ],
+      "body": "human_female",
+      "hand_anchor": [
+        14,
+        16
+      ]
+    },
+    {
+      "id": "male_walk_1",
+      "page": "page_00",
+      "rect": [
+        35,
+        29,
+        18,
+        29
+      ],
+      "anchor": [
+        8,
+        26
+      ],
+      "body": "human_male",
+      "hand_anchor": [
+        14,
+        17
+      ]
+    },
+    {
+      "id": "female_walk_2",
+      "page": "page_00",
+      "rect": [
+        54,
+        29,
+        18,
+        27
+      ],
+      "anchor": [
+        8,
+        24
+      ],
+      "body": "human_female",
+      "hand_anchor": [
+        16,
+        13
+      ]
+    },
+    {
+      "id": "male_walk_2",
+      "page": "page_00",
+      "rect": [
+        73,
+        29,
+        18,
+        28
+      ],
+      "anchor": [
+        8,
+        25
+      ],
+      "body": "human_male",
+      "hand_anchor": [
+        16,
+        14
+      ]
+    },
+    {
+      "id": "female_carry_0",
+      "page": "page_00",
+      "rect": [
+        92,
+        29,
+        18,
+        27
+      ],
+      "anchor": [
+        8,
+        24
+      ],
+      "body": "human_female",
+      "hand_anchor": [
+        16,
+        13
+      ]
+    },
+    {
+      "id": "male_carry_0",
+      "page": "page_00",
+      "rect": [
+        0,
+        59,
+        18,
+        28
+      ],
+      "anchor": [
+        8,
+        25
+      ],
+      "body": "human_male",
+      "hand_anchor": [
+        16,
+        14
+      ]
+    },
+    {
+      "id": "female_carry_1",
+      "page": "page_00",
+      "rect": [
+        19,
+        59,
+        18,
+        28
+      ],
+      "anchor": [
+        8,
+        25
+      ],
+      "body": "human_female",
+      "hand_anchor": [
+        16,
+        14
+      ]
+    },
+    {
+      "id": "male_carry_1",
+      "page": "page_00",
+      "rect": [
+        38,
+        59,
+        18,
+        29
+      ],
+      "anchor": [
+        8,
+        26
+      ],
+      "body": "human_male",
+      "hand_anchor": [
+        16,
+        15
+      ]
+    },
+    {
+      "id": "female_carry_2",
+      "page": "page_00",
+      "rect": [
+        57,
+        59,
+        18,
+        27
+      ],
+      "anchor": [
+        8,
+        24
+      ],
+      "body": "human_female",
+      "hand_anchor": [
+        16,
+        13
+      ]
+    },
+    {
+      "id": "male_carry_2",
+      "page": "page_00",
+      "rect": [
+        76,
+        59,
+        18,
+        28
+      ],
+      "anchor": [
+        8,
+        25
+      ],
+      "body": "human_male",
+      "hand_anchor": [
+        16,
+        14
+      ]
+    },
+    {
+      "id": "female_hoe_clear_0",
+      "page": "page_00",
+      "rect": [
+        95,
+        59,
+        24,
+        27
+      ],
+      "anchor": [
+        8,
+        24
+      ],
+      "body": "human_female",
+      "hand_anchor": [
+        13,
+        11
+      ]
+    },
+    {
+      "id": "male_hoe_clear_0",
+      "page": "page_00",
+      "rect": [
+        0,
+        89,
+        24,
+        27
+      ],
+      "anchor": [
+        8,
+        24
+      ],
+      "body": "human_male",
+      "hand_anchor": [
+        13,
+        11
+      ]
+    },
+    {
+      "id": "female_hoe_clear_1",
+      "page": "page_00",
+      "rect": [
+        25,
+        89,
+        26,
+        23
+      ],
+      "anchor": [
+        8,
+        20
+      ],
+      "body": "human_female",
+      "hand_anchor": [
+        18,
+        15
+      ]
+    },
+    {
+      "id": "male_hoe_clear_1",
+      "page": "page_00",
+      "rect": [
+        52,
+        89,
+        26,
+        24
+      ],
+      "anchor": [
+        8,
+        21
+      ],
+      "body": "human_male",
+      "hand_anchor": [
+        18,
+        16
+      ]
+    },
+    {
+      "id": "female_hoe_clear_2",
+      "page": "page_00",
+      "rect": [
+        79,
+        89,
+        26,
+        25
+      ],
+      "anchor": [
+        8,
+        22
+      ],
+      "body": "human_female",
+      "hand_anchor": [
+        16,
+        13
+      ]
+    },
+    {
+      "id": "male_hoe_clear_2",
+      "page": "page_01",
+      "rect": [
+        0,
+        0,
+        26,
+        26
+      ],
+      "anchor": [
+        8,
+        23
+      ],
+      "body": "human_male",
+      "hand_anchor": [
+        16,
+        14
+      ]
+    },
+    {
+      "id": "female_hoe_till_0",
+      "page": "page_01",
+      "rect": [
+        27,
+        0,
+        23,
+        28
+      ],
+      "anchor": [
+        8,
+        25
+      ],
+      "body": "human_female",
+      "hand_anchor": [
+        16,
+        10
+      ]
+    },
+    {
+      "id": "male_hoe_till_0",
+      "page": "page_01",
+      "rect": [
+        51,
+        0,
+        23,
+        28
+      ],
+      "anchor": [
+        8,
+        25
+      ],
+      "body": "human_male",
+      "hand_anchor": [
+        16,
+        10
+      ]
+    },
+    {
+      "id": "female_hoe_till_1",
+      "page": "page_01",
+      "rect": [
+        75,
+        0,
+        26,
+        24
+      ],
+      "anchor": [
+        8,
+        20
+      ],
+      "body": "human_female",
+      "hand_anchor": [
+        18,
+        16
+      ]
+    },
+    {
+      "id": "male_hoe_till_1",
+      "page": "page_01",
+      "rect": [
+        102,
+        0,
+        26,
+        25
+      ],
+      "anchor": [
+        8,
+        21
+      ],
+      "body": "human_male",
+      "hand_anchor": [
+        18,
+        17
+      ]
+    },
+    {
+      "id": "female_hoe_till_2",
+      "page": "page_01",
+      "rect": [
+        0,
+        29,
+        26,
+        25
+      ],
+      "anchor": [
+        8,
+        22
+      ],
+      "body": "human_female",
+      "hand_anchor": [
+        16,
+        16
+      ]
+    },
+    {
+      "id": "male_hoe_till_2",
+      "page": "page_01",
+      "rect": [
+        27,
+        29,
+        26,
+        25
+      ],
+      "anchor": [
+        8,
+        22
+      ],
+      "body": "human_male",
+      "hand_anchor": [
+        16,
+        16
+      ]
+    },
+    {
+      "id": "female_sow_0",
+      "page": "page_01",
+      "rect": [
+        54,
+        29,
+        17,
+        26
+      ],
+      "anchor": [
+        8,
+        23
+      ],
+      "body": "human_female",
+      "hand_anchor": [
+        13,
+        14
+      ]
+    },
+    {
+      "id": "male_sow_0",
+      "page": "page_01",
+      "rect": [
+        72,
+        29,
+        17,
+        27
+      ],
+      "anchor": [
+        8,
+        24
+      ],
+      "body": "human_male",
+      "hand_anchor": [
+        13,
+        15
+      ]
+    },
+    {
+      "id": "female_sow_1",
+      "page": "page_01",
+      "rect": [
+        90,
+        29,
+        22,
+        21
+      ],
+      "anchor": [
+        8,
+        18
+      ],
+      "body": "human_female",
+      "hand_anchor": [
+        18,
+        16
+      ]
+    },
+    {
+      "id": "male_sow_1",
+      "page": "page_01",
+      "rect": [
+        0,
+        57,
+        22,
+        22
+      ],
+      "anchor": [
+        8,
+        19
+      ],
+      "body": "human_male",
+      "hand_anchor": [
+        18,
+        17
+      ]
+    },
+    {
+      "id": "female_sow_2",
+      "page": "page_01",
+      "rect": [
+        23,
+        57,
+        18,
+        24
+      ],
+      "anchor": [
+        8,
+        21
+      ],
+      "body": "human_female",
+      "hand_anchor": [
+        15,
+        15
+      ]
+    },
+    {
+      "id": "male_sow_2",
+      "page": "page_01",
+      "rect": [
+        42,
+        57,
+        18,
+        25
+      ],
+      "anchor": [
+        8,
+        22
+      ],
+      "body": "human_male",
+      "hand_anchor": [
+        15,
+        16
+      ]
+    },
+    {
+      "id": "female_water_0",
+      "page": "page_01",
+      "rect": [
+        61,
+        57,
+        25,
+        27
+      ],
+      "anchor": [
+        8,
+        24
+      ],
+      "body": "human_female",
+      "hand_anchor": [
+        15,
+        13
+      ]
+    },
+    {
+      "id": "male_water_0",
+      "page": "page_01",
+      "rect": [
+        87,
+        57,
+        25,
+        27
+      ],
+      "anchor": [
+        8,
+        24
+      ],
+      "body": "human_male",
+      "hand_anchor": [
+        15,
+        13
+      ]
+    },
+    {
+      "id": "female_water_1",
+      "page": "page_01",
+      "rect": [
+        0,
+        85,
+        26,
+        24
+      ],
+      "anchor": [
+        8,
+        21
+      ],
+      "body": "human_female",
+      "hand_anchor": [
+        16,
+        13
+      ]
+    },
+    {
+      "id": "male_water_1",
+      "page": "page_01",
+      "rect": [
+        27,
+        85,
+        26,
+        25
+      ],
+      "anchor": [
+        8,
+        22
+      ],
+      "body": "human_male",
+      "hand_anchor": [
+        16,
+        14
+      ]
+    },
+    {
+      "id": "female_water_2",
+      "page": "page_01",
+      "rect": [
+        54,
+        85,
+        24,
+        25
+      ],
+      "anchor": [
+        8,
+        22
+      ],
+      "body": "human_female",
+      "hand_anchor": [
+        15,
+        13
+      ]
+    },
+    {
+      "id": "male_water_2",
+      "page": "page_01",
+      "rect": [
+        79,
+        85,
+        24,
+        26
+      ],
+      "anchor": [
+        8,
+        23
+      ],
+      "body": "human_male",
+      "hand_anchor": [
+        15,
+        14
+      ]
+    },
+    {
+      "id": "female_harvest_0",
+      "page": "page_01",
+      "rect": [
+        104,
+        85,
+        18,
+        25
+      ],
+      "anchor": [
+        8,
+        22
+      ],
+      "body": "human_female",
+      "hand_anchor": [
+        14,
+        15
+      ]
+    },
+    {
+      "id": "male_harvest_0",
+      "page": "page_02",
+      "rect": [
+        0,
+        0,
+        18,
+        26
+      ],
+      "anchor": [
+        8,
+        23
+      ],
+      "body": "human_male",
+      "hand_anchor": [
+        14,
+        16
+      ]
+    },
+    {
+      "id": "female_harvest_1",
+      "page": "page_02",
+      "rect": [
+        19,
+        0,
+        21,
+        22
+      ],
+      "anchor": [
+        8,
+        19
+      ],
+      "body": "human_female",
+      "hand_anchor": [
+        18,
+        17
+      ]
+    },
+    {
+      "id": "male_harvest_1",
+      "page": "page_02",
+      "rect": [
+        41,
+        0,
+        21,
+        22
+      ],
+      "anchor": [
+        8,
+        19
+      ],
+      "body": "human_male",
+      "hand_anchor": [
+        18,
+        17
+      ]
+    },
+    {
+      "id": "female_harvest_2",
+      "page": "page_02",
+      "rect": [
+        63,
+        0,
+        23,
+        25
+      ],
+      "anchor": [
+        8,
+        22
+      ],
+      "body": "human_female",
+      "hand_anchor": [
+        16,
+        13
+      ]
+    },
+    {
+      "id": "male_harvest_2",
+      "page": "page_02",
+      "rect": [
+        87,
+        0,
+        23,
+        26
+      ],
+      "anchor": [
+        8,
+        23
+      ],
+      "body": "human_male",
+      "hand_anchor": [
+        16,
+        14
+      ]
+    },
+    {
+      "id": "female_store_0",
+      "page": "page_02",
+      "rect": [
+        0,
+        27,
+        22,
+        26
+      ],
+      "anchor": [
+        8,
+        23
+      ],
+      "body": "human_female",
+      "hand_anchor": [
+        16,
+        13
+      ]
+    },
+    {
+      "id": "male_store_0",
+      "page": "page_02",
+      "rect": [
+        23,
+        27,
+        22,
+        27
+      ],
+      "anchor": [
+        8,
+        24
+      ],
+      "body": "human_male",
+      "hand_anchor": [
+        16,
+        14
+      ]
+    },
+    {
+      "id": "female_store_1",
+      "page": "page_02",
+      "rect": [
+        46,
+        27,
+        25,
+        24
+      ],
+      "anchor": [
+        8,
+        21
+      ],
+      "body": "human_female",
+      "hand_anchor": [
+        18,
+        15
+      ]
+    },
+    {
+      "id": "male_store_1",
+      "page": "page_02",
+      "rect": [
+        72,
+        27,
+        25,
+        25
+      ],
+      "anchor": [
+        8,
+        22
+      ],
+      "body": "human_male",
+      "hand_anchor": [
+        18,
+        16
+      ]
+    },
+    {
+      "id": "female_store_2",
+      "page": "page_02",
+      "rect": [
+        98,
+        27,
+        19,
+        25
+      ],
+      "anchor": [
+        8,
+        22
+      ],
+      "body": "human_female",
+      "hand_anchor": [
+        16,
+        16
+      ]
+    },
+    {
+      "id": "male_store_2",
+      "page": "page_02",
+      "rect": [
+        0,
+        55,
+        19,
+        25
+      ],
+      "anchor": [
+        8,
+        22
+      ],
+      "body": "human_male",
+      "hand_anchor": [
+        16,
+        16
+      ]
+    },
+    {
+      "id": "female_cook_0",
+      "page": "page_02",
+      "rect": [
+        20,
+        55,
+        22,
+        27
+      ],
+      "anchor": [
+        8,
+        24
+      ],
+      "body": "human_female",
+      "hand_anchor": [
+        17,
+        10
+      ]
+    },
+    {
+      "id": "male_cook_0",
+      "page": "page_02",
+      "rect": [
+        43,
+        55,
+        22,
+        27
+      ],
+      "anchor": [
+        8,
+        24
+      ],
+      "body": "human_male",
+      "hand_anchor": [
+        17,
+        10
+      ]
+    },
+    {
+      "id": "female_cook_1",
+      "page": "page_02",
+      "rect": [
+        66,
+        55,
+        23,
+        26
+      ],
+      "anchor": [
+        8,
+        23
+      ],
+      "body": "human_female",
+      "hand_anchor": [
+        18,
+        13
+      ]
+    },
+    {
+      "id": "male_cook_1",
+      "page": "page_02",
+      "rect": [
+        90,
+        55,
+        23,
+        27
+      ],
+      "anchor": [
+        8,
+        24
+      ],
+      "body": "human_male",
+      "hand_anchor": [
+        18,
+        14
+      ]
+    },
+    {
+      "id": "female_cook_2",
+      "page": "page_02",
+      "rect": [
+        0,
+        83,
+        22,
+        27
+      ],
+      "anchor": [
+        8,
+        24
+      ],
+      "body": "human_female",
+      "hand_anchor": [
+        17,
+        12
+      ]
+    },
+    {
+      "id": "male_cook_2",
+      "page": "page_02",
+      "rect": [
+        23,
+        83,
+        22,
+        27
+      ],
+      "anchor": [
+        8,
+        24
+      ],
+      "body": "human_male",
+      "hand_anchor": [
+        17,
+        12
+      ]
+    },
+    {
+      "id": "female_eat_0",
+      "page": "page_02",
+      "rect": [
+        46,
+        83,
+        19,
+        25
+      ],
+      "anchor": [
+        8,
+        22
+      ],
+      "body": "human_female",
+      "hand_anchor": [
+        15,
+        14
+      ]
+    },
+    {
+      "id": "male_eat_0",
+      "page": "page_02",
+      "rect": [
+        66,
+        83,
+        19,
+        26
+      ],
+      "anchor": [
+        8,
+        23
+      ],
+      "body": "human_male",
+      "hand_anchor": [
+        15,
+        15
+      ]
+    },
+    {
+      "id": "female_eat_1",
+      "page": "page_02",
+      "rect": [
+        86,
+        83,
+        18,
+        25
+      ],
+      "anchor": [
+        8,
+        22
+      ],
+      "body": "human_female",
+      "hand_anchor": [
+        14,
+        9
+      ]
+    },
+    {
+      "id": "male_eat_1",
+      "page": "page_02",
+      "rect": [
+        105,
+        83,
+        18,
+        25
+      ],
+      "anchor": [
+        8,
+        22
+      ],
+      "body": "human_male",
+      "hand_anchor": [
+        14,
+        9
+      ]
+    },
+    {
+      "id": "female_eat_2",
+      "page": "page_03",
+      "rect": [
+        0,
+        0,
+        18,
+        25
+      ],
+      "anchor": [
+        8,
+        22
+      ],
+      "body": "human_female",
+      "hand_anchor": [
+        14,
+        13
+      ]
+    },
+    {
+      "id": "male_eat_2",
+      "page": "page_03",
+      "rect": [
+        19,
+        0,
+        18,
+        26
+      ],
+      "anchor": [
+        8,
+        23
+      ],
+      "body": "human_male",
+      "hand_anchor": [
+        14,
+        14
+      ]
+    },
+    {
+      "id": "female_fill_bowl_0",
+      "page": "page_03",
+      "rect": [
+        38,
+        0,
+        21,
+        26
+      ],
+      "anchor": [
+        8,
+        23
+      ],
+      "body": "human_female",
+      "hand_anchor": [
+        16,
+        12
+      ]
+    },
+    {
+      "id": "male_fill_bowl_0",
+      "page": "page_03",
+      "rect": [
+        60,
+        0,
+        21,
+        27
+      ],
+      "anchor": [
+        8,
+        24
+      ],
+      "body": "human_male",
+      "hand_anchor": [
+        16,
+        13
+      ]
+    },
+    {
+      "id": "female_fill_bowl_1",
+      "page": "page_03",
+      "rect": [
+        82,
+        0,
+        23,
+        21
+      ],
+      "anchor": [
+        8,
+        18
+      ],
+      "body": "human_female",
+      "hand_anchor": [
+        18,
+        12
+      ]
+    },
+    {
+      "id": "male_fill_bowl_1",
+      "page": "page_03",
+      "rect": [
+        0,
+        28,
+        23,
+        22
+      ],
+      "anchor": [
+        8,
+        19
+      ],
+      "body": "human_male",
+      "hand_anchor": [
+        18,
+        13
+      ]
+    },
+    {
+      "id": "female_fill_bowl_2",
+      "page": "page_03",
+      "rect": [
+        24,
+        28,
+        22,
+        25
+      ],
+      "anchor": [
+        8,
+        22
+      ],
+      "body": "human_female",
+      "hand_anchor": [
+        16,
+        14
+      ]
+    },
+    {
+      "id": "male_fill_bowl_2",
+      "page": "page_03",
+      "rect": [
+        47,
+        28,
+        22,
+        25
+      ],
+      "anchor": [
+        8,
+        22
+      ],
+      "body": "human_male",
+      "hand_anchor": [
+        16,
+        14
+      ]
+    },
+    {
+      "id": "female_drink_0",
+      "page": "page_03",
+      "rect": [
+        70,
+        28,
+        22,
+        27
+      ],
+      "anchor": [
+        8,
+        24
+      ],
+      "body": "human_female",
+      "hand_anchor": [
+        14,
+        16
+      ]
+    },
+    {
+      "id": "male_drink_0",
+      "page": "page_03",
+      "rect": [
+        93,
+        28,
+        22,
+        28
+      ],
+      "anchor": [
+        8,
+        25
+      ],
+      "body": "human_male",
+      "hand_anchor": [
+        14,
+        17
+      ]
+    },
+    {
+      "id": "female_drink_1",
+      "page": "page_03",
+      "rect": [
+        0,
+        57,
+        22,
+        27
+      ],
+      "anchor": [
+        8,
+        24
+      ],
+      "body": "human_female",
+      "hand_anchor": [
+        14,
+        10
+      ]
+    },
+    {
+      "id": "male_drink_1",
+      "page": "page_03",
+      "rect": [
+        23,
+        57,
+        22,
+        27
+      ],
+      "anchor": [
+        8,
+        24
+      ],
+      "body": "human_male",
+      "hand_anchor": [
+        14,
+        10
+      ]
+    },
+    {
+      "id": "female_drink_2",
+      "page": "page_03",
+      "rect": [
+        46,
+        57,
+        22,
+        27
+      ],
+      "anchor": [
+        8,
+        24
+      ],
+      "body": "human_female",
+      "hand_anchor": [
+        14,
+        15
+      ]
+    },
+    {
+      "id": "male_drink_2",
+      "page": "page_03",
+      "rect": [
+        69,
+        57,
+        22,
+        28
+      ],
+      "anchor": [
+        8,
+        25
+      ],
+      "body": "human_male",
+      "hand_anchor": [
+        14,
+        16
+      ]
+    },
+    {
+      "id": "female_axe_0",
+      "page": "page_03",
+      "rect": [
+        92,
+        57,
+        16,
+        31
+      ],
+      "anchor": [
+        8,
+        28
+      ],
+      "body": "human_female",
+      "hand_anchor": [
+        9,
+        7
+      ]
+    },
+    {
+      "id": "male_axe_0",
+      "page": "page_03",
+      "rect": [
+        109,
+        57,
+        16,
+        31
+      ],
+      "anchor": [
+        8,
+        28
+      ],
+      "body": "human_male",
+      "hand_anchor": [
+        9,
+        7
+      ]
+    },
+    {
+      "id": "female_axe_1",
+      "page": "page_03",
+      "rect": [
+        0,
+        89,
+        26,
+        25
+      ],
+      "anchor": [
+        8,
+        22
+      ],
+      "body": "human_female",
+      "hand_anchor": [
+        19,
+        14
+      ]
+    },
+    {
+      "id": "male_axe_1",
+      "page": "page_03",
+      "rect": [
+        27,
+        89,
+        26,
+        25
+      ],
+      "anchor": [
+        8,
+        22
+      ],
+      "body": "human_male",
+      "hand_anchor": [
+        19,
+        14
+      ]
+    },
+    {
+      "id": "female_axe_2",
+      "page": "page_03",
+      "rect": [
+        54,
+        89,
+        25,
+        26
+      ],
+      "anchor": [
+        8,
+        23
+      ],
+      "body": "human_female",
+      "hand_anchor": [
+        16,
+        13
+      ]
+    },
+    {
+      "id": "male_axe_2",
+      "page": "page_03",
+      "rect": [
+        80,
+        89,
+        25,
+        27
+      ],
+      "anchor": [
+        8,
+        24
+      ],
+      "body": "human_male",
+      "hand_anchor": [
+        16,
+        14
+      ]
+    },
+    {
+      "id": "female_hammer_0",
+      "page": "page_03",
+      "rect": [
+        106,
+        89,
+        20,
+        32
+      ],
+      "anchor": [
+        8,
+        29
+      ],
+      "body": "human_female",
+      "hand_anchor": [
+        14,
+        7
+      ]
+    },
+    {
+      "id": "male_hammer_0",
+      "page": "page_04",
+      "rect": [
+        0,
+        0,
+        20,
+        32
+      ],
+      "anchor": [
+        8,
+        29
+      ],
+      "body": "human_male",
+      "hand_anchor": [
+        14,
+        7
+      ]
+    },
+    {
+      "id": "female_hammer_1",
+      "page": "page_04",
+      "rect": [
+        21,
+        0,
+        26,
+        25
+      ],
+      "anchor": [
+        8,
+        22
+      ],
+      "body": "human_female",
+      "hand_anchor": [
+        18,
+        12
+      ]
+    },
+    {
+      "id": "male_hammer_1",
+      "page": "page_04",
+      "rect": [
+        48,
+        0,
+        26,
+        25
+      ],
+      "anchor": [
+        8,
+        22
+      ],
+      "body": "human_male",
+      "hand_anchor": [
+        18,
+        12
+      ]
+    },
+    {
+      "id": "female_hammer_2",
+      "page": "page_04",
+      "rect": [
+        75,
+        0,
+        25,
+        27
+      ],
+      "anchor": [
+        8,
+        24
+      ],
+      "body": "human_female",
+      "hand_anchor": [
+        16,
+        8
+      ]
+    },
+    {
+      "id": "male_hammer_2",
+      "page": "page_04",
+      "rect": [
+        101,
+        0,
+        25,
+        27
+      ],
+      "anchor": [
+        8,
+        24
+      ],
+      "body": "human_male",
+      "hand_anchor": [
+        16,
+        8
+      ]
+    },
+    {
+      "id": "female_rest_0",
+      "page": "page_04",
+      "rect": [
+        0,
+        33,
+        17,
+        24
+      ],
+      "anchor": [
+        8,
+        21
+      ],
+      "body": "human_female",
+      "hand_anchor": [
+        13,
+        15
+      ]
+    },
+    {
+      "id": "male_rest_0",
+      "page": "page_04",
+      "rect": [
+        18,
+        33,
+        16,
+        25
+      ],
+      "anchor": [
+        8,
+        22
+      ],
+      "body": "human_male",
+      "hand_anchor": [
+        13,
+        16
+      ]
+    },
+    {
+      "id": "female_rest_1",
+      "page": "page_04",
+      "rect": [
+        35,
+        33,
+        16,
+        21
+      ],
+      "anchor": [
+        8,
+        18
+      ],
+      "body": "human_female",
+      "hand_anchor": [
+        13,
+        14
+      ]
+    },
+    {
+      "id": "male_rest_1",
+      "page": "page_04",
+      "rect": [
+        52,
+        33,
+        16,
+        22
+      ],
+      "anchor": [
+        8,
+        19
+      ],
+      "body": "human_male",
+      "hand_anchor": [
+        13,
+        15
+      ]
+    },
+    {
+      "id": "female_rest_2",
+      "page": "page_04",
+      "rect": [
+        69,
+        33,
+        16,
+        20
+      ],
+      "anchor": [
+        8,
+        17
+      ],
+      "body": "human_female",
+      "hand_anchor": [
+        12,
+        13
+      ]
+    },
+    {
+      "id": "male_rest_2",
+      "page": "page_04",
+      "rect": [
+        86,
+        33,
+        16,
+        21
+      ],
+      "anchor": [
+        8,
+        18
+      ],
+      "body": "human_male",
+      "hand_anchor": [
+        12,
+        14
+      ]
+    },
+    {
+      "id": "female_sleep_0",
+      "page": "page_04",
+      "rect": [
+        103,
+        33,
+        24,
+        12
+      ],
+      "anchor": [
+        11,
+        9
+      ],
+      "body": "human_female"
+    },
+    {
+      "id": "male_sleep_0",
+      "page": "page_04",
+      "rect": [
+        0,
+        59,
+        24,
+        12
+      ],
+      "anchor": [
+        11,
+        9
+      ],
+      "body": "human_male"
+    },
+    {
+      "id": "female_sleep_1",
+      "page": "page_04",
+      "rect": [
+        25,
+        59,
+        24,
+        13
+      ],
+      "anchor": [
+        11,
+        10
+      ],
+      "body": "human_female"
+    },
+    {
+      "id": "male_sleep_1",
+      "page": "page_04",
+      "rect": [
+        50,
+        59,
+        24,
+        13
+      ],
+      "anchor": [
+        11,
+        10
+      ],
+      "body": "human_male"
+    },
+    {
+      "id": "female_sleep_2",
+      "page": "page_04",
+      "rect": [
+        75,
+        59,
+        24,
+        12
+      ],
+      "anchor": [
+        11,
+        9
+      ],
+      "body": "human_female"
+    },
+    {
+      "id": "male_sleep_2",
+      "page": "page_04",
+      "rect": [
+        100,
+        59,
+        24,
+        12
+      ],
+      "anchor": [
+        11,
+        9
+      ],
+      "body": "human_male"
+    },
+    {
+      "id": "female_fish_0",
+      "page": "page_04",
+      "rect": [
+        0,
+        73,
+        24,
+        27
+      ],
+      "anchor": [
+        8,
+        24
+      ],
+      "body": "human_female",
+      "hand_anchor": [
+        14,
+        12
+      ]
+    },
+    {
+      "id": "male_fish_0",
+      "page": "page_04",
+      "rect": [
+        25,
+        73,
+        24,
+        28
+      ],
+      "anchor": [
+        8,
+        25
+      ],
+      "body": "human_male",
+      "hand_anchor": [
+        14,
+        13
+      ]
+    },
+    {
+      "id": "female_fish_1",
+      "page": "page_04",
+      "rect": [
+        50,
+        73,
+        25,
+        27
+      ],
+      "anchor": [
+        8,
+        24
+      ],
+      "body": "human_female",
+      "hand_anchor": [
+        16,
+        10
+      ]
+    },
+    {
+      "id": "male_fish_1",
+      "page": "page_04",
+      "rect": [
+        76,
+        73,
+        25,
+        27
+      ],
+      "anchor": [
+        8,
+        24
+      ],
+      "body": "human_male",
+      "hand_anchor": [
+        16,
+        10
+      ]
+    },
+    {
+      "id": "female_fish_2",
+      "page": "page_04",
+      "rect": [
+        102,
+        73,
+        24,
+        27
+      ],
+      "anchor": [
+        8,
+        24
+      ],
+      "body": "human_female",
+      "hand_anchor": [
+        15,
+        11
+      ]
+    },
+    {
+      "id": "male_fish_2",
+      "page": "page_05",
+      "rect": [
+        0,
+        0,
+        24,
+        28
+      ],
+      "anchor": [
+        8,
+        25
+      ],
+      "body": "human_male",
+      "hand_anchor": [
+        15,
+        12
+      ]
+    },
+    {
+      "id": "female_fish_success_0",
+      "page": "page_05",
+      "rect": [
+        25,
+        0,
+        25,
+        27
+      ],
+      "anchor": [
+        8,
+        24
+      ],
+      "body": "human_female",
+      "hand_anchor": [
+        15,
+        11
+      ]
+    },
+    {
+      "id": "male_fish_success_0",
+      "page": "page_05",
+      "rect": [
+        51,
+        0,
+        25,
+        28
+      ],
+      "anchor": [
+        8,
+        25
+      ],
+      "body": "human_male",
+      "hand_anchor": [
+        15,
+        12
+      ]
+    },
+    {
+      "id": "female_fish_success_1",
+      "page": "page_05",
+      "rect": [
+        77,
+        0,
+        25,
+        29
+      ],
+      "anchor": [
+        8,
+        26
+      ],
+      "body": "human_female",
+      "hand_anchor": [
+        16,
+        5
+      ]
+    },
+    {
+      "id": "male_fish_success_1",
+      "page": "page_05",
+      "rect": [
+        103,
+        0,
+        25,
+        29
+      ],
+      "anchor": [
+        8,
+        26
+      ],
+      "body": "human_male",
+      "hand_anchor": [
+        16,
+        5
+      ]
+    },
+    {
+      "id": "female_fish_success_2",
+      "page": "page_05",
+      "rect": [
+        0,
+        30,
+        26,
+        27
+      ],
+      "anchor": [
+        8,
+        24
+      ],
+      "body": "human_female",
+      "hand_anchor": [
+        14,
+        7
+      ]
+    },
+    {
+      "id": "male_fish_success_2",
+      "page": "page_05",
+      "rect": [
+        27,
+        30,
+        26,
+        28
+      ],
+      "anchor": [
+        8,
+        25
+      ],
+      "body": "human_male",
+      "hand_anchor": [
+        14,
+        8
+      ]
+    },
+    {
+      "id": "female_fish_fail_0",
+      "page": "page_05",
+      "rect": [
+        54,
+        30,
+        25,
+        27
+      ],
+      "anchor": [
+        8,
+        24
+      ],
+      "body": "human_female",
+      "hand_anchor": [
+        16,
+        11
+      ]
+    },
+    {
+      "id": "male_fish_fail_0",
+      "page": "page_05",
+      "rect": [
+        80,
+        30,
+        25,
+        28
+      ],
+      "anchor": [
+        8,
+        25
+      ],
+      "body": "human_male",
+      "hand_anchor": [
+        16,
+        12
+      ]
+    },
+    {
+      "id": "female_fish_fail_1",
+      "page": "page_05",
+      "rect": [
+        0,
+        59,
+        25,
+        29
+      ],
+      "anchor": [
+        8,
+        26
+      ],
+      "body": "human_female",
+      "hand_anchor": [
+        15,
+        8
+      ]
+    },
+    {
+      "id": "male_fish_fail_1",
+      "page": "page_05",
+      "rect": [
+        26,
+        59,
+        25,
+        29
+      ],
+      "anchor": [
+        8,
+        26
+      ],
+      "body": "human_male",
+      "hand_anchor": [
+        15,
+        8
+      ]
+    },
+    {
+      "id": "female_fish_fail_2",
+      "page": "page_05",
+      "rect": [
+        52,
+        59,
+        24,
+        26
+      ],
+      "anchor": [
+        8,
+        23
+      ],
+      "body": "human_female",
+      "hand_anchor": [
+        15,
+        13
+      ]
+    },
+    {
+      "id": "male_fish_fail_2",
+      "page": "page_05",
+      "rect": [
+        77,
+        59,
+        24,
+        27
+      ],
+      "anchor": [
+        8,
+        24
+      ],
+      "body": "human_male",
+      "hand_anchor": [
+        15,
+        14
+      ]
+    },
+    {
+      "id": "prop_hoe",
+      "page": "page_05",
+      "rect": [
+        102,
+        59,
+        22,
+        18
+      ],
+      "anchor": [
+        1,
+        16
+      ],
+      "body": "prop"
+    },
+    {
+      "id": "prop_axe",
+      "page": "page_05",
+      "rect": [
+        0,
+        89,
+        21,
+        17
+      ],
+      "anchor": [
+        1,
+        15
+      ],
+      "body": "prop"
+    },
+    {
+      "id": "prop_hammer",
+      "page": "page_05",
+      "rect": [
+        22,
+        89,
+        21,
+        15
+      ],
+      "anchor": [
+        0,
+        13
+      ],
+      "body": "prop"
+    },
+    {
+      "id": "prop_rod",
+      "page": "page_05",
+      "rect": [
+        44,
+        89,
+        19,
+        15
+      ],
+      "anchor": [
+        1,
+        13
+      ],
+      "body": "prop"
+    },
+    {
+      "id": "prop_water_can",
+      "page": "page_05",
+      "rect": [
+        64,
+        89,
+        18,
+        13
+      ],
+      "anchor": [
+        5,
+        2
+      ],
+      "body": "prop"
+    },
+    {
+      "id": "prop_pail",
+      "page": "page_05",
+      "rect": [
+        83,
+        89,
+        12,
+        13
+      ],
+      "anchor": [
+        5,
+        2
+      ],
+      "body": "prop"
+    },
+    {
+      "id": "prop_basket",
+      "page": "page_05",
+      "rect": [
+        96,
+        89,
+        19,
+        13
+      ],
+      "anchor": [
+        9,
+        2
+      ],
+      "body": "prop"
+    },
+    {
+      "id": "prop_cup",
+      "page": "page_05",
+      "rect": [
+        116,
+        89,
+        11,
+        9
+      ],
+      "anchor": [
+        4,
+        4
+      ],
+      "body": "prop"
+    },
+    {
+      "id": "prop_bowl",
+      "page": "page_05",
+      "rect": [
+        0,
+        107,
+        14,
+        8
+      ],
+      "anchor": [
+        6,
+        2
+      ],
+      "body": "prop"
+    },
+    {
+      "id": "prop_fish",
+      "page": "page_05",
+      "rect": [
+        15,
+        107,
+        15,
+        8
+      ],
+      "anchor": [
+        7,
+        4
+      ],
+      "body": "prop"
+    },
+    {
+      "id": "prop_crop",
+      "page": "page_05",
+      "rect": [
+        31,
+        107,
+        8,
+        9
+      ],
+      "anchor": [
+        3,
+        5
+      ],
+      "body": "prop"
+    },
+    {
+      "id": "prop_seeds",
+      "page": "page_05",
+      "rect": [
+        40,
+        107,
+        10,
+        10
+      ],
+      "anchor": [
+        5,
+        4
+      ],
+      "body": "prop"
+    },
+    {
+      "id": "prop_meal",
+      "page": "page_05",
+      "rect": [
+        51,
+        107,
+        14,
+        8
+      ],
+      "anchor": [
+        6,
+        2
+      ],
+      "body": "prop"
+    },
+    {
+      "id": "prop_wood",
+      "page": "page_05",
+      "rect": [
+        66,
+        107,
+        17,
+        9
+      ],
+      "anchor": [
+        8,
+        1
+      ],
+      "body": "prop"
+    },
+    {
+      "id": "prop_stone",
+      "page": "page_05",
+      "rect": [
+        84,
+        107,
+        15,
+        11
+      ],
+      "anchor": [
+        7,
+        4
+      ],
+      "body": "prop"
+    },
+    {
+      "id": "prop_rope",
+      "page": "page_05",
+      "rect": [
+        100,
+        107,
+        20,
+        14
+      ],
+      "anchor": [
+        8,
+        4
+      ],
+      "body": "prop"
+    },
+    {
+      "id": "west_house_0",
+      "page": "page_06",
+      "rect": [
+        0,
+        0,
+        73,
+        55
+      ],
+      "anchor": [
+        33,
+        49
+      ],
+      "body": "prop"
+    },
+    {
+      "id": "west_house_1",
+      "page": "page_06",
+      "rect": [
+        0,
+        56,
+        73,
+        55
+      ],
+      "anchor": [
+        33,
+        49
+      ],
+      "body": "prop"
+    },
+    {
+      "id": "west_house_2",
+      "page": "page_07",
+      "rect": [
+        0,
+        0,
+        73,
+        55
+      ],
+      "anchor": [
+        33,
+        49
+      ],
+      "body": "prop"
+    },
+    {
+      "id": "west_house_3",
+      "page": "page_07",
+      "rect": [
+        0,
+        56,
+        73,
+        55
+      ],
+      "anchor": [
+        33,
+        49
+      ],
+      "body": "prop"
+    },
+    {
+      "id": "east_house_0",
+      "page": "page_08",
+      "rect": [
+        0,
+        0,
+        73,
+        45
+      ],
+      "anchor": [
+        33,
+        39
+      ],
+      "body": "prop"
+    },
+    {
+      "id": "east_house_1",
+      "page": "page_08",
+      "rect": [
+        0,
+        46,
+        73,
+        45
+      ],
+      "anchor": [
+        33,
+        39
+      ],
+      "body": "prop"
+    },
+    {
+      "id": "east_house_2",
+      "page": "page_09",
+      "rect": [
+        0,
+        0,
+        73,
+        45
+      ],
+      "anchor": [
+        33,
+        39
+      ],
+      "body": "prop"
+    },
+    {
+      "id": "east_house_3",
+      "page": "page_09",
+      "rect": [
+        0,
+        46,
+        73,
+        45
+      ],
+      "anchor": [
+        33,
+        39
+      ],
+      "body": "prop"
+    },
+    {
+      "id": "kitchen",
+      "page": "page_10",
+      "rect": [
+        0,
+        0,
+        64,
+        55
+      ],
+      "anchor": [
+        38,
+        49
+      ],
+      "body": "prop"
+    },
+    {
+      "id": "storehouse",
+      "page": "page_10",
+      "rect": [
+        0,
+        56,
+        64,
+        43
+      ],
+      "anchor": [
+        37,
+        37
+      ],
+      "body": "prop"
+    },
+    {
+      "id": "workshop",
+      "page": "page_11",
+      "rect": [
+        0,
+        0,
+        64,
+        43
+      ],
+      "anchor": [
+        43,
+        37
+      ],
+      "body": "prop"
+    },
+    {
+      "id": "kitchen_1",
+      "page": "page_11",
+      "rect": [
+        0,
+        44,
+        64,
+        55
+      ],
+      "anchor": [
+        38,
+        49
+      ],
+      "body": "prop"
+    },
+    {
+      "id": "kitchen_2",
+      "page": "page_12",
+      "rect": [
+        0,
+        0,
+        64,
+        55
+      ],
+      "anchor": [
+        38,
+        49
+      ],
+      "body": "prop"
+    },
+    {
+      "id": "kitchen_3",
+      "page": "page_12",
+      "rect": [
+        0,
+        56,
+        64,
+        55
+      ],
+      "anchor": [
+        38,
+        49
+      ],
+      "body": "prop"
+    },
+    {
+      "id": "storehouse_1",
+      "page": "page_13",
+      "rect": [
+        0,
+        0,
+        64,
+        43
+      ],
+      "anchor": [
+        37,
+        37
+      ],
+      "body": "prop"
+    },
+    {
+      "id": "storehouse_2",
+      "page": "page_13",
+      "rect": [
+        0,
+        44,
+        64,
+        43
+      ],
+      "anchor": [
+        37,
+        37
+      ],
+      "body": "prop"
+    },
+    {
+      "id": "storehouse_3",
+      "page": "page_14",
+      "rect": [
+        0,
+        0,
+        64,
+        43
+      ],
+      "anchor": [
+        37,
+        37
+      ],
+      "body": "prop"
+    },
+    {
+      "id": "workshop_1",
+      "page": "page_14",
+      "rect": [
+        0,
+        44,
+        64,
+        43
+      ],
+      "anchor": [
+        43,
+        37
+      ],
+      "body": "prop"
+    },
+    {
+      "id": "workshop_2",
+      "page": "page_15",
+      "rect": [
+        0,
+        0,
+        64,
+        43
+      ],
+      "anchor": [
+        43,
+        37
+      ],
+      "body": "prop"
+    },
+    {
+      "id": "workshop_3",
+      "page": "page_15",
+      "rect": [
+        0,
+        44,
+        64,
+        43
+      ],
+      "anchor": [
+        43,
+        37
+      ],
+      "body": "prop"
+    },
+    {
+      "id": "shared_table",
+      "page": "page_15",
+      "rect": [
+        65,
+        44,
+        16,
+        10
+      ],
+      "anchor": [
+        8,
+        8
+      ],
+      "body": "prop"
+    },
+    {
+      "id": "shared_stool",
+      "page": "page_15",
+      "rect": [
+        82,
+        44,
+        7,
+        7
+      ],
+      "anchor": [
+        3,
+        5
+      ],
+      "body": "prop"
+    }
+  ]
+}

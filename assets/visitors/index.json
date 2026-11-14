@@ -1,0 +1,3646 @@
+{
+  "pages": [
+    {
+      "id": "page_00",
+      "file": "page_00.bgra",
+      "sha3_256": "ff8620311ff050f5ff45f94f2428afe028fbd9c6918b815efa36490007e425be",
+      "width": 128,
+      "height": 128
+    },
+    {
+      "id": "page_01",
+      "file": "page_01.bgra",
+      "sha3_256": "3141c6fd67bda1894ddedd30038b849150bfaa6bf2621dc55ab643931f20d16d",
+      "width": 128,
+      "height": 128
+    },
+    {
+      "id": "page_02",
+      "file": "page_02.bgra",
+      "sha3_256": "d899f5aa3984a1bd81ba6d5dfdf6f5991ced2d21d946e76410737f724b871381",
+      "width": 128,
+      "height": 128
+    },
+    {
+      "id": "page_03",
+      "file": "page_03.bgra",
+      "sha3_256": "492d8bce9d27a280f27368c14fd60a18422724c7488633f1f9b0a9f3bcd48bb1",
+      "width": 128,
+      "height": 128
+    },
+    {
+      "id": "page_04",
+      "file": "page_04.bgra",
+      "sha3_256": "11ac51346dabb1d1107f8618366de9e09e1b24510135e79b2164afa3ff8eec2f",
+      "width": 128,
+      "height": 128
+    },
+    {
+      "id": "page_05",
+      "file": "page_05.bgra",
+      "sha3_256": "e5d44da7ea155518e19ed2333fb08243ed0b399ad6e381eb72737dfe47537c0a",
+      "width": 128,
+      "height": 128
+    },
+    {
+      "id": "page_06",
+      "file": "page_06.bgra",
+      "sha3_256": "833b7841917a58d6bbe1bcd7feddc8eb332dbdd7902a7f67249ab6f84dbb1120",
+      "width": 128,
+      "height": 128
+    },
+    {
+      "id": "page_07",
+      "file": "page_07.bgra",
+      "sha3_256": "71cf8f1e449df020414fab08d41934fa4eafffe81441a573dfa0ac55f6a45c55",
+      "width": 128,
+      "height": 128
+    },
+    {
+      "id": "page_08",
+      "file": "page_08.bgra",
+      "sha3_256": "7522b04972c28866fa0b879940b1d43f5b00e2609c4a87109d2ec12bf831e49c",
+      "width": 128,
+      "height": 128
+    },
+    {
+      "id": "page_09",
+      "file": "page_09.bgra",
+      "sha3_256": "5077355a3e1d857b9aeeda4d2148d99e47db9a210a703867593eeadd5473eef2",
+      "width": 128,
+      "height": 128
+    }
+  ],
+  "frames": [
+    {
+      "id": "mail_carrier_idle_0",
+      "page": "page_00",
+      "rect": [
+        0,
+        0,
+        20,
+        30
+      ],
+      "anchor": [
+        8,
+        27
+      ],
+      "body": "human",
+      "hand_anchor": [
+        14,
+        19
+      ]
+    },
+    {
+      "id": "mail_carrier_idle_1",
+      "page": "page_00",
+      "rect": [
+        21,
+        0,
+        20,
+        29
+      ],
+      "anchor": [
+        8,
+        26
+      ],
+      "body": "human",
+      "hand_anchor": [
+        15,
+        17
+      ]
+    },
+    {
+      "id": "mail_carrier_idle_2",
+      "page": "page_00",
+      "rect": [
+        42,
+        0,
+        20,
+        30
+      ],
+      "anchor": [
+        8,
+        27
+      ],
+      "body": "human",
+      "hand_anchor": [
+        14,
+        18
+      ]
+    },
+    {
+      "id": "mail_carrier_walk_0",
+      "page": "page_00",
+      "rect": [
+        63,
+        0,
+        19,
+        30
+      ],
+      "anchor": [
+        8,
+        27
+      ],
+      "body": "human",
+      "hand_anchor": [
+        13,
+        21
+      ]
+    },
+    {
+      "id": "mail_carrier_walk_1",
+      "page": "page_00",
+      "rect": [
+        83,
+        0,
+        21,
+        31
+      ],
+      "anchor": [
+        8,
+        28
+      ],
+      "body": "human",
+      "hand_anchor": [
+        16,
+        19
+      ]
+    },
+    {
+      "id": "mail_carrier_walk_2",
+      "page": "page_00",
+      "rect": [
+        105,
+        0,
+        20,
+        30
+      ],
+      "anchor": [
+        8,
+        27
+      ],
+      "body": "human",
+      "hand_anchor": [
+        14,
+        19
+      ]
+    },
+    {
+      "id": "mail_carrier_greet_0",
+      "page": "page_00",
+      "rect": [
+        0,
+        32,
+        21,
+        30
+      ],
+      "anchor": [
+        8,
+        27
+      ],
+      "body": "human",
+      "hand_anchor": [
+        16,
+        16
+      ]
+    },
+    {
+      "id": "mail_carrier_greet_1",
+      "page": "page_00",
+      "rect": [
+        22,
+        32,
+        21,
+        30
+      ],
+      "anchor": [
+        8,
+        27
+      ],
+      "body": "human",
+      "hand_anchor": [
+        18,
+        11
+      ]
+    },
+    {
+      "id": "mail_carrier_greet_2",
+      "page": "page_00",
+      "rect": [
+        44,
+        32,
+        22,
+        29
+      ],
+      "anchor": [
+        8,
+        26
+      ],
+      "body": "human",
+      "hand_anchor": [
+        16,
+        12
+      ]
+    },
+    {
+      "id": "mail_carrier_work_0",
+      "page": "page_00",
+      "rect": [
+        67,
+        32,
+        21,
+        29
+      ],
+      "anchor": [
+        8,
+        26
+      ],
+      "body": "human",
+      "hand_anchor": [
+        16,
+        13
+      ]
+    },
+    {
+      "id": "mail_carrier_work_1",
+      "page": "page_00",
+      "rect": [
+        89,
+        32,
+        23,
+        26
+      ],
+      "anchor": [
+        8,
+        23
+      ],
+      "body": "human",
+      "hand_anchor": [
+        18,
+        17
+      ]
+    },
+    {
+      "id": "mail_carrier_work_2",
+      "page": "page_00",
+      "rect": [
+        0,
+        63,
+        22,
+        28
+      ],
+      "anchor": [
+        8,
+        25
+      ],
+      "body": "human",
+      "hand_anchor": [
+        16,
+        16
+      ]
+    },
+    {
+      "id": "mail_carrier_carry_0",
+      "page": "page_00",
+      "rect": [
+        23,
+        63,
+        20,
+        30
+      ],
+      "anchor": [
+        8,
+        27
+      ],
+      "body": "human",
+      "hand_anchor": [
+        15,
+        16
+      ]
+    },
+    {
+      "id": "mail_carrier_carry_1",
+      "page": "page_00",
+      "rect": [
+        44,
+        63,
+        22,
+        31
+      ],
+      "anchor": [
+        8,
+        28
+      ],
+      "body": "human",
+      "hand_anchor": [
+        16,
+        16
+      ]
+    },
+    {
+      "id": "mail_carrier_carry_2",
+      "page": "page_00",
+      "rect": [
+        67,
+        63,
+        21,
+        30
+      ],
+      "anchor": [
+        8,
+        27
+      ],
+      "body": "human",
+      "hand_anchor": [
+        16,
+        16
+      ]
+    },
+    {
+      "id": "mail_carrier_rest_0",
+      "page": "page_00",
+      "rect": [
+        89,
+        63,
+        24,
+        27
+      ],
+      "anchor": [
+        8,
+        24
+      ],
+      "body": "human",
+      "hand_anchor": [
+        12,
+        18
+      ]
+    },
+    {
+      "id": "mail_carrier_rest_1",
+      "page": "page_00",
+      "rect": [
+        0,
+        95,
+        24,
+        24
+      ],
+      "anchor": [
+        8,
+        21
+      ],
+      "body": "human",
+      "hand_anchor": [
+        13,
+        17
+      ]
+    },
+    {
+      "id": "mail_carrier_rest_2",
+      "page": "page_00",
+      "rect": [
+        25,
+        95,
+        24,
+        24
+      ],
+      "anchor": [
+        8,
+        21
+      ],
+      "body": "human",
+      "hand_anchor": [
+        13,
+        17
+      ]
+    },
+    {
+      "id": "seed_merchant_idle_0",
+      "page": "page_00",
+      "rect": [
+        50,
+        95,
+        20,
+        29
+      ],
+      "anchor": [
+        8,
+        26
+      ],
+      "body": "human",
+      "hand_anchor": [
+        14,
+        18
+      ]
+    },
+    {
+      "id": "seed_merchant_idle_1",
+      "page": "page_00",
+      "rect": [
+        71,
+        95,
+        20,
+        29
+      ],
+      "anchor": [
+        8,
+        26
+      ],
+      "body": "human",
+      "hand_anchor": [
+        15,
+        17
+      ]
+    },
+    {
+      "id": "seed_merchant_idle_2",
+      "page": "page_00",
+      "rect": [
+        92,
+        95,
+        20,
+        29
+      ],
+      "anchor": [
+        8,
+        26
+      ],
+      "body": "human",
+      "hand_anchor": [
+        14,
+        17
+      ]
+    },
+    {
+      "id": "seed_merchant_walk_0",
+      "page": "page_01",
+      "rect": [
+        0,
+        0,
+        19,
+        29
+      ],
+      "anchor": [
+        8,
+        26
+      ],
+      "body": "human",
+      "hand_anchor": [
+        13,
+        20
+      ]
+    },
+    {
+      "id": "seed_merchant_walk_1",
+      "page": "page_01",
+      "rect": [
+        20,
+        0,
+        21,
+        30
+      ],
+      "anchor": [
+        8,
+        27
+      ],
+      "body": "human",
+      "hand_anchor": [
+        16,
+        18
+      ]
+    },
+    {
+      "id": "seed_merchant_walk_2",
+      "page": "page_01",
+      "rect": [
+        42,
+        0,
+        20,
+        29
+      ],
+      "anchor": [
+        8,
+        26
+      ],
+      "body": "human",
+      "hand_anchor": [
+        14,
+        18
+      ]
+    },
+    {
+      "id": "seed_merchant_greet_0",
+      "page": "page_01",
+      "rect": [
+        63,
+        0,
+        21,
+        29
+      ],
+      "anchor": [
+        8,
+        26
+      ],
+      "body": "human",
+      "hand_anchor": [
+        16,
+        15
+      ]
+    },
+    {
+      "id": "seed_merchant_greet_1",
+      "page": "page_01",
+      "rect": [
+        85,
+        0,
+        21,
+        29
+      ],
+      "anchor": [
+        8,
+        26
+      ],
+      "body": "human",
+      "hand_anchor": [
+        18,
+        10
+      ]
+    },
+    {
+      "id": "seed_merchant_greet_2",
+      "page": "page_01",
+      "rect": [
+        0,
+        31,
+        22,
+        29
+      ],
+      "anchor": [
+        8,
+        26
+      ],
+      "body": "human",
+      "hand_anchor": [
+        16,
+        12
+      ]
+    },
+    {
+      "id": "seed_merchant_work_0",
+      "page": "page_01",
+      "rect": [
+        23,
+        31,
+        21,
+        29
+      ],
+      "anchor": [
+        8,
+        26
+      ],
+      "body": "human",
+      "hand_anchor": [
+        16,
+        13
+      ]
+    },
+    {
+      "id": "seed_merchant_work_1",
+      "page": "page_01",
+      "rect": [
+        45,
+        31,
+        23,
+        25
+      ],
+      "anchor": [
+        8,
+        22
+      ],
+      "body": "human",
+      "hand_anchor": [
+        18,
+        16
+      ]
+    },
+    {
+      "id": "seed_merchant_work_2",
+      "page": "page_01",
+      "rect": [
+        69,
+        31,
+        22,
+        27
+      ],
+      "anchor": [
+        8,
+        24
+      ],
+      "body": "human",
+      "hand_anchor": [
+        16,
+        15
+      ]
+    },
+    {
+      "id": "seed_merchant_carry_0",
+      "page": "page_01",
+      "rect": [
+        92,
+        31,
+        20,
+        29
+      ],
+      "anchor": [
+        8,
+        26
+      ],
+      "body": "human",
+      "hand_anchor": [
+        15,
+        15
+      ]
+    },
+    {
+      "id": "seed_merchant_carry_1",
+      "page": "page_01",
+      "rect": [
+        0,
+        61,
+        22,
+        30
+      ],
+      "anchor": [
+        8,
+        27
+      ],
+      "body": "human",
+      "hand_anchor": [
+        16,
+        15
+      ]
+    },
+    {
+      "id": "seed_merchant_carry_2",
+      "page": "page_01",
+      "rect": [
+        23,
+        61,
+        21,
+        29
+      ],
+      "anchor": [
+        8,
+        26
+      ],
+      "body": "human",
+      "hand_anchor": [
+        16,
+        15
+      ]
+    },
+    {
+      "id": "seed_merchant_rest_0",
+      "page": "page_01",
+      "rect": [
+        45,
+        61,
+        24,
+        27
+      ],
+      "anchor": [
+        8,
+        24
+      ],
+      "body": "human",
+      "hand_anchor": [
+        12,
+        18
+      ]
+    },
+    {
+      "id": "seed_merchant_rest_1",
+      "page": "page_01",
+      "rect": [
+        70,
+        61,
+        24,
+        23
+      ],
+      "anchor": [
+        8,
+        20
+      ],
+      "body": "human",
+      "hand_anchor": [
+        13,
+        16
+      ]
+    },
+    {
+      "id": "seed_merchant_rest_2",
+      "page": "page_01",
+      "rect": [
+        95,
+        61,
+        24,
+        23
+      ],
+      "anchor": [
+        8,
+        20
+      ],
+      "body": "human",
+      "hand_anchor": [
+        13,
+        16
+      ]
+    },
+    {
+      "id": "carpenter_idle_0",
+      "page": "page_01",
+      "rect": [
+        0,
+        92,
+        25,
+        30
+      ],
+      "anchor": [
+        8,
+        27
+      ],
+      "body": "human",
+      "hand_anchor": [
+        14,
+        19
+      ]
+    },
+    {
+      "id": "carpenter_idle_1",
+      "page": "page_01",
+      "rect": [
+        26,
+        92,
+        25,
+        29
+      ],
+      "anchor": [
+        8,
+        26
+      ],
+      "body": "human",
+      "hand_anchor": [
+        15,
+        17
+      ]
+    },
+    {
+      "id": "carpenter_idle_2",
+      "page": "page_01",
+      "rect": [
+        52,
+        92,
+        25,
+        30
+      ],
+      "anchor": [
+        8,
+        27
+      ],
+      "body": "human",
+      "hand_anchor": [
+        14,
+        18
+      ]
+    },
+    {
+      "id": "carpenter_walk_0",
+      "page": "page_01",
+      "rect": [
+        78,
+        92,
+        25,
+        30
+      ],
+      "anchor": [
+        8,
+        27
+      ],
+      "body": "human",
+      "hand_anchor": [
+        13,
+        21
+      ]
+    },
+    {
+      "id": "carpenter_walk_1",
+      "page": "page_02",
+      "rect": [
+        0,
+        0,
+        25,
+        31
+      ],
+      "anchor": [
+        8,
+        28
+      ],
+      "body": "human",
+      "hand_anchor": [
+        16,
+        19
+      ]
+    },
+    {
+      "id": "carpenter_walk_2",
+      "page": "page_02",
+      "rect": [
+        26,
+        0,
+        25,
+        30
+      ],
+      "anchor": [
+        8,
+        27
+      ],
+      "body": "human",
+      "hand_anchor": [
+        14,
+        19
+      ]
+    },
+    {
+      "id": "carpenter_greet_0",
+      "page": "page_02",
+      "rect": [
+        52,
+        0,
+        25,
+        30
+      ],
+      "anchor": [
+        8,
+        27
+      ],
+      "body": "human",
+      "hand_anchor": [
+        16,
+        16
+      ]
+    },
+    {
+      "id": "carpenter_greet_1",
+      "page": "page_02",
+      "rect": [
+        78,
+        0,
+        21,
+        30
+      ],
+      "anchor": [
+        8,
+        27
+      ],
+      "body": "human",
+      "hand_anchor": [
+        18,
+        11
+      ]
+    },
+    {
+      "id": "carpenter_greet_2",
+      "page": "page_02",
+      "rect": [
+        100,
+        0,
+        25,
+        29
+      ],
+      "anchor": [
+        8,
+        26
+      ],
+      "body": "human",
+      "hand_anchor": [
+        16,
+        12
+      ]
+    },
+    {
+      "id": "carpenter_work_0",
+      "page": "page_02",
+      "rect": [
+        0,
+        32,
+        25,
+        29
+      ],
+      "anchor": [
+        8,
+        26
+      ],
+      "body": "human",
+      "hand_anchor": [
+        16,
+        13
+      ]
+    },
+    {
+      "id": "carpenter_work_1",
+      "page": "page_02",
+      "rect": [
+        26,
+        32,
+        25,
+        26
+      ],
+      "anchor": [
+        8,
+        23
+      ],
+      "body": "human",
+      "hand_anchor": [
+        18,
+        17
+      ]
+    },
+    {
+      "id": "carpenter_work_2",
+      "page": "page_02",
+      "rect": [
+        52,
+        32,
+        25,
+        28
+      ],
+      "anchor": [
+        8,
+        25
+      ],
+      "body": "human",
+      "hand_anchor": [
+        16,
+        16
+      ]
+    },
+    {
+      "id": "carpenter_carry_0",
+      "page": "page_02",
+      "rect": [
+        78,
+        32,
+        25,
+        30
+      ],
+      "anchor": [
+        8,
+        27
+      ],
+      "body": "human",
+      "hand_anchor": [
+        15,
+        16
+      ]
+    },
+    {
+      "id": "carpenter_carry_1",
+      "page": "page_02",
+      "rect": [
+        0,
+        63,
+        25,
+        31
+      ],
+      "anchor": [
+        8,
+        28
+      ],
+      "body": "human",
+      "hand_anchor": [
+        16,
+        16
+      ]
+    },
+    {
+      "id": "carpenter_carry_2",
+      "page": "page_02",
+      "rect": [
+        26,
+        63,
+        25,
+        30
+      ],
+      "anchor": [
+        8,
+        27
+      ],
+      "body": "human",
+      "hand_anchor": [
+        16,
+        16
+      ]
+    },
+    {
+      "id": "carpenter_rest_0",
+      "page": "page_02",
+      "rect": [
+        52,
+        63,
+        25,
+        27
+      ],
+      "anchor": [
+        8,
+        24
+      ],
+      "body": "human",
+      "hand_anchor": [
+        12,
+        18
+      ]
+    },
+    {
+      "id": "carpenter_rest_1",
+      "page": "page_02",
+      "rect": [
+        78,
+        63,
+        25,
+        24
+      ],
+      "anchor": [
+        8,
+        21
+      ],
+      "body": "human",
+      "hand_anchor": [
+        13,
+        17
+      ]
+    },
+    {
+      "id": "carpenter_rest_2",
+      "page": "page_02",
+      "rect": [
+        0,
+        95,
+        25,
+        24
+      ],
+      "anchor": [
+        8,
+        21
+      ],
+      "body": "human",
+      "hand_anchor": [
+        13,
+        17
+      ]
+    },
+    {
+      "id": "cook_idle_0",
+      "page": "page_02",
+      "rect": [
+        26,
+        95,
+        21,
+        31
+      ],
+      "anchor": [
+        8,
+        28
+      ],
+      "body": "human",
+      "hand_anchor": [
+        14,
+        20
+      ]
+    },
+    {
+      "id": "cook_idle_1",
+      "page": "page_02",
+      "rect": [
+        48,
+        95,
+        22,
+        30
+      ],
+      "anchor": [
+        8,
+        27
+      ],
+      "body": "human",
+      "hand_anchor": [
+        15,
+        18
+      ]
+    },
+    {
+      "id": "cook_idle_2",
+      "page": "page_02",
+      "rect": [
+        71,
+        95,
+        21,
+        31
+      ],
+      "anchor": [
+        8,
+        28
+      ],
+      "body": "human",
+      "hand_anchor": [
+        14,
+        19
+      ]
+    },
+    {
+      "id": "cook_walk_0",
+      "page": "page_02",
+      "rect": [
+        93,
+        95,
+        20,
+        31
+      ],
+      "anchor": [
+        8,
+        28
+      ],
+      "body": "human",
+      "hand_anchor": [
+        13,
+        22
+      ]
+    },
+    {
+      "id": "cook_walk_1",
+      "page": "page_03",
+      "rect": [
+        0,
+        0,
+        22,
+        32
+      ],
+      "anchor": [
+        8,
+        29
+      ],
+      "body": "human",
+      "hand_anchor": [
+        16,
+        20
+      ]
+    },
+    {
+      "id": "cook_walk_2",
+      "page": "page_03",
+      "rect": [
+        23,
+        0,
+        21,
+        31
+      ],
+      "anchor": [
+        8,
+        28
+      ],
+      "body": "human",
+      "hand_anchor": [
+        14,
+        20
+      ]
+    },
+    {
+      "id": "cook_greet_0",
+      "page": "page_03",
+      "rect": [
+        45,
+        0,
+        22,
+        31
+      ],
+      "anchor": [
+        8,
+        28
+      ],
+      "body": "human",
+      "hand_anchor": [
+        16,
+        17
+      ]
+    },
+    {
+      "id": "cook_greet_1",
+      "page": "page_03",
+      "rect": [
+        68,
+        0,
+        21,
+        31
+      ],
+      "anchor": [
+        8,
+        28
+      ],
+      "body": "human",
+      "hand_anchor": [
+        18,
+        12
+      ]
+    },
+    {
+      "id": "cook_greet_2",
+      "page": "page_03",
+      "rect": [
+        90,
+        0,
+        23,
+        30
+      ],
+      "anchor": [
+        8,
+        27
+      ],
+      "body": "human",
+      "hand_anchor": [
+        16,
+        13
+      ]
+    },
+    {
+      "id": "cook_work_0",
+      "page": "page_03",
+      "rect": [
+        0,
+        33,
+        22,
+        30
+      ],
+      "anchor": [
+        8,
+        27
+      ],
+      "body": "human",
+      "hand_anchor": [
+        16,
+        14
+      ]
+    },
+    {
+      "id": "cook_work_1",
+      "page": "page_03",
+      "rect": [
+        23,
+        33,
+        25,
+        27
+      ],
+      "anchor": [
+        8,
+        24
+      ],
+      "body": "human",
+      "hand_anchor": [
+        18,
+        18
+      ]
+    },
+    {
+      "id": "cook_work_2",
+      "page": "page_03",
+      "rect": [
+        49,
+        33,
+        23,
+        29
+      ],
+      "anchor": [
+        8,
+        26
+      ],
+      "body": "human",
+      "hand_anchor": [
+        16,
+        17
+      ]
+    },
+    {
+      "id": "cook_carry_0",
+      "page": "page_03",
+      "rect": [
+        73,
+        33,
+        22,
+        31
+      ],
+      "anchor": [
+        8,
+        28
+      ],
+      "body": "human",
+      "hand_anchor": [
+        15,
+        17
+      ]
+    },
+    {
+      "id": "cook_carry_1",
+      "page": "page_03",
+      "rect": [
+        96,
+        33,
+        23,
+        32
+      ],
+      "anchor": [
+        8,
+        29
+      ],
+      "body": "human",
+      "hand_anchor": [
+        16,
+        17
+      ]
+    },
+    {
+      "id": "cook_carry_2",
+      "page": "page_03",
+      "rect": [
+        0,
+        66,
+        22,
+        31
+      ],
+      "anchor": [
+        8,
+        28
+      ],
+      "body": "human",
+      "hand_anchor": [
+        16,
+        17
+      ]
+    },
+    {
+      "id": "cook_rest_0",
+      "page": "page_03",
+      "rect": [
+        23,
+        66,
+        25,
+        28
+      ],
+      "anchor": [
+        8,
+        25
+      ],
+      "body": "human",
+      "hand_anchor": [
+        12,
+        19
+      ]
+    },
+    {
+      "id": "cook_rest_1",
+      "page": "page_03",
+      "rect": [
+        49,
+        66,
+        25,
+        25
+      ],
+      "anchor": [
+        8,
+        22
+      ],
+      "body": "human",
+      "hand_anchor": [
+        13,
+        18
+      ]
+    },
+    {
+      "id": "cook_rest_2",
+      "page": "page_03",
+      "rect": [
+        75,
+        66,
+        25,
+        25
+      ],
+      "anchor": [
+        8,
+        22
+      ],
+      "body": "human",
+      "hand_anchor": [
+        13,
+        18
+      ]
+    },
+    {
+      "id": "fisher_idle_0",
+      "page": "page_03",
+      "rect": [
+        101,
+        66,
+        25,
+        29
+      ],
+      "anchor": [
+        8,
+        26
+      ],
+      "body": "human",
+      "hand_anchor": [
+        14,
+        18
+      ]
+    },
+    {
+      "id": "fisher_idle_1",
+      "page": "page_03",
+      "rect": [
+        0,
+        98,
+        25,
+        28
+      ],
+      "anchor": [
+        8,
+        25
+      ],
+      "body": "human",
+      "hand_anchor": [
+        15,
+        16
+      ]
+    },
+    {
+      "id": "fisher_idle_2",
+      "page": "page_03",
+      "rect": [
+        26,
+        98,
+        25,
+        29
+      ],
+      "anchor": [
+        8,
+        26
+      ],
+      "body": "human",
+      "hand_anchor": [
+        14,
+        17
+      ]
+    },
+    {
+      "id": "fisher_walk_0",
+      "page": "page_03",
+      "rect": [
+        52,
+        98,
+        25,
+        29
+      ],
+      "anchor": [
+        8,
+        26
+      ],
+      "body": "human",
+      "hand_anchor": [
+        13,
+        20
+      ]
+    },
+    {
+      "id": "fisher_walk_1",
+      "page": "page_03",
+      "rect": [
+        78,
+        98,
+        25,
+        29
+      ],
+      "anchor": [
+        8,
+        26
+      ],
+      "body": "human",
+      "hand_anchor": [
+        16,
+        17
+      ]
+    },
+    {
+      "id": "fisher_walk_2",
+      "page": "page_04",
+      "rect": [
+        0,
+        0,
+        25,
+        29
+      ],
+      "anchor": [
+        8,
+        26
+      ],
+      "body": "human",
+      "hand_anchor": [
+        14,
+        18
+      ]
+    },
+    {
+      "id": "fisher_greet_0",
+      "page": "page_04",
+      "rect": [
+        26,
+        0,
+        25,
+        29
+      ],
+      "anchor": [
+        8,
+        26
+      ],
+      "body": "human",
+      "hand_anchor": [
+        16,
+        15
+      ]
+    },
+    {
+      "id": "fisher_greet_1",
+      "page": "page_04",
+      "rect": [
+        52,
+        0,
+        21,
+        29
+      ],
+      "anchor": [
+        8,
+        26
+      ],
+      "body": "human",
+      "hand_anchor": [
+        18,
+        10
+      ]
+    },
+    {
+      "id": "fisher_greet_2",
+      "page": "page_04",
+      "rect": [
+        74,
+        0,
+        25,
+        29
+      ],
+      "anchor": [
+        8,
+        26
+      ],
+      "body": "human",
+      "hand_anchor": [
+        16,
+        12
+      ]
+    },
+    {
+      "id": "fisher_work_0",
+      "page": "page_04",
+      "rect": [
+        100,
+        0,
+        25,
+        29
+      ],
+      "anchor": [
+        8,
+        26
+      ],
+      "body": "human",
+      "hand_anchor": [
+        16,
+        13
+      ]
+    },
+    {
+      "id": "fisher_work_1",
+      "page": "page_04",
+      "rect": [
+        0,
+        30,
+        25,
+        28
+      ],
+      "anchor": [
+        8,
+        25
+      ],
+      "body": "human",
+      "hand_anchor": [
+        18,
+        19
+      ]
+    },
+    {
+      "id": "fisher_work_2",
+      "page": "page_04",
+      "rect": [
+        26,
+        30,
+        25,
+        28
+      ],
+      "anchor": [
+        8,
+        25
+      ],
+      "body": "human",
+      "hand_anchor": [
+        16,
+        16
+      ]
+    },
+    {
+      "id": "fisher_carry_0",
+      "page": "page_04",
+      "rect": [
+        52,
+        30,
+        25,
+        29
+      ],
+      "anchor": [
+        8,
+        26
+      ],
+      "body": "human",
+      "hand_anchor": [
+        15,
+        15
+      ]
+    },
+    {
+      "id": "fisher_carry_1",
+      "page": "page_04",
+      "rect": [
+        78,
+        30,
+        25,
+        29
+      ],
+      "anchor": [
+        8,
+        26
+      ],
+      "body": "human",
+      "hand_anchor": [
+        16,
+        14
+      ]
+    },
+    {
+      "id": "fisher_carry_2",
+      "page": "page_04",
+      "rect": [
+        0,
+        60,
+        25,
+        29
+      ],
+      "anchor": [
+        8,
+        26
+      ],
+      "body": "human",
+      "hand_anchor": [
+        16,
+        15
+      ]
+    },
+    {
+      "id": "fisher_rest_0",
+      "page": "page_04",
+      "rect": [
+        26,
+        60,
+        25,
+        28
+      ],
+      "anchor": [
+        8,
+        25
+      ],
+      "body": "human",
+      "hand_anchor": [
+        12,
+        19
+      ]
+    },
+    {
+      "id": "fisher_rest_1",
+      "page": "page_04",
+      "rect": [
+        52,
+        60,
+        25,
+        28
+      ],
+      "anchor": [
+        8,
+        25
+      ],
+      "body": "human",
+      "hand_anchor": [
+        13,
+        21
+      ]
+    },
+    {
+      "id": "fisher_rest_2",
+      "page": "page_04",
+      "rect": [
+        78,
+        60,
+        25,
+        28
+      ],
+      "anchor": [
+        8,
+        25
+      ],
+      "body": "human",
+      "hand_anchor": [
+        13,
+        21
+      ]
+    },
+    {
+      "id": "weaver_idle_0",
+      "page": "page_04",
+      "rect": [
+        104,
+        60,
+        20,
+        27
+      ],
+      "anchor": [
+        8,
+        24
+      ],
+      "body": "human",
+      "hand_anchor": [
+        14,
+        16
+      ]
+    },
+    {
+      "id": "weaver_idle_1",
+      "page": "page_04",
+      "rect": [
+        0,
+        90,
+        21,
+        27
+      ],
+      "anchor": [
+        8,
+        24
+      ],
+      "body": "human",
+      "hand_anchor": [
+        15,
+        15
+      ]
+    },
+    {
+      "id": "weaver_idle_2",
+      "page": "page_04",
+      "rect": [
+        22,
+        90,
+        20,
+        27
+      ],
+      "anchor": [
+        8,
+        24
+      ],
+      "body": "human",
+      "hand_anchor": [
+        14,
+        15
+      ]
+    },
+    {
+      "id": "weaver_walk_0",
+      "page": "page_04",
+      "rect": [
+        43,
+        90,
+        20,
+        27
+      ],
+      "anchor": [
+        8,
+        24
+      ],
+      "body": "human",
+      "hand_anchor": [
+        13,
+        18
+      ]
+    },
+    {
+      "id": "weaver_walk_1",
+      "page": "page_04",
+      "rect": [
+        64,
+        90,
+        22,
+        28
+      ],
+      "anchor": [
+        8,
+        25
+      ],
+      "body": "human",
+      "hand_anchor": [
+        16,
+        16
+      ]
+    },
+    {
+      "id": "weaver_walk_2",
+      "page": "page_04",
+      "rect": [
+        87,
+        90,
+        20,
+        27
+      ],
+      "anchor": [
+        8,
+        24
+      ],
+      "body": "human",
+      "hand_anchor": [
+        14,
+        16
+      ]
+    },
+    {
+      "id": "weaver_greet_0",
+      "page": "page_05",
+      "rect": [
+        0,
+        0,
+        22,
+        27
+      ],
+      "anchor": [
+        8,
+        24
+      ],
+      "body": "human",
+      "hand_anchor": [
+        16,
+        13
+      ]
+    },
+    {
+      "id": "weaver_greet_1",
+      "page": "page_05",
+      "rect": [
+        23,
+        0,
+        21,
+        27
+      ],
+      "anchor": [
+        8,
+        24
+      ],
+      "body": "human",
+      "hand_anchor": [
+        18,
+        8
+      ]
+    },
+    {
+      "id": "weaver_greet_2",
+      "page": "page_05",
+      "rect": [
+        45,
+        0,
+        22,
+        27
+      ],
+      "anchor": [
+        8,
+        24
+      ],
+      "body": "human",
+      "hand_anchor": [
+        16,
+        10
+      ]
+    },
+    {
+      "id": "weaver_work_0",
+      "page": "page_05",
+      "rect": [
+        68,
+        0,
+        22,
+        27
+      ],
+      "anchor": [
+        8,
+        24
+      ],
+      "body": "human",
+      "hand_anchor": [
+        16,
+        11
+      ]
+    },
+    {
+      "id": "weaver_work_1",
+      "page": "page_05",
+      "rect": [
+        91,
+        0,
+        24,
+        23
+      ],
+      "anchor": [
+        8,
+        20
+      ],
+      "body": "human",
+      "hand_anchor": [
+        18,
+        14
+      ]
+    },
+    {
+      "id": "weaver_work_2",
+      "page": "page_05",
+      "rect": [
+        0,
+        28,
+        22,
+        25
+      ],
+      "anchor": [
+        8,
+        22
+      ],
+      "body": "human",
+      "hand_anchor": [
+        16,
+        13
+      ]
+    },
+    {
+      "id": "weaver_carry_0",
+      "page": "page_05",
+      "rect": [
+        23,
+        28,
+        21,
+        27
+      ],
+      "anchor": [
+        8,
+        24
+      ],
+      "body": "human",
+      "hand_anchor": [
+        15,
+        13
+      ]
+    },
+    {
+      "id": "weaver_carry_1",
+      "page": "page_05",
+      "rect": [
+        45,
+        28,
+        22,
+        28
+      ],
+      "anchor": [
+        8,
+        25
+      ],
+      "body": "human",
+      "hand_anchor": [
+        16,
+        13
+      ]
+    },
+    {
+      "id": "weaver_carry_2",
+      "page": "page_05",
+      "rect": [
+        68,
+        28,
+        22,
+        27
+      ],
+      "anchor": [
+        8,
+        24
+      ],
+      "body": "human",
+      "hand_anchor": [
+        16,
+        13
+      ]
+    },
+    {
+      "id": "weaver_rest_0",
+      "page": "page_05",
+      "rect": [
+        91,
+        28,
+        25,
+        25
+      ],
+      "anchor": [
+        8,
+        22
+      ],
+      "body": "human",
+      "hand_anchor": [
+        12,
+        16
+      ]
+    },
+    {
+      "id": "weaver_rest_1",
+      "page": "page_05",
+      "rect": [
+        0,
+        57,
+        25,
+        21
+      ],
+      "anchor": [
+        8,
+        18
+      ],
+      "body": "human",
+      "hand_anchor": [
+        13,
+        14
+      ]
+    },
+    {
+      "id": "weaver_rest_2",
+      "page": "page_05",
+      "rect": [
+        26,
+        57,
+        25,
+        21
+      ],
+      "anchor": [
+        8,
+        18
+      ],
+      "body": "human",
+      "hand_anchor": [
+        13,
+        14
+      ]
+    },
+    {
+      "id": "fruit_grower_idle_0",
+      "page": "page_05",
+      "rect": [
+        52,
+        57,
+        20,
+        28
+      ],
+      "anchor": [
+        8,
+        25
+      ],
+      "body": "human",
+      "hand_anchor": [
+        14,
+        17
+      ]
+    },
+    {
+      "id": "fruit_grower_idle_1",
+      "page": "page_05",
+      "rect": [
+        73,
+        57,
+        21,
+        27
+      ],
+      "anchor": [
+        8,
+        24
+      ],
+      "body": "human",
+      "hand_anchor": [
+        15,
+        15
+      ]
+    },
+    {
+      "id": "fruit_grower_idle_2",
+      "page": "page_05",
+      "rect": [
+        95,
+        57,
+        20,
+        28
+      ],
+      "anchor": [
+        8,
+        25
+      ],
+      "body": "human",
+      "hand_anchor": [
+        14,
+        16
+      ]
+    },
+    {
+      "id": "fruit_grower_walk_0",
+      "page": "page_05",
+      "rect": [
+        0,
+        86,
+        20,
+        28
+      ],
+      "anchor": [
+        8,
+        25
+      ],
+      "body": "human",
+      "hand_anchor": [
+        13,
+        19
+      ]
+    },
+    {
+      "id": "fruit_grower_walk_1",
+      "page": "page_05",
+      "rect": [
+        21,
+        86,
+        22,
+        29
+      ],
+      "anchor": [
+        8,
+        26
+      ],
+      "body": "human",
+      "hand_anchor": [
+        16,
+        17
+      ]
+    },
+    {
+      "id": "fruit_grower_walk_2",
+      "page": "page_05",
+      "rect": [
+        44,
+        86,
+        20,
+        28
+      ],
+      "anchor": [
+        8,
+        25
+      ],
+      "body": "human",
+      "hand_anchor": [
+        14,
+        17
+      ]
+    },
+    {
+      "id": "fruit_grower_greet_0",
+      "page": "page_05",
+      "rect": [
+        65,
+        86,
+        22,
+        28
+      ],
+      "anchor": [
+        8,
+        25
+      ],
+      "body": "human",
+      "hand_anchor": [
+        16,
+        14
+      ]
+    },
+    {
+      "id": "fruit_grower_greet_1",
+      "page": "page_05",
+      "rect": [
+        88,
+        86,
+        21,
+        28
+      ],
+      "anchor": [
+        8,
+        25
+      ],
+      "body": "human",
+      "hand_anchor": [
+        18,
+        9
+      ]
+    },
+    {
+      "id": "fruit_grower_greet_2",
+      "page": "page_06",
+      "rect": [
+        0,
+        0,
+        22,
+        27
+      ],
+      "anchor": [
+        8,
+        24
+      ],
+      "body": "human",
+      "hand_anchor": [
+        16,
+        10
+      ]
+    },
+    {
+      "id": "fruit_grower_work_0",
+      "page": "page_06",
+      "rect": [
+        23,
+        0,
+        22,
+        27
+      ],
+      "anchor": [
+        8,
+        24
+      ],
+      "body": "human",
+      "hand_anchor": [
+        16,
+        11
+      ]
+    },
+    {
+      "id": "fruit_grower_work_1",
+      "page": "page_06",
+      "rect": [
+        46,
+        0,
+        24,
+        24
+      ],
+      "anchor": [
+        8,
+        21
+      ],
+      "body": "human",
+      "hand_anchor": [
+        18,
+        15
+      ]
+    },
+    {
+      "id": "fruit_grower_work_2",
+      "page": "page_06",
+      "rect": [
+        71,
+        0,
+        22,
+        26
+      ],
+      "anchor": [
+        8,
+        23
+      ],
+      "body": "human",
+      "hand_anchor": [
+        16,
+        14
+      ]
+    },
+    {
+      "id": "fruit_grower_carry_0",
+      "page": "page_06",
+      "rect": [
+        94,
+        0,
+        21,
+        28
+      ],
+      "anchor": [
+        8,
+        25
+      ],
+      "body": "human",
+      "hand_anchor": [
+        15,
+        14
+      ]
+    },
+    {
+      "id": "fruit_grower_carry_1",
+      "page": "page_06",
+      "rect": [
+        0,
+        29,
+        22,
+        29
+      ],
+      "anchor": [
+        8,
+        26
+      ],
+      "body": "human",
+      "hand_anchor": [
+        16,
+        14
+      ]
+    },
+    {
+      "id": "fruit_grower_carry_2",
+      "page": "page_06",
+      "rect": [
+        23,
+        29,
+        22,
+        28
+      ],
+      "anchor": [
+        8,
+        25
+      ],
+      "body": "human",
+      "hand_anchor": [
+        16,
+        14
+      ]
+    },
+    {
+      "id": "fruit_grower_rest_0",
+      "page": "page_06",
+      "rect": [
+        46,
+        29,
+        25,
+        25
+      ],
+      "anchor": [
+        8,
+        22
+      ],
+      "body": "human",
+      "hand_anchor": [
+        12,
+        16
+      ]
+    },
+    {
+      "id": "fruit_grower_rest_1",
+      "page": "page_06",
+      "rect": [
+        72,
+        29,
+        25,
+        22
+      ],
+      "anchor": [
+        8,
+        19
+      ],
+      "body": "human",
+      "hand_anchor": [
+        13,
+        15
+      ]
+    },
+    {
+      "id": "fruit_grower_rest_2",
+      "page": "page_06",
+      "rect": [
+        98,
+        29,
+        25,
+        22
+      ],
+      "anchor": [
+        8,
+        19
+      ],
+      "body": "human",
+      "hand_anchor": [
+        13,
+        15
+      ]
+    },
+    {
+      "id": "florist_idle_0",
+      "page": "page_06",
+      "rect": [
+        0,
+        59,
+        22,
+        27
+      ],
+      "anchor": [
+        8,
+        24
+      ],
+      "body": "human",
+      "hand_anchor": [
+        14,
+        16
+      ]
+    },
+    {
+      "id": "florist_idle_1",
+      "page": "page_06",
+      "rect": [
+        23,
+        59,
+        23,
+        27
+      ],
+      "anchor": [
+        8,
+        24
+      ],
+      "body": "human",
+      "hand_anchor": [
+        15,
+        15
+      ]
+    },
+    {
+      "id": "florist_idle_2",
+      "page": "page_06",
+      "rect": [
+        47,
+        59,
+        22,
+        27
+      ],
+      "anchor": [
+        8,
+        24
+      ],
+      "body": "human",
+      "hand_anchor": [
+        14,
+        15
+      ]
+    },
+    {
+      "id": "florist_walk_0",
+      "page": "page_06",
+      "rect": [
+        70,
+        59,
+        22,
+        27
+      ],
+      "anchor": [
+        8,
+        24
+      ],
+      "body": "human",
+      "hand_anchor": [
+        13,
+        18
+      ]
+    },
+    {
+      "id": "florist_walk_1",
+      "page": "page_06",
+      "rect": [
+        93,
+        59,
+        24,
+        28
+      ],
+      "anchor": [
+        8,
+        25
+      ],
+      "body": "human",
+      "hand_anchor": [
+        16,
+        16
+      ]
+    },
+    {
+      "id": "florist_walk_2",
+      "page": "page_06",
+      "rect": [
+        0,
+        88,
+        22,
+        27
+      ],
+      "anchor": [
+        8,
+        24
+      ],
+      "body": "human",
+      "hand_anchor": [
+        14,
+        16
+      ]
+    },
+    {
+      "id": "florist_greet_0",
+      "page": "page_06",
+      "rect": [
+        23,
+        88,
+        24,
+        27
+      ],
+      "anchor": [
+        8,
+        24
+      ],
+      "body": "human",
+      "hand_anchor": [
+        16,
+        13
+      ]
+    },
+    {
+      "id": "florist_greet_1",
+      "page": "page_06",
+      "rect": [
+        48,
+        88,
+        21,
+        27
+      ],
+      "anchor": [
+        8,
+        24
+      ],
+      "body": "human",
+      "hand_anchor": [
+        18,
+        8
+      ]
+    },
+    {
+      "id": "florist_greet_2",
+      "page": "page_06",
+      "rect": [
+        70,
+        88,
+        25,
+        27
+      ],
+      "anchor": [
+        8,
+        24
+      ],
+      "body": "human",
+      "hand_anchor": [
+        16,
+        10
+      ]
+    },
+    {
+      "id": "florist_work_0",
+      "page": "page_06",
+      "rect": [
+        96,
+        88,
+        24,
+        27
+      ],
+      "anchor": [
+        8,
+        24
+      ],
+      "body": "human",
+      "hand_anchor": [
+        16,
+        11
+      ]
+    },
+    {
+      "id": "florist_work_1",
+      "page": "page_07",
+      "rect": [
+        0,
+        0,
+        26,
+        23
+      ],
+      "anchor": [
+        8,
+        20
+      ],
+      "body": "human",
+      "hand_anchor": [
+        18,
+        14
+      ]
+    },
+    {
+      "id": "florist_work_2",
+      "page": "page_07",
+      "rect": [
+        27,
+        0,
+        25,
+        25
+      ],
+      "anchor": [
+        8,
+        22
+      ],
+      "body": "human",
+      "hand_anchor": [
+        16,
+        13
+      ]
+    },
+    {
+      "id": "florist_carry_0",
+      "page": "page_07",
+      "rect": [
+        53,
+        0,
+        23,
+        27
+      ],
+      "anchor": [
+        8,
+        24
+      ],
+      "body": "human",
+      "hand_anchor": [
+        15,
+        13
+      ]
+    },
+    {
+      "id": "florist_carry_1",
+      "page": "page_07",
+      "rect": [
+        77,
+        0,
+        25,
+        28
+      ],
+      "anchor": [
+        8,
+        25
+      ],
+      "body": "human",
+      "hand_anchor": [
+        16,
+        13
+      ]
+    },
+    {
+      "id": "florist_carry_2",
+      "page": "page_07",
+      "rect": [
+        103,
+        0,
+        24,
+        27
+      ],
+      "anchor": [
+        8,
+        24
+      ],
+      "body": "human",
+      "hand_anchor": [
+        16,
+        13
+      ]
+    },
+    {
+      "id": "florist_rest_0",
+      "page": "page_07",
+      "rect": [
+        0,
+        29,
+        26,
+        25
+      ],
+      "anchor": [
+        8,
+        22
+      ],
+      "body": "human",
+      "hand_anchor": [
+        12,
+        16
+      ]
+    },
+    {
+      "id": "florist_rest_1",
+      "page": "page_07",
+      "rect": [
+        27,
+        29,
+        26,
+        21
+      ],
+      "anchor": [
+        8,
+        18
+      ],
+      "body": "human",
+      "hand_anchor": [
+        13,
+        14
+      ]
+    },
+    {
+      "id": "florist_rest_2",
+      "page": "page_07",
+      "rect": [
+        54,
+        29,
+        26,
+        21
+      ],
+      "anchor": [
+        8,
+        18
+      ],
+      "body": "human",
+      "hand_anchor": [
+        13,
+        14
+      ]
+    },
+    {
+      "id": "traveling_painter_idle_0",
+      "page": "page_07",
+      "rect": [
+        81,
+        29,
+        22,
+        29
+      ],
+      "anchor": [
+        8,
+        26
+      ],
+      "body": "human",
+      "hand_anchor": [
+        14,
+        18
+      ]
+    },
+    {
+      "id": "traveling_painter_idle_1",
+      "page": "page_07",
+      "rect": [
+        104,
+        29,
+        23,
+        29
+      ],
+      "anchor": [
+        8,
+        26
+      ],
+      "body": "human",
+      "hand_anchor": [
+        15,
+        17
+      ]
+    },
+    {
+      "id": "traveling_painter_idle_2",
+      "page": "page_07",
+      "rect": [
+        0,
+        59,
+        22,
+        29
+      ],
+      "anchor": [
+        8,
+        26
+      ],
+      "body": "human",
+      "hand_anchor": [
+        14,
+        17
+      ]
+    },
+    {
+      "id": "traveling_painter_walk_0",
+      "page": "page_07",
+      "rect": [
+        23,
+        59,
+        22,
+        29
+      ],
+      "anchor": [
+        8,
+        26
+      ],
+      "body": "human",
+      "hand_anchor": [
+        13,
+        20
+      ]
+    },
+    {
+      "id": "traveling_painter_walk_1",
+      "page": "page_07",
+      "rect": [
+        46,
+        59,
+        24,
+        30
+      ],
+      "anchor": [
+        8,
+        27
+      ],
+      "body": "human",
+      "hand_anchor": [
+        16,
+        18
+      ]
+    },
+    {
+      "id": "traveling_painter_walk_2",
+      "page": "page_07",
+      "rect": [
+        71,
+        59,
+        22,
+        29
+      ],
+      "anchor": [
+        8,
+        26
+      ],
+      "body": "human",
+      "hand_anchor": [
+        14,
+        18
+      ]
+    },
+    {
+      "id": "traveling_painter_greet_0",
+      "page": "page_07",
+      "rect": [
+        94,
+        59,
+        24,
+        30
+      ],
+      "anchor": [
+        8,
+        27
+      ],
+      "body": "human",
+      "hand_anchor": [
+        16,
+        16
+      ]
+    },
+    {
+      "id": "traveling_painter_greet_1",
+      "page": "page_07",
+      "rect": [
+        0,
+        90,
+        21,
+        29
+      ],
+      "anchor": [
+        8,
+        26
+      ],
+      "body": "human",
+      "hand_anchor": [
+        18,
+        10
+      ]
+    },
+    {
+      "id": "traveling_painter_greet_2",
+      "page": "page_07",
+      "rect": [
+        22,
+        90,
+        25,
+        29
+      ],
+      "anchor": [
+        8,
+        26
+      ],
+      "body": "human",
+      "hand_anchor": [
+        16,
+        12
+      ]
+    },
+    {
+      "id": "traveling_painter_work_0",
+      "page": "page_07",
+      "rect": [
+        48,
+        90,
+        24,
+        29
+      ],
+      "anchor": [
+        8,
+        26
+      ],
+      "body": "human",
+      "hand_anchor": [
+        16,
+        13
+      ]
+    },
+    {
+      "id": "traveling_painter_work_1",
+      "page": "page_07",
+      "rect": [
+        73,
+        90,
+        26,
+        26
+      ],
+      "anchor": [
+        8,
+        23
+      ],
+      "body": "human",
+      "hand_anchor": [
+        18,
+        17
+      ]
+    },
+    {
+      "id": "traveling_painter_work_2",
+      "page": "page_07",
+      "rect": [
+        100,
+        90,
+        25,
+        28
+      ],
+      "anchor": [
+        8,
+        25
+      ],
+      "body": "human",
+      "hand_anchor": [
+        16,
+        16
+      ]
+    },
+    {
+      "id": "traveling_painter_carry_0",
+      "page": "page_08",
+      "rect": [
+        0,
+        0,
+        23,
+        30
+      ],
+      "anchor": [
+        8,
+        27
+      ],
+      "body": "human",
+      "hand_anchor": [
+        15,
+        16
+      ]
+    },
+    {
+      "id": "traveling_painter_carry_1",
+      "page": "page_08",
+      "rect": [
+        24,
+        0,
+        25,
+        31
+      ],
+      "anchor": [
+        8,
+        28
+      ],
+      "body": "human",
+      "hand_anchor": [
+        16,
+        16
+      ]
+    },
+    {
+      "id": "traveling_painter_carry_2",
+      "page": "page_08",
+      "rect": [
+        50,
+        0,
+        24,
+        30
+      ],
+      "anchor": [
+        8,
+        27
+      ],
+      "body": "human",
+      "hand_anchor": [
+        16,
+        16
+      ]
+    },
+    {
+      "id": "traveling_painter_rest_0",
+      "page": "page_08",
+      "rect": [
+        75,
+        0,
+        26,
+        27
+      ],
+      "anchor": [
+        8,
+        24
+      ],
+      "body": "human",
+      "hand_anchor": [
+        12,
+        18
+      ]
+    },
+    {
+      "id": "traveling_painter_rest_1",
+      "page": "page_08",
+      "rect": [
+        102,
+        0,
+        26,
+        23
+      ],
+      "anchor": [
+        8,
+        20
+      ],
+      "body": "human",
+      "hand_anchor": [
+        13,
+        16
+      ]
+    },
+    {
+      "id": "traveling_painter_rest_2",
+      "page": "page_08",
+      "rect": [
+        0,
+        32,
+        26,
+        24
+      ],
+      "anchor": [
+        8,
+        21
+      ],
+      "body": "human",
+      "hand_anchor": [
+        13,
+        17
+      ]
+    },
+    {
+      "id": "road_worker_idle_0",
+      "page": "page_08",
+      "rect": [
+        27,
+        32,
+        26,
+        30
+      ],
+      "anchor": [
+        8,
+        27
+      ],
+      "body": "human",
+      "hand_anchor": [
+        14,
+        19
+      ]
+    },
+    {
+      "id": "road_worker_idle_1",
+      "page": "page_08",
+      "rect": [
+        54,
+        32,
+        26,
+        29
+      ],
+      "anchor": [
+        8,
+        26
+      ],
+      "body": "human",
+      "hand_anchor": [
+        15,
+        17
+      ]
+    },
+    {
+      "id": "road_worker_idle_2",
+      "page": "page_08",
+      "rect": [
+        81,
+        32,
+        26,
+        30
+      ],
+      "anchor": [
+        8,
+        27
+      ],
+      "body": "human",
+      "hand_anchor": [
+        14,
+        18
+      ]
+    },
+    {
+      "id": "road_worker_walk_0",
+      "page": "page_08",
+      "rect": [
+        0,
+        63,
+        26,
+        30
+      ],
+      "anchor": [
+        8,
+        27
+      ],
+      "body": "human",
+      "hand_anchor": [
+        13,
+        21
+      ]
+    },
+    {
+      "id": "road_worker_walk_1",
+      "page": "page_08",
+      "rect": [
+        27,
+        63,
+        26,
+        31
+      ],
+      "anchor": [
+        8,
+        28
+      ],
+      "body": "human",
+      "hand_anchor": [
+        16,
+        19
+      ]
+    },
+    {
+      "id": "road_worker_walk_2",
+      "page": "page_08",
+      "rect": [
+        54,
+        63,
+        26,
+        30
+      ],
+      "anchor": [
+        8,
+        27
+      ],
+      "body": "human",
+      "hand_anchor": [
+        14,
+        19
+      ]
+    },
+    {
+      "id": "road_worker_greet_0",
+      "page": "page_08",
+      "rect": [
+        81,
+        63,
+        26,
+        30
+      ],
+      "anchor": [
+        8,
+        27
+      ],
+      "body": "human",
+      "hand_anchor": [
+        16,
+        16
+      ]
+    },
+    {
+      "id": "road_worker_greet_1",
+      "page": "page_08",
+      "rect": [
+        0,
+        95,
+        21,
+        30
+      ],
+      "anchor": [
+        8,
+        27
+      ],
+      "body": "human",
+      "hand_anchor": [
+        18,
+        11
+      ]
+    },
+    {
+      "id": "road_worker_greet_2",
+      "page": "page_08",
+      "rect": [
+        22,
+        95,
+        26,
+        29
+      ],
+      "anchor": [
+        8,
+        26
+      ],
+      "body": "human",
+      "hand_anchor": [
+        16,
+        12
+      ]
+    },
+    {
+      "id": "road_worker_work_0",
+      "page": "page_08",
+      "rect": [
+        49,
+        95,
+        26,
+        29
+      ],
+      "anchor": [
+        8,
+        26
+      ],
+      "body": "human",
+      "hand_anchor": [
+        16,
+        13
+      ]
+    },
+    {
+      "id": "road_worker_work_1",
+      "page": "page_08",
+      "rect": [
+        76,
+        95,
+        26,
+        26
+      ],
+      "anchor": [
+        8,
+        23
+      ],
+      "body": "human",
+      "hand_anchor": [
+        18,
+        17
+      ]
+    },
+    {
+      "id": "road_worker_work_2",
+      "page": "page_09",
+      "rect": [
+        0,
+        0,
+        26,
+        28
+      ],
+      "anchor": [
+        8,
+        25
+      ],
+      "body": "human",
+      "hand_anchor": [
+        16,
+        16
+      ]
+    },
+    {
+      "id": "road_worker_carry_0",
+      "page": "page_09",
+      "rect": [
+        27,
+        0,
+        26,
+        30
+      ],
+      "anchor": [
+        8,
+        27
+      ],
+      "body": "human",
+      "hand_anchor": [
+        15,
+        16
+      ]
+    },
+    {
+      "id": "road_worker_carry_1",
+      "page": "page_09",
+      "rect": [
+        54,
+        0,
+        26,
+        31
+      ],
+      "anchor": [
+        8,
+        28
+      ],
+      "body": "human",
+      "hand_anchor": [
+        16,
+        16
+      ]
+    },
+    {
+      "id": "road_worker_carry_2",
+      "page": "page_09",
+      "rect": [
+        81,
+        0,
+        26,
+        30
+      ],
+      "anchor": [
+        8,
+        27
+      ],
+      "body": "human",
+      "hand_anchor": [
+        16,
+        16
+      ]
+    },
+    {
+      "id": "road_worker_rest_0",
+      "page": "page_09",
+      "rect": [
+        0,
+        32,
+        26,
+        27
+      ],
+      "anchor": [
+        8,
+        24
+      ],
+      "body": "human",
+      "hand_anchor": [
+        12,
+        18
+      ]
+    },
+    {
+      "id": "road_worker_rest_1",
+      "page": "page_09",
+      "rect": [
+        27,
+        32,
+        26,
+        24
+      ],
+      "anchor": [
+        8,
+        21
+      ],
+      "body": "human",
+      "hand_anchor": [
+        13,
+        17
+      ]
+    },
+    {
+      "id": "road_worker_rest_2",
+      "page": "page_09",
+      "rect": [
+        54,
+        32,
+        26,
+        24
+      ],
+      "anchor": [
+        8,
+        21
+      ],
+      "body": "human",
+      "hand_anchor": [
+        13,
+        17
+      ]
+    },
+    {
+      "id": "mail_carrier_label",
+      "page": "page_09",
+      "rect": [
+        81,
+        32,
+        46,
+        12
+      ],
+      "anchor": [
+        23,
+        11
+      ],
+      "body": "prop"
+    },
+    {
+      "id": "seed_merchant_label",
+      "page": "page_09",
+      "rect": [
+        0,
+        60,
+        46,
+        12
+      ],
+      "anchor": [
+        23,
+        11
+      ],
+      "body": "prop"
+    },
+    {
+      "id": "carpenter_label",
+      "page": "page_09",
+      "rect": [
+        47,
+        60,
+        46,
+        12
+      ],
+      "anchor": [
+        23,
+        11
+      ],
+      "body": "prop"
+    },
+    {
+      "id": "cook_label",
+      "page": "page_09",
+      "rect": [
+        0,
+        73,
+        46,
+        12
+      ],
+      "anchor": [
+        23,
+        11
+      ],
+      "body": "prop"
+    },
+    {
+      "id": "fisher_label",
+      "page": "page_09",
+      "rect": [
+        47,
+        73,
+        46,
+        12
+      ],
+      "anchor": [
+        23,
+        11
+      ],
+      "body": "prop"
+    },
+    {
+      "id": "weaver_label",
+      "page": "page_09",
+      "rect": [
+        0,
+        86,
+        46,
+        12
+      ],
+      "anchor": [
+        23,
+        11
+      ],
+      "body": "prop"
+    },
+    {
+      "id": "fruit_grower_label",
+      "page": "page_09",
+      "rect": [
+        47,
+        86,
+        46,
+        12
+      ],
+      "anchor": [
+        23,
+        11
+      ],
+      "body": "prop"
+    },
+    {
+      "id": "florist_label",
+      "page": "page_09",
+      "rect": [
+        0,
+        99,
+        46,
+        12
+      ],
+      "anchor": [
+        23,
+        11
+      ],
+      "body": "prop"
+    },
+    {
+      "id": "traveling_painter_label",
+      "page": "page_09",
+      "rect": [
+        47,
+        99,
+        64,
+        12
+      ],
+      "anchor": [
+        32,
+        11
+      ],
+      "body": "prop"
+    },
+    {
+      "id": "road_worker_label",
+      "page": "page_09",
+      "rect": [
+        0,
+        112,
+        54,
+        12
+      ],
+      "anchor": [
+        27,
+        11
+      ],
+      "body": "prop"
+    }
+  ]
+}

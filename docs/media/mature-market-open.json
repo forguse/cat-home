@@ -1,0 +1,132 @@
+{
+  "camera": [
+    612.0,
+    298.0
+  ],
+  "capture": "Production LivingView and physical nearest-neighbor sampling from a fixed market view.",
+  "checkpoint": "target/probes/real-calendar/village-host-1794636596073/boundary-365/world-v4.json",
+  "checkpoint_calendar_age": 364,
+  "checkpoint_last_wall_ms": 1821535999999,
+  "checkpoint_sha3_256": "f874cf4bc38614beebfea7f2ce14333971cb6b7fa7e032680b0ea3cf0c26fe79",
+  "open_stalls": [
+    {
+      "id": "stall_produce.door",
+      "item": "Crops",
+      "quantity": 64
+    },
+    {
+      "id": "stall_seed.door",
+      "item": "Seeds",
+      "quantity": 64
+    },
+    {
+      "id": "stall_meal.door",
+      "item": "Food",
+      "quantity": 2
+    },
+    {
+      "id": "stall_cloth.door",
+      "item": "Rope",
+      "quantity": 5
+    },
+    {
+      "id": "stall_fish.door",
+      "item": "Fish",
+      "quantity": 64
+    },
+    {
+      "id": "stall_fruit_flower.door",
+      "item": "Crops",
+      "quantity": 64
+    }
+  ],
+  "physical_size": [
+    900,
+    468
+  ],
+  "simulation": "Production HomeHost tick on isolated byte-identical checkpoint copy; no stock, pose, actor, or phase override.",
+  "visible_people": [
+    {
+      "pose": "Working",
+      "position": [
+        620.0,
+        364.0
+      ],
+      "profession": "mail_carrier"
+    },
+    {
+      "pose": "Working",
+      "position": [
+        716.0,
+        348.0
+      ],
+      "profession": "seed_merchant"
+    },
+    {
+      "pose": "Working",
+      "position": [
+        660.0,
+        428.0
+      ],
+      "profession": "cook"
+    },
+    {
+      "pose": "Working",
+      "position": [
+        812.0,
+        348.0
+      ],
+      "profession": "fisher"
+    },
+    {
+      "pose": "Working",
+      "position": [
+        716.0,
+        428.0
+      ],
+      "profession": "weaver"
+    },
+    {
+      "pose": "Working",
+      "position": [
+        660.0,
+        348.0
+      ],
+      "profession": "fruit_grower"
+    },
+    {
+      "pose": "Working",
+      "position": [
+        868.0,
+        348.0
+      ],
+      "profession": "florist"
+    },
+    {
+      "pose": "Waiting",
+      "position": [
+        891.9616088867188,
+        364.0
+      ],
+      "profession": "traveling_painter"
+    },
+    {
+      "pose": "Resting",
+      "position": [
+        644.0,
+        404.0
+      ],
+      "profession": "roofer"
+    },
+    {
+      "pose": "Resting",
+      "position": [
+        700.0,
+        372.0
+      ],
+      "profession": "florist"
+    }
+  ],
+  "world_day": 21569,
+  "world_minute": 653
+}

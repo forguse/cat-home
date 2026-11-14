@@ -1,0 +1,50 @@
+{
+  "width": 64,
+  "height": 12,
+  "anchor": [
+    32,
+    11
+  ],
+  "frames": [
+    {
+      "profession": "mail_carrier",
+      "text": "米信·邮差"
+    },
+    {
+      "profession": "seed_merchant",
+      "text": "谷芽·种商"
+    },
+    {
+      "profession": "carpenter",
+      "text": "槐青·木匠"
+    },
+    {
+      "profession": "cook",
+      "text": "苏灶·厨师"
+    },
+    {
+      "profession": "fisher",
+      "text": "陆澜·渔人"
+    },
+    {
+      "profession": "weaver",
+      "text": "青梭·织工"
+    },
+    {
+      "profession": "fruit_grower",
+      "text": "林枝·果农"
+    },
+    {
+      "profession": "florist",
+      "text": "花晴·花匠"
+    },
+    {
+      "profession": "traveling_painter",
+      "text": "夏墨·旅行画家"
+    },
+    {
+      "profession": "road_worker",
+      "text": "石砾·修路人"
+    }
+  ]
+}

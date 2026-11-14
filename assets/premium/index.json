@@ -1,0 +1,3324 @@
+{
+  "pages": [
+    {
+      "width": 256,
+      "height": 256
+    },
+    {
+      "width": 256,
+      "height": 256
+    },
+    {
+      "width": 256,
+      "height": 256
+    },
+    {
+      "width": 256,
+      "height": 256
+    },
+    {
+      "width": 256,
+      "height": 256
+    },
+    {
+      "width": 256,
+      "height": 256
+    },
+    {
+      "width": 256,
+      "height": 256
+    },
+    {
+      "width": 256,
+      "height": 256
+    },
+    {
+      "width": 256,
+      "height": 256
+    },
+    {
+      "width": 256,
+      "height": 256
+    },
+    {
+      "width": 256,
+      "height": 256
+    }
+  ],
+  "frames": [
+    {
+      "id": "west_house_0",
+      "page": 0,
+      "rect": [
+        0,
+        0,
+        96,
+        95
+      ],
+      "anchor": [
+        47,
+        94
+      ]
+    },
+    {
+      "id": "east_house_0",
+      "page": 0,
+      "rect": [
+        97,
+        0,
+        96,
+        102
+      ],
+      "anchor": [
+        45,
+        101
+      ]
+    },
+    {
+      "id": "kitchen",
+      "page": 0,
+      "rect": [
+        0,
+        103,
+        96,
+        84
+      ],
+      "anchor": [
+        37,
+        83
+      ]
+    },
+    {
+      "id": "storehouse",
+      "page": 0,
+      "rect": [
+        97,
+        103,
+        96,
+        90
+      ],
+      "anchor": [
+        46,
+        89
+      ]
+    },
+    {
+      "id": "workshop",
+      "page": 0,
+      "rect": [
+        0,
+        194,
+        64,
+        59
+      ],
+      "anchor": [
+        31,
+        58
+      ]
+    },
+    {
+      "id": "west_house_3",
+      "page": 1,
+      "rect": [
+        0,
+        0,
+        106,
+        88
+      ],
+      "anchor": [
+        43,
+        87
+      ]
+    },
+    {
+      "id": "east_house_3",
+      "page": 1,
+      "rect": [
+        107,
+        0,
+        106,
+        96
+      ],
+      "anchor": [
+        39,
+        95
+      ]
+    },
+    {
+      "id": "tree_oak",
+      "page": 1,
+      "rect": [
+        0,
+        97,
+        56,
+        53
+      ],
+      "anchor": [
+        26,
+        51
+      ]
+    },
+    {
+      "id": "tree_birch",
+      "page": 1,
+      "rect": [
+        57,
+        97,
+        52,
+        72
+      ],
+      "anchor": [
+        26,
+        71
+      ]
+    },
+    {
+      "id": "tree_apple",
+      "page": 1,
+      "rect": [
+        110,
+        97,
+        56,
+        58
+      ],
+      "anchor": [
+        27,
+        58
+      ]
+    },
+    {
+      "id": "tree_cherry",
+      "page": 1,
+      "rect": [
+        167,
+        97,
+        56,
+        50
+      ],
+      "anchor": [
+        22,
+        49
+      ]
+    },
+    {
+      "id": "tree_maple",
+      "page": 1,
+      "rect": [
+        0,
+        170,
+        56,
+        49
+      ],
+      "anchor": [
+        26,
+        49
+      ]
+    },
+    {
+      "id": "bush_berry",
+      "page": 1,
+      "rect": [
+        57,
+        170,
+        38,
+        28
+      ],
+      "anchor": [
+        18,
+        27
+      ]
+    },
+    {
+      "id": "flowers_wild",
+      "page": 1,
+      "rect": [
+        96,
+        170,
+        36,
+        28
+      ],
+      "anchor": [
+        17,
+        27
+      ]
+    },
+    {
+      "id": "bush_herb",
+      "page": 1,
+      "rect": [
+        133,
+        170,
+        37,
+        28
+      ],
+      "anchor": [
+        14,
+        28
+      ]
+    },
+    {
+      "id": "rocks_moss",
+      "page": 1,
+      "rect": [
+        171,
+        170,
+        32,
+        22
+      ],
+      "anchor": [
+        17,
+        22
+      ]
+    },
+    {
+      "id": "tree_stump",
+      "page": 1,
+      "rect": [
+        204,
+        170,
+        32,
+        27
+      ],
+      "anchor": [
+        15,
+        26
+      ]
+    },
+    {
+      "id": "logs",
+      "page": 1,
+      "rect": [
+        0,
+        220,
+        32,
+        24
+      ],
+      "anchor": [
+        17,
+        23
+      ]
+    },
+    {
+      "id": "well_stone",
+      "page": 1,
+      "rect": [
+        33,
+        220,
+        31,
+        32
+      ],
+      "anchor": [
+        16,
+        31
+      ]
+    },
+    {
+      "id": "female_walk_0",
+      "page": 2,
+      "rect": [
+        0,
+        0,
+        25,
+        39
+      ],
+      "anchor": [
+        12,
+        37
+      ],
+      "hand_anchor": [
+        19,
+        24
+      ]
+    },
+    {
+      "id": "female_walk_1",
+      "page": 2,
+      "rect": [
+        26,
+        0,
+        25,
+        39
+      ],
+      "anchor": [
+        13,
+        37
+      ],
+      "hand_anchor": [
+        18,
+        24
+      ]
+    },
+    {
+      "id": "female_walk_2",
+      "page": 2,
+      "rect": [
+        52,
+        0,
+        25,
+        39
+      ],
+      "anchor": [
+        13,
+        38
+      ],
+      "hand_anchor": [
+        19,
+        23
+      ]
+    },
+    {
+      "id": "female_hoe_till_0",
+      "page": 2,
+      "rect": [
+        78,
+        0,
+        33,
+        39
+      ],
+      "anchor": [
+        13,
+        38
+      ]
+    },
+    {
+      "id": "female_hoe_till_1",
+      "page": 2,
+      "rect": [
+        112,
+        0,
+        31,
+        36
+      ],
+      "anchor": [
+        12,
+        35
+      ]
+    },
+    {
+      "id": "female_hoe_till_2",
+      "page": 2,
+      "rect": [
+        144,
+        0,
+        31,
+        39
+      ],
+      "anchor": [
+        11,
+        38
+      ]
+    },
+    {
+      "id": "female_water_0",
+      "page": 2,
+      "rect": [
+        176,
+        0,
+        26,
+        39
+      ],
+      "anchor": [
+        11,
+        38
+      ]
+    },
+    {
+      "id": "female_water_1",
+      "page": 2,
+      "rect": [
+        203,
+        0,
+        31,
+        39
+      ],
+      "anchor": [
+        11,
+        38
+      ]
+    },
+    {
+      "id": "female_water_2",
+      "page": 2,
+      "rect": [
+        0,
+        40,
+        26,
+        39
+      ],
+      "anchor": [
+        11,
+        38
+      ]
+    },
+    {
+      "id": "female_harvest_0",
+      "page": 2,
+      "rect": [
+        27,
+        40,
+        34,
+        32
+      ],
+      "anchor": [
+        13,
+        30
+      ]
+    },
+    {
+      "id": "female_harvest_1",
+      "page": 2,
+      "rect": [
+        62,
+        40,
+        31,
+        33
+      ],
+      "anchor": [
+        15,
+        31
+      ]
+    },
+    {
+      "id": "female_harvest_2",
+      "page": 2,
+      "rect": [
+        94,
+        40,
+        30,
+        34
+      ],
+      "anchor": [
+        16,
+        32
+      ]
+    },
+    {
+      "id": "male_walk_0",
+      "page": 2,
+      "rect": [
+        125,
+        40,
+        21,
+        39
+      ],
+      "anchor": [
+        11,
+        38
+      ],
+      "hand_anchor": [
+        18,
+        23
+      ]
+    },
+    {
+      "id": "male_walk_1",
+      "page": 2,
+      "rect": [
+        147,
+        40,
+        20,
+        39
+      ],
+      "anchor": [
+        11,
+        38
+      ],
+      "hand_anchor": [
+        16,
+        26
+      ]
+    },
+    {
+      "id": "male_walk_2",
+      "page": 2,
+      "rect": [
+        168,
+        40,
+        21,
+        39
+      ],
+      "anchor": [
+        11,
+        38
+      ],
+      "hand_anchor": [
+        18,
+        23
+      ]
+    },
+    {
+      "id": "male_hoe_till_0",
+      "page": 2,
+      "rect": [
+        190,
+        40,
+        31,
+        39
+      ],
+      "anchor": [
+        12,
+        38
+      ]
+    },
+    {
+      "id": "male_hoe_till_1",
+      "page": 2,
+      "rect": [
+        222,
+        40,
+        29,
+        36
+      ],
+      "anchor": [
+        10,
+        35
+      ]
+    },
+    {
+      "id": "male_hoe_till_2",
+      "page": 2,
+      "rect": [
+        0,
+        80,
+        30,
+        39
+      ],
+      "anchor": [
+        10,
+        38
+      ]
+    },
+    {
+      "id": "male_water_0",
+      "page": 2,
+      "rect": [
+        31,
+        80,
+        23,
+        39
+      ],
+      "anchor": [
+        9,
+        38
+      ]
+    },
+    {
+      "id": "male_water_1",
+      "page": 2,
+      "rect": [
+        55,
+        80,
+        29,
+        39
+      ],
+      "anchor": [
+        9,
+        38
+      ]
+    },
+    {
+      "id": "male_water_2",
+      "page": 2,
+      "rect": [
+        85,
+        80,
+        23,
+        39
+      ],
+      "anchor": [
+        9,
+        38
+      ]
+    },
+    {
+      "id": "male_harvest_0",
+      "page": 2,
+      "rect": [
+        109,
+        80,
+        34,
+        33
+      ],
+      "anchor": [
+        14,
+        31
+      ]
+    },
+    {
+      "id": "male_harvest_1",
+      "page": 2,
+      "rect": [
+        144,
+        80,
+        29,
+        33
+      ],
+      "anchor": [
+        14,
+        32
+      ]
+    },
+    {
+      "id": "male_harvest_2",
+      "page": 2,
+      "rect": [
+        174,
+        80,
+        30,
+        34
+      ],
+      "anchor": [
+        15,
+        33
+      ]
+    },
+    {
+      "id": "ground_grass",
+      "page": 2,
+      "rect": [
+        0,
+        120,
+        64,
+        64
+      ],
+      "anchor": [
+        0,
+        0
+      ]
+    },
+    {
+      "id": "ground_path",
+      "page": 2,
+      "rect": [
+        65,
+        120,
+        64,
+        64
+      ],
+      "anchor": [
+        0,
+        0
+      ]
+    },
+    {
+      "id": "ground_soil",
+      "page": 2,
+      "rect": [
+        130,
+        120,
+        64,
+        64
+      ],
+      "anchor": [
+        0,
+        0
+      ]
+    },
+    {
+      "id": "ground_water_shallow",
+      "page": 2,
+      "rect": [
+        0,
+        185,
+        64,
+        64
+      ],
+      "anchor": [
+        0,
+        0
+      ]
+    },
+    {
+      "id": "ground_water",
+      "page": 2,
+      "rect": [
+        65,
+        185,
+        64,
+        64
+      ],
+      "anchor": [
+        0,
+        0
+      ]
+    },
+    {
+      "id": "ground_rock",
+      "page": 2,
+      "rect": [
+        130,
+        185,
+        64,
+        64
+      ],
+      "anchor": [
+        0,
+        0
+      ]
+    },
+    {
+      "id": "female_idle_0",
+      "page": 2,
+      "rect": [
+        195,
+        185,
+        26,
+        39
+      ],
+      "anchor": [
+        14,
+        38
+      ],
+      "hand_anchor": [
+        20,
+        26
+      ]
+    },
+    {
+      "id": "female_idle_1",
+      "page": 2,
+      "rect": [
+        222,
+        185,
+        26,
+        39
+      ],
+      "anchor": [
+        14,
+        38
+      ],
+      "hand_anchor": [
+        20,
+        26
+      ]
+    },
+    {
+      "id": "female_idle_2",
+      "page": 3,
+      "rect": [
+        0,
+        0,
+        26,
+        39
+      ],
+      "anchor": [
+        14,
+        38
+      ],
+      "hand_anchor": [
+        20,
+        26
+      ]
+    },
+    {
+      "id": "male_idle_0",
+      "page": 3,
+      "rect": [
+        27,
+        0,
+        21,
+        39
+      ],
+      "anchor": [
+        11,
+        38
+      ],
+      "hand_anchor": [
+        17,
+        26
+      ]
+    },
+    {
+      "id": "male_idle_1",
+      "page": 3,
+      "rect": [
+        49,
+        0,
+        21,
+        39
+      ],
+      "anchor": [
+        11,
+        38
+      ],
+      "hand_anchor": [
+        17,
+        26
+      ]
+    },
+    {
+      "id": "male_idle_2",
+      "page": 3,
+      "rect": [
+        71,
+        0,
+        21,
+        39
+      ],
+      "anchor": [
+        11,
+        38
+      ],
+      "hand_anchor": [
+        17,
+        26
+      ]
+    },
+    {
+      "id": "female_drink_0",
+      "page": 3,
+      "rect": [
+        93,
+        0,
+        24,
+        40
+      ],
+      "anchor": [
+        12,
+        39
+      ]
+    },
+    {
+      "id": "female_drink_1",
+      "page": 3,
+      "rect": [
+        118,
+        0,
+        24,
+        40
+      ],
+      "anchor": [
+        12,
+        39
+      ]
+    },
+    {
+      "id": "female_drink_2",
+      "page": 3,
+      "rect": [
+        143,
+        0,
+        24,
+        40
+      ],
+      "anchor": [
+        12,
+        39
+      ]
+    },
+    {
+      "id": "male_drink_0",
+      "page": 3,
+      "rect": [
+        168,
+        0,
+        21,
+        40
+      ],
+      "anchor": [
+        11,
+        39
+      ]
+    },
+    {
+      "id": "male_drink_1",
+      "page": 3,
+      "rect": [
+        190,
+        0,
+        21,
+        40
+      ],
+      "anchor": [
+        10,
+        39
+      ]
+    },
+    {
+      "id": "male_drink_2",
+      "page": 3,
+      "rect": [
+        212,
+        0,
+        21,
+        40
+      ],
+      "anchor": [
+        11,
+        39
+      ]
+    },
+    {
+      "id": "cat_idle_0",
+      "page": 3,
+      "rect": [
+        234,
+        0,
+        18,
+        18
+      ],
+      "anchor": [
+        7,
+        18
+      ]
+    },
+    {
+      "id": "cat_idle_1",
+      "page": 3,
+      "rect": [
+        0,
+        41,
+        18,
+        18
+      ],
+      "anchor": [
+        7,
+        18
+      ]
+    },
+    {
+      "id": "cat_idle_2",
+      "page": 3,
+      "rect": [
+        19,
+        41,
+        18,
+        18
+      ],
+      "anchor": [
+        7,
+        18
+      ]
+    },
+    {
+      "id": "cat_walk_0",
+      "page": 3,
+      "rect": [
+        38,
+        41,
+        19,
+        18
+      ],
+      "anchor": [
+        8,
+        18
+      ]
+    },
+    {
+      "id": "cat_walk_1",
+      "page": 3,
+      "rect": [
+        58,
+        41,
+        19,
+        18
+      ],
+      "anchor": [
+        8,
+        18
+      ]
+    },
+    {
+      "id": "cat_walk_2",
+      "page": 3,
+      "rect": [
+        78,
+        41,
+        19,
+        18
+      ],
+      "anchor": [
+        8,
+        18
+      ]
+    },
+    {
+      "id": "cat_eat_0",
+      "page": 3,
+      "rect": [
+        98,
+        41,
+        18,
+        18
+      ],
+      "anchor": [
+        8,
+        17
+      ]
+    },
+    {
+      "id": "cat_eat_1",
+      "page": 3,
+      "rect": [
+        117,
+        41,
+        18,
+        18
+      ],
+      "anchor": [
+        8,
+        17
+      ]
+    },
+    {
+      "id": "cat_eat_2",
+      "page": 3,
+      "rect": [
+        136,
+        41,
+        18,
+        18
+      ],
+      "anchor": [
+        8,
+        17
+      ]
+    },
+    {
+      "id": "cat_drink_0",
+      "page": 3,
+      "rect": [
+        155,
+        41,
+        18,
+        17
+      ],
+      "anchor": [
+        8,
+        17
+      ]
+    },
+    {
+      "id": "cat_drink_1",
+      "page": 3,
+      "rect": [
+        174,
+        41,
+        18,
+        18
+      ],
+      "anchor": [
+        8,
+        16
+      ]
+    },
+    {
+      "id": "cat_drink_2",
+      "page": 3,
+      "rect": [
+        193,
+        41,
+        18,
+        17
+      ],
+      "anchor": [
+        8,
+        17
+      ]
+    },
+    {
+      "id": "cat_rest_0",
+      "page": 3,
+      "rect": [
+        212,
+        41,
+        18,
+        16
+      ],
+      "anchor": [
+        8,
+        16
+      ]
+    },
+    {
+      "id": "cat_rest_1",
+      "page": 3,
+      "rect": [
+        231,
+        41,
+        18,
+        16
+      ],
+      "anchor": [
+        8,
+        16
+      ]
+    },
+    {
+      "id": "cat_rest_2",
+      "page": 3,
+      "rect": [
+        0,
+        60,
+        18,
+        16
+      ],
+      "anchor": [
+        8,
+        16
+      ]
+    },
+    {
+      "id": "cat_sleep_0",
+      "page": 3,
+      "rect": [
+        19,
+        60,
+        18,
+        15
+      ],
+      "anchor": [
+        8,
+        14
+      ]
+    },
+    {
+      "id": "cat_sleep_1",
+      "page": 3,
+      "rect": [
+        38,
+        60,
+        18,
+        15
+      ],
+      "anchor": [
+        8,
+        14
+      ]
+    },
+    {
+      "id": "cat_sleep_2",
+      "page": 3,
+      "rect": [
+        57,
+        60,
+        18,
+        14
+      ],
+      "anchor": [
+        8,
+        13
+      ]
+    },
+    {
+      "id": "cat_sit_0",
+      "page": 3,
+      "rect": [
+        76,
+        60,
+        17,
+        17
+      ],
+      "anchor": [
+        8,
+        17
+      ]
+    },
+    {
+      "id": "cat_sit_1",
+      "page": 3,
+      "rect": [
+        94,
+        60,
+        17,
+        18
+      ],
+      "anchor": [
+        8,
+        18
+      ]
+    },
+    {
+      "id": "cat_sit_2",
+      "page": 3,
+      "rect": [
+        112,
+        60,
+        17,
+        17
+      ],
+      "anchor": [
+        8,
+        17
+      ]
+    },
+    {
+      "id": "cat_hop_0",
+      "page": 3,
+      "rect": [
+        130,
+        60,
+        19,
+        14
+      ],
+      "anchor": [
+        9,
+        14
+      ]
+    },
+    {
+      "id": "cat_hop_1",
+      "page": 3,
+      "rect": [
+        150,
+        60,
+        19,
+        18
+      ],
+      "anchor": [
+        9,
+        18
+      ]
+    },
+    {
+      "id": "cat_hop_2",
+      "page": 3,
+      "rect": [
+        170,
+        60,
+        20,
+        16
+      ],
+      "anchor": [
+        9,
+        16
+      ]
+    },
+    {
+      "id": "female_carry_0",
+      "page": 3,
+      "rect": [
+        191,
+        60,
+        26,
+        39
+      ],
+      "anchor": [
+        14,
+        38
+      ],
+      "hand_anchor": [
+        20,
+        25
+      ]
+    },
+    {
+      "id": "female_carry_1",
+      "page": 3,
+      "rect": [
+        218,
+        60,
+        26,
+        39
+      ],
+      "anchor": [
+        13,
+        38
+      ],
+      "hand_anchor": [
+        20,
+        24
+      ]
+    },
+    {
+      "id": "female_carry_2",
+      "page": 3,
+      "rect": [
+        0,
+        100,
+        26,
+        39
+      ],
+      "anchor": [
+        13,
+        38
+      ],
+      "hand_anchor": [
+        20,
+        23
+      ]
+    },
+    {
+      "id": "female_axe_0",
+      "page": 3,
+      "rect": [
+        27,
+        100,
+        33,
+        39
+      ],
+      "anchor": [
+        12,
+        38
+      ]
+    },
+    {
+      "id": "female_axe_1",
+      "page": 3,
+      "rect": [
+        61,
+        100,
+        28,
+        36
+      ],
+      "anchor": [
+        12,
+        35
+      ]
+    },
+    {
+      "id": "female_axe_2",
+      "page": 3,
+      "rect": [
+        90,
+        100,
+        28,
+        39
+      ],
+      "anchor": [
+        12,
+        38
+      ]
+    },
+    {
+      "id": "female_hammer_0",
+      "page": 3,
+      "rect": [
+        119,
+        100,
+        26,
+        39
+      ],
+      "anchor": [
+        11,
+        38
+      ]
+    },
+    {
+      "id": "female_hammer_1",
+      "page": 3,
+      "rect": [
+        146,
+        100,
+        26,
+        39
+      ],
+      "anchor": [
+        11,
+        38
+      ]
+    },
+    {
+      "id": "female_hammer_2",
+      "page": 3,
+      "rect": [
+        173,
+        100,
+        26,
+        39
+      ],
+      "anchor": [
+        11,
+        38
+      ]
+    },
+    {
+      "id": "female_sow_0",
+      "page": 3,
+      "rect": [
+        200,
+        100,
+        28,
+        32
+      ],
+      "anchor": [
+        10,
+        31
+      ]
+    },
+    {
+      "id": "female_sow_1",
+      "page": 3,
+      "rect": [
+        0,
+        140,
+        29,
+        33
+      ],
+      "anchor": [
+        10,
+        32
+      ]
+    },
+    {
+      "id": "female_sow_2",
+      "page": 3,
+      "rect": [
+        30,
+        140,
+        26,
+        34
+      ],
+      "anchor": [
+        11,
+        33
+      ]
+    },
+    {
+      "id": "male_carry_0",
+      "page": 3,
+      "rect": [
+        57,
+        140,
+        21,
+        39
+      ],
+      "anchor": [
+        11,
+        38
+      ],
+      "hand_anchor": [
+        18,
+        24
+      ]
+    },
+    {
+      "id": "male_carry_1",
+      "page": 3,
+      "rect": [
+        79,
+        140,
+        21,
+        39
+      ],
+      "anchor": [
+        11,
+        38
+      ],
+      "hand_anchor": [
+        17,
+        25
+      ]
+    },
+    {
+      "id": "male_carry_2",
+      "page": 3,
+      "rect": [
+        101,
+        140,
+        21,
+        39
+      ],
+      "anchor": [
+        11,
+        38
+      ],
+      "hand_anchor": [
+        18,
+        23
+      ]
+    },
+    {
+      "id": "male_axe_0",
+      "page": 3,
+      "rect": [
+        123,
+        140,
+        31,
+        39
+      ],
+      "anchor": [
+        11,
+        38
+      ]
+    },
+    {
+      "id": "male_axe_1",
+      "page": 3,
+      "rect": [
+        155,
+        140,
+        26,
+        37
+      ],
+      "anchor": [
+        11,
+        36
+      ]
+    },
+    {
+      "id": "male_axe_2",
+      "page": 3,
+      "rect": [
+        182,
+        140,
+        26,
+        39
+      ],
+      "anchor": [
+        10,
+        38
+      ]
+    },
+    {
+      "id": "male_hammer_0",
+      "page": 3,
+      "rect": [
+        209,
+        140,
+        23,
+        39
+      ],
+      "anchor": [
+        9,
+        38
+      ]
+    },
+    {
+      "id": "male_hammer_1",
+      "page": 3,
+      "rect": [
+        0,
+        180,
+        24,
+        39
+      ],
+      "anchor": [
+        9,
+        38
+      ]
+    },
+    {
+      "id": "male_hammer_2",
+      "page": 3,
+      "rect": [
+        25,
+        180,
+        23,
+        39
+      ],
+      "anchor": [
+        10,
+        38
+      ]
+    },
+    {
+      "id": "male_sow_0",
+      "page": 3,
+      "rect": [
+        49,
+        180,
+        27,
+        33
+      ],
+      "anchor": [
+        12,
+        32
+      ]
+    },
+    {
+      "id": "male_sow_1",
+      "page": 3,
+      "rect": [
+        77,
+        180,
+        30,
+        33
+      ],
+      "anchor": [
+        11,
+        32
+      ]
+    },
+    {
+      "id": "male_sow_2",
+      "page": 3,
+      "rect": [
+        108,
+        180,
+        22,
+        34
+      ],
+      "anchor": [
+        10,
+        33
+      ]
+    },
+    {
+      "id": "female_cook_0",
+      "page": 3,
+      "rect": [
+        131,
+        180,
+        25,
+        38
+      ],
+      "anchor": [
+        13,
+        37
+      ]
+    },
+    {
+      "id": "female_cook_1",
+      "page": 3,
+      "rect": [
+        157,
+        180,
+        26,
+        38
+      ],
+      "anchor": [
+        13,
+        37
+      ]
+    },
+    {
+      "id": "female_cook_2",
+      "page": 3,
+      "rect": [
+        184,
+        180,
+        25,
+        38
+      ],
+      "anchor": [
+        13,
+        37
+      ]
+    },
+    {
+      "id": "female_eat_0",
+      "page": 3,
+      "rect": [
+        210,
+        180,
+        25,
+        34
+      ],
+      "anchor": [
+        14,
+        33
+      ]
+    },
+    {
+      "id": "female_eat_1",
+      "page": 3,
+      "rect": [
+        0,
+        220,
+        25,
+        34
+      ],
+      "anchor": [
+        14,
+        33
+      ]
+    },
+    {
+      "id": "female_eat_2",
+      "page": 3,
+      "rect": [
+        26,
+        220,
+        25,
+        34
+      ],
+      "anchor": [
+        14,
+        33
+      ]
+    },
+    {
+      "id": "female_rest_0",
+      "page": 3,
+      "rect": [
+        52,
+        220,
+        25,
+        34
+      ],
+      "anchor": [
+        15,
+        33
+      ]
+    },
+    {
+      "id": "female_rest_1",
+      "page": 3,
+      "rect": [
+        78,
+        220,
+        25,
+        34
+      ],
+      "anchor": [
+        15,
+        33
+      ]
+    },
+    {
+      "id": "female_rest_2",
+      "page": 3,
+      "rect": [
+        104,
+        220,
+        25,
+        34
+      ],
+      "anchor": [
+        15,
+        33
+      ]
+    },
+    {
+      "id": "female_store_0",
+      "page": 4,
+      "rect": [
+        0,
+        0,
+        25,
+        38
+      ],
+      "anchor": [
+        12,
+        37
+      ]
+    },
+    {
+      "id": "female_store_1",
+      "page": 4,
+      "rect": [
+        26,
+        0,
+        25,
+        38
+      ],
+      "anchor": [
+        12,
+        37
+      ]
+    },
+    {
+      "id": "female_store_2",
+      "page": 4,
+      "rect": [
+        52,
+        0,
+        25,
+        38
+      ],
+      "anchor": [
+        12,
+        37
+      ]
+    },
+    {
+      "id": "male_cook_0",
+      "page": 4,
+      "rect": [
+        78,
+        0,
+        21,
+        39
+      ],
+      "anchor": [
+        12,
+        38
+      ]
+    },
+    {
+      "id": "male_cook_1",
+      "page": 4,
+      "rect": [
+        100,
+        0,
+        24,
+        39
+      ],
+      "anchor": [
+        12,
+        39
+      ]
+    },
+    {
+      "id": "male_cook_2",
+      "page": 4,
+      "rect": [
+        125,
+        0,
+        21,
+        39
+      ],
+      "anchor": [
+        12,
+        39
+      ]
+    },
+    {
+      "id": "male_eat_0",
+      "page": 4,
+      "rect": [
+        147,
+        0,
+        21,
+        34
+      ],
+      "anchor": [
+        12,
+        33
+      ]
+    },
+    {
+      "id": "male_eat_1",
+      "page": 4,
+      "rect": [
+        169,
+        0,
+        21,
+        34
+      ],
+      "anchor": [
+        12,
+        33
+      ]
+    },
+    {
+      "id": "male_eat_2",
+      "page": 4,
+      "rect": [
+        191,
+        0,
+        21,
+        34
+      ],
+      "anchor": [
+        12,
+        33
+      ]
+    },
+    {
+      "id": "male_rest_0",
+      "page": 4,
+      "rect": [
+        213,
+        0,
+        21,
+        34
+      ],
+      "anchor": [
+        10,
+        33
+      ]
+    },
+    {
+      "id": "male_rest_1",
+      "page": 4,
+      "rect": [
+        235,
+        0,
+        21,
+        34
+      ],
+      "anchor": [
+        10,
+        33
+      ]
+    },
+    {
+      "id": "male_rest_2",
+      "page": 4,
+      "rect": [
+        0,
+        40,
+        21,
+        34
+      ],
+      "anchor": [
+        10,
+        33
+      ]
+    },
+    {
+      "id": "male_store_0",
+      "page": 4,
+      "rect": [
+        22,
+        40,
+        23,
+        38
+      ],
+      "anchor": [
+        11,
+        37
+      ]
+    },
+    {
+      "id": "male_store_1",
+      "page": 4,
+      "rect": [
+        46,
+        40,
+        21,
+        38
+      ],
+      "anchor": [
+        11,
+        37
+      ]
+    },
+    {
+      "id": "male_store_2",
+      "page": 4,
+      "rect": [
+        68,
+        40,
+        24,
+        38
+      ],
+      "anchor": [
+        11,
+        37
+      ]
+    },
+    {
+      "id": "female_fish_0",
+      "page": 4,
+      "rect": [
+        93,
+        40,
+        30,
+        38
+      ],
+      "anchor": [
+        12,
+        37
+      ],
+      "hand_anchor": [
+        29,
+        8
+      ]
+    },
+    {
+      "id": "female_fish_1",
+      "page": 4,
+      "rect": [
+        124,
+        40,
+        30,
+        38
+      ],
+      "anchor": [
+        12,
+        37
+      ],
+      "hand_anchor": [
+        29,
+        8
+      ]
+    },
+    {
+      "id": "female_fish_2",
+      "page": 4,
+      "rect": [
+        155,
+        40,
+        30,
+        38
+      ],
+      "anchor": [
+        12,
+        37
+      ],
+      "hand_anchor": [
+        29,
+        8
+      ]
+    },
+    {
+      "id": "female_fish_success_0",
+      "page": 4,
+      "rect": [
+        186,
+        40,
+        34,
+        38
+      ],
+      "anchor": [
+        14,
+        37
+      ]
+    },
+    {
+      "id": "female_fish_success_1",
+      "page": 4,
+      "rect": [
+        221,
+        40,
+        31,
+        38
+      ],
+      "anchor": [
+        13,
+        37
+      ]
+    },
+    {
+      "id": "female_fish_success_2",
+      "page": 4,
+      "rect": [
+        0,
+        79,
+        27,
+        38
+      ],
+      "anchor": [
+        13,
+        37
+      ]
+    },
+    {
+      "id": "female_fish_fail_0",
+      "page": 4,
+      "rect": [
+        28,
+        79,
+        30,
+        38
+      ],
+      "anchor": [
+        12,
+        37
+      ]
+    },
+    {
+      "id": "female_fish_fail_1",
+      "page": 4,
+      "rect": [
+        59,
+        79,
+        29,
+        37
+      ],
+      "anchor": [
+        11,
+        36
+      ]
+    },
+    {
+      "id": "female_fish_fail_2",
+      "page": 4,
+      "rect": [
+        89,
+        79,
+        29,
+        37
+      ],
+      "anchor": [
+        11,
+        36
+      ]
+    },
+    {
+      "id": "female_sleep_0",
+      "page": 4,
+      "rect": [
+        119,
+        79,
+        31,
+        26
+      ],
+      "anchor": [
+        14,
+        25
+      ]
+    },
+    {
+      "id": "female_sleep_1",
+      "page": 4,
+      "rect": [
+        151,
+        79,
+        30,
+        26
+      ],
+      "anchor": [
+        14,
+        25
+      ]
+    },
+    {
+      "id": "female_sleep_2",
+      "page": 4,
+      "rect": [
+        182,
+        79,
+        30,
+        26
+      ],
+      "anchor": [
+        14,
+        25
+      ]
+    },
+    {
+      "id": "male_fish_0",
+      "page": 4,
+      "rect": [
+        213,
+        79,
+        28,
+        39
+      ],
+      "anchor": [
+        11,
+        38
+      ],
+      "hand_anchor": [
+        27,
+        9
+      ]
+    },
+    {
+      "id": "male_fish_1",
+      "page": 4,
+      "rect": [
+        0,
+        119,
+        28,
+        39
+      ],
+      "anchor": [
+        11,
+        38
+      ],
+      "hand_anchor": [
+        27,
+        9
+      ]
+    },
+    {
+      "id": "male_fish_2",
+      "page": 4,
+      "rect": [
+        29,
+        119,
+        28,
+        39
+      ],
+      "anchor": [
+        11,
+        38
+      ],
+      "hand_anchor": [
+        27,
+        9
+      ]
+    },
+    {
+      "id": "male_fish_success_0",
+      "page": 4,
+      "rect": [
+        58,
+        119,
+        33,
+        39
+      ],
+      "anchor": [
+        13,
+        38
+      ]
+    },
+    {
+      "id": "male_fish_success_1",
+      "page": 4,
+      "rect": [
+        92,
+        119,
+        30,
+        39
+      ],
+      "anchor": [
+        13,
+        38
+      ]
+    },
+    {
+      "id": "male_fish_success_2",
+      "page": 4,
+      "rect": [
+        123,
+        119,
+        26,
+        39
+      ],
+      "anchor": [
+        13,
+        38
+      ]
+    },
+    {
+      "id": "male_fish_fail_0",
+      "page": 4,
+      "rect": [
+        150,
+        119,
+        28,
+        39
+      ],
+      "anchor": [
+        11,
+        38
+      ]
+    },
+    {
+      "id": "male_fish_fail_1",
+      "page": 4,
+      "rect": [
+        179,
+        119,
+        28,
+        38
+      ],
+      "anchor": [
+        10,
+        37
+      ]
+    },
+    {
+      "id": "male_fish_fail_2",
+      "page": 4,
+      "rect": [
+        208,
+        119,
+        28,
+        38
+      ],
+      "anchor": [
+        11,
+        37
+      ]
+    },
+    {
+      "id": "male_sleep_0",
+      "page": 4,
+      "rect": [
+        0,
+        159,
+        29,
+        26
+      ],
+      "anchor": [
+        14,
+        25
+      ]
+    },
+    {
+      "id": "male_sleep_1",
+      "page": 4,
+      "rect": [
+        30,
+        159,
+        29,
+        26
+      ],
+      "anchor": [
+        14,
+        25
+      ]
+    },
+    {
+      "id": "male_sleep_2",
+      "page": 4,
+      "rect": [
+        60,
+        159,
+        29,
+        26
+      ],
+      "anchor": [
+        14,
+        25
+      ]
+    },
+    {
+      "id": "female_hoe_clear_0",
+      "page": 4,
+      "rect": [
+        90,
+        159,
+        29,
+        33
+      ],
+      "anchor": [
+        12,
+        32
+      ]
+    },
+    {
+      "id": "female_hoe_clear_1",
+      "page": 4,
+      "rect": [
+        120,
+        159,
+        30,
+        32
+      ],
+      "anchor": [
+        12,
+        32
+      ]
+    },
+    {
+      "id": "female_hoe_clear_2",
+      "page": 4,
+      "rect": [
+        151,
+        159,
+        28,
+        33
+      ],
+      "anchor": [
+        11,
+        32
+      ]
+    },
+    {
+      "id": "female_greet_0",
+      "page": 4,
+      "rect": [
+        180,
+        159,
+        27,
+        38
+      ],
+      "anchor": [
+        14,
+        37
+      ]
+    },
+    {
+      "id": "female_greet_1",
+      "page": 4,
+      "rect": [
+        208,
+        159,
+        27,
+        38
+      ],
+      "anchor": [
+        15,
+        37
+      ]
+    },
+    {
+      "id": "female_greet_2",
+      "page": 4,
+      "rect": [
+        0,
+        198,
+        26,
+        38
+      ],
+      "anchor": [
+        14,
+        37
+      ]
+    },
+    {
+      "id": "male_hoe_clear_0",
+      "page": 4,
+      "rect": [
+        27,
+        198,
+        29,
+        34
+      ],
+      "anchor": [
+        12,
+        33
+      ]
+    },
+    {
+      "id": "male_hoe_clear_1",
+      "page": 4,
+      "rect": [
+        57,
+        198,
+        29,
+        33
+      ],
+      "anchor": [
+        11,
+        32
+      ]
+    },
+    {
+      "id": "male_hoe_clear_2",
+      "page": 4,
+      "rect": [
+        87,
+        198,
+        26,
+        34
+      ],
+      "anchor": [
+        10,
+        33
+      ]
+    },
+    {
+      "id": "male_greet_0",
+      "page": 4,
+      "rect": [
+        114,
+        198,
+        24,
+        39
+      ],
+      "anchor": [
+        12,
+        38
+      ]
+    },
+    {
+      "id": "male_greet_1",
+      "page": 4,
+      "rect": [
+        139,
+        198,
+        26,
+        39
+      ],
+      "anchor": [
+        13,
+        38
+      ]
+    },
+    {
+      "id": "male_greet_2",
+      "page": 4,
+      "rect": [
+        166,
+        198,
+        22,
+        39
+      ],
+      "anchor": [
+        12,
+        38
+      ]
+    },
+    {
+      "id": "guesthouse_3",
+      "page": 5,
+      "rect": [
+        0,
+        0,
+        88,
+        85
+      ],
+      "anchor": [
+        43,
+        84
+      ]
+    },
+    {
+      "id": "depot_3",
+      "page": 5,
+      "rect": [
+        89,
+        0,
+        83,
+        83
+      ],
+      "anchor": [
+        57,
+        82
+      ]
+    },
+    {
+      "id": "market_3",
+      "page": 5,
+      "rect": [
+        0,
+        86,
+        96,
+        90
+      ],
+      "anchor": [
+        47,
+        88
+      ]
+    },
+    {
+      "id": "stall_3",
+      "page": 5,
+      "rect": [
+        97,
+        86,
+        69,
+        66
+      ],
+      "anchor": [
+        31,
+        65
+      ]
+    },
+    {
+      "id": "well_3",
+      "page": 5,
+      "rect": [
+        167,
+        86,
+        57,
+        63
+      ],
+      "anchor": [
+        28,
+        62
+      ]
+    },
+    {
+      "id": "garden_3",
+      "page": 5,
+      "rect": [
+        0,
+        177,
+        87,
+        70
+      ],
+      "anchor": [
+        44,
+        69
+      ]
+    },
+    {
+      "id": "west_house_level_3",
+      "page": 6,
+      "rect": [
+        0,
+        0,
+        98,
+        97
+      ],
+      "anchor": [
+        46,
+        97
+      ]
+    },
+    {
+      "id": "kitchen_level_3",
+      "page": 6,
+      "rect": [
+        99,
+        0,
+        94,
+        91
+      ],
+      "anchor": [
+        40,
+        91
+      ]
+    },
+    {
+      "id": "storehouse_level_3",
+      "page": 6,
+      "rect": [
+        0,
+        98,
+        96,
+        93
+      ],
+      "anchor": [
+        49,
+        93
+      ]
+    },
+    {
+      "id": "workshop_level_3",
+      "page": 6,
+      "rect": [
+        97,
+        98,
+        64,
+        59
+      ],
+      "anchor": [
+        26,
+        59
+      ]
+    },
+    {
+      "id": "structure_upgrade_scaffold",
+      "page": 6,
+      "rect": [
+        162,
+        98,
+        42,
+        39
+      ],
+      "anchor": [
+        23,
+        38
+      ]
+    },
+    {
+      "id": "west_house_level_4",
+      "page": 7,
+      "rect": [
+        0,
+        0,
+        98,
+        99
+      ],
+      "anchor": [
+        42,
+        99
+      ]
+    },
+    {
+      "id": "kitchen_level_4",
+      "page": 7,
+      "rect": [
+        99,
+        0,
+        94,
+        85
+      ],
+      "anchor": [
+        43,
+        85
+      ]
+    },
+    {
+      "id": "storehouse_level_4",
+      "page": 7,
+      "rect": [
+        0,
+        100,
+        96,
+        91
+      ],
+      "anchor": [
+        48,
+        90
+      ]
+    },
+    {
+      "id": "workshop_level_4",
+      "page": 7,
+      "rect": [
+        97,
+        100,
+        64,
+        61
+      ],
+      "anchor": [
+        31,
+        61
+      ]
+    },
+    {
+      "id": "scaffold_frame",
+      "page": 7,
+      "rect": [
+        162,
+        100,
+        66,
+        61
+      ],
+      "anchor": [
+        33,
+        61
+      ]
+    },
+    {
+      "id": "east_house_level_3",
+      "page": 8,
+      "rect": [
+        0,
+        0,
+        92,
+        89
+      ],
+      "anchor": [
+        46,
+        89
+      ]
+    },
+    {
+      "id": "east_house_level_4",
+      "page": 8,
+      "rect": [
+        93,
+        0,
+        94,
+        92
+      ],
+      "anchor": [
+        47,
+        92
+      ]
+    },
+    {
+      "id": "housing_single_clear",
+      "page": 8,
+      "rect": [
+        188,
+        0,
+        60,
+        31
+      ],
+      "anchor": [
+        27,
+        31
+      ]
+    },
+    {
+      "id": "housing_single_foundation",
+      "page": 8,
+      "rect": [
+        0,
+        93,
+        64,
+        29
+      ],
+      "anchor": [
+        29,
+        29
+      ]
+    },
+    {
+      "id": "housing_single_frame",
+      "page": 8,
+      "rect": [
+        65,
+        93,
+        67,
+        66
+      ],
+      "anchor": [
+        29,
+        66
+      ]
+    },
+    {
+      "id": "housing_single_roof",
+      "page": 8,
+      "rect": [
+        133,
+        93,
+        68,
+        61
+      ],
+      "anchor": [
+        31,
+        61
+      ]
+    },
+    {
+      "id": "housing_single_fit_out",
+      "page": 8,
+      "rect": [
+        0,
+        160,
+        68,
+        68
+      ],
+      "anchor": [
+        30,
+        68
+      ]
+    },
+    {
+      "id": "housing_single_move_in",
+      "page": 8,
+      "rect": [
+        69,
+        160,
+        69,
+        68
+      ],
+      "anchor": [
+        31,
+        68
+      ]
+    },
+    {
+      "id": "housing_shared_clear",
+      "page": 8,
+      "rect": [
+        139,
+        160,
+        94,
+        43
+      ],
+      "anchor": [
+        47,
+        43
+      ]
+    },
+    {
+      "id": "housing_shared_foundation",
+      "page": 9,
+      "rect": [
+        0,
+        0,
+        96,
+        43
+      ],
+      "anchor": [
+        47,
+        43
+      ]
+    },
+    {
+      "id": "housing_shared_frame",
+      "page": 9,
+      "rect": [
+        97,
+        0,
+        99,
+        65
+      ],
+      "anchor": [
+        49,
+        65
+      ]
+    },
+    {
+      "id": "housing_shared_roof",
+      "page": 9,
+      "rect": [
+        0,
+        66,
+        102,
+        85
+      ],
+      "anchor": [
+        51,
+        85
+      ]
+    },
+    {
+      "id": "housing_shared_fit_out",
+      "page": 9,
+      "rect": [
+        103,
+        66,
+        103,
+        86
+      ],
+      "anchor": [
+        51,
+        86
+      ]
+    },
+    {
+      "id": "housing_shared_move_in",
+      "page": 9,
+      "rect": [
+        0,
+        153,
+        103,
+        86
+      ],
+      "anchor": [
+        51,
+        86
+      ]
+    },
+    {
+      "id": "shared_table",
+      "page": 9,
+      "rect": [
+        104,
+        153,
+        33,
+        22
+      ],
+      "anchor": [
+        16,
+        20
+      ]
+    },
+    {
+      "id": "shared_stool",
+      "page": 9,
+      "rect": [
+        138,
+        153,
+        13,
+        14
+      ],
+      "anchor": [
+        7,
+        14
+      ]
+    },
+    {
+      "id": "prop_bowl",
+      "page": 9,
+      "rect": [
+        152,
+        153,
+        13,
+        9
+      ],
+      "anchor": [
+        6,
+        9
+      ]
+    },
+    {
+      "id": "prop_bowl_full",
+      "page": 9,
+      "rect": [
+        166,
+        153,
+        13,
+        9
+      ],
+      "anchor": [
+        6,
+        9
+      ]
+    },
+    {
+      "id": "prop_meal",
+      "page": 9,
+      "rect": [
+        180,
+        153,
+        11,
+        8
+      ],
+      "anchor": [
+        6,
+        7
+      ]
+    },
+    {
+      "id": "prop_stove",
+      "page": 9,
+      "rect": [
+        192,
+        153,
+        21,
+        21
+      ],
+      "anchor": [
+        10,
+        21
+      ]
+    },
+    {
+      "id": "prop_wood",
+      "page": 9,
+      "rect": [
+        214,
+        153,
+        19,
+        13
+      ],
+      "anchor": [
+        10,
+        7
+      ]
+    },
+    {
+      "id": "housing_moving_box",
+      "page": 9,
+      "rect": [
+        234,
+        153,
+        20,
+        14
+      ],
+      "anchor": [
+        10,
+        8
+      ]
+    },
+    {
+      "id": "prop_hoe",
+      "page": 10,
+      "rect": [
+        0,
+        0,
+        23,
+        21
+      ],
+      "anchor": [
+        16,
+        7
+      ]
+    },
+    {
+      "id": "prop_axe",
+      "page": 10,
+      "rect": [
+        24,
+        0,
+        20,
+        11
+      ],
+      "anchor": [
+        13,
+        6
+      ]
+    },
+    {
+      "id": "prop_hammer",
+      "page": 10,
+      "rect": [
+        45,
+        0,
+        18,
+        15
+      ],
+      "anchor": [
+        12,
+        9
+      ]
+    },
+    {
+      "id": "prop_water_can",
+      "page": 10,
+      "rect": [
+        64,
+        0,
+        18,
+        16
+      ],
+      "anchor": [
+        13,
+        5
+      ]
+    },
+    {
+      "id": "prop_seeds",
+      "page": 10,
+      "rect": [
+        83,
+        0,
+        12,
+        12
+      ],
+      "anchor": [
+        5,
+        4
+      ]
+    },
+    {
+      "id": "prop_crop",
+      "page": 10,
+      "rect": [
+        96,
+        0,
+        18,
+        18
+      ],
+      "anchor": [
+        9,
+        3
+      ]
+    },
+    {
+      "id": "prop_fish",
+      "page": 10,
+      "rect": [
+        115,
+        0,
+        16,
+        6
+      ],
+      "anchor": [
+        8,
+        3
+      ]
+    },
+    {
+      "id": "prop_pail",
+      "page": 10,
+      "rect": [
+        132,
+        0,
+        14,
+        16
+      ],
+      "anchor": [
+        7,
+        1
+      ]
+    },
+    {
+      "id": "plot_cleared",
+      "page": 10,
+      "rect": [
+        147,
+        0,
+        18,
+        13
+      ],
+      "anchor": [
+        9,
+        7
+      ]
+    },
+    {
+      "id": "plot_tilled",
+      "page": 10,
+      "rect": [
+        166,
+        0,
+        18,
+        13
+      ],
+      "anchor": [
+        9,
+        7
+      ]
+    },
+    {
+      "id": "plot_seed",
+      "page": 10,
+      "rect": [
+        185,
+        0,
+        18,
+        13
+      ],
+      "anchor": [
+        9,
+        7
+      ]
+    },
+    {
+      "id": "plot_sprout",
+      "page": 10,
+      "rect": [
+        204,
+        0,
+        18,
+        13
+      ],
+      "anchor": [
+        9,
+        7
+      ]
+    },
+    {
+      "id": "plot_growing",
+      "page": 10,
+      "rect": [
+        223,
+        0,
+        18,
+        13
+      ],
+      "anchor": [
+        9,
+        7
+      ]
+    },
+    {
+      "id": "plot_mature",
+      "page": 10,
+      "rect": [
+        0,
+        22,
+        18,
+        13
+      ],
+      "anchor": [
+        9,
+        7
+      ]
+    },
+    {
+      "id": "female_fill_bowl_0",
+      "page": 10,
+      "rect": [
+        19,
+        22,
+        26,
+        38
+      ],
+      "anchor": [
+        12,
+        38
+      ]
+    },
+    {
+      "id": "female_fill_bowl_1",
+      "page": 10,
+      "rect": [
+        46,
+        22,
+        30,
+        39
+      ],
+      "anchor": [
+        13,
+        38
+      ]
+    },
+    {
+      "id": "female_fill_bowl_2",
+      "page": 10,
+      "rect": [
+        77,
+        22,
+        26,
+        38
+      ],
+      "anchor": [
+        12,
+        38
+      ]
+    },
+    {
+      "id": "male_fill_bowl_0",
+      "page": 10,
+      "rect": [
+        104,
+        22,
+        25,
+        38
+      ],
+      "anchor": [
+        12,
+        38
+      ]
+    },
+    {
+      "id": "male_fill_bowl_1",
+      "page": 10,
+      "rect": [
+        130,
+        22,
+        31,
+        38
+      ],
+      "anchor": [
+        13,
+        37
+      ]
+    },
+    {
+      "id": "male_fill_bowl_2",
+      "page": 10,
+      "rect": [
+        162,
+        22,
+        25,
+        38
+      ],
+      "anchor": [
+        12,
+        38
+      ]
+    }
+  ]
+}

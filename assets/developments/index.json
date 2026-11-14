@@ -1,0 +1,380 @@
+{
+  "pages": [
+    {
+      "id": "page_00",
+      "file": "page_00.bgra",
+      "sha3_256": "6a3e32a4cc4b6f003dfa089e45e7aafa699fb7d4467715a0874e5462dc24176d",
+      "width": 128,
+      "height": 128
+    },
+    {
+      "id": "page_01",
+      "file": "page_01.bgra",
+      "sha3_256": "bfbba48769b04921296ebacf3b00a2474bcb49d21a7e370c2acb9384d171c035",
+      "width": 128,
+      "height": 128
+    }
+  ],
+  "frames": [
+    {
+      "id": "road_1",
+      "page": "page_00",
+      "rect": [
+        0,
+        0,
+        11,
+        38
+      ],
+      "anchor": [
+        9,
+        3
+      ],
+      "body": "prop"
+    },
+    {
+      "id": "road_2",
+      "page": "page_00",
+      "rect": [
+        12,
+        0,
+        13,
+        40
+      ],
+      "anchor": [
+        10,
+        4
+      ],
+      "body": "prop"
+    },
+    {
+      "id": "road_3",
+      "page": "page_00",
+      "rect": [
+        26,
+        0,
+        13,
+        40
+      ],
+      "anchor": [
+        10,
+        4
+      ],
+      "body": "prop"
+    },
+    {
+      "id": "bridge_1",
+      "page": "page_00",
+      "rect": [
+        40,
+        0,
+        15,
+        3
+      ],
+      "anchor": [
+        3,
+        0
+      ],
+      "body": "prop"
+    },
+    {
+      "id": "bridge_2",
+      "page": "page_00",
+      "rect": [
+        56,
+        0,
+        15,
+        43
+      ],
+      "anchor": [
+        3,
+        0
+      ],
+      "body": "prop"
+    },
+    {
+      "id": "bridge_3",
+      "page": "page_00",
+      "rect": [
+        72,
+        0,
+        15,
+        43
+      ],
+      "anchor": [
+        3,
+        0
+      ],
+      "body": "prop"
+    },
+    {
+      "id": "market_1",
+      "page": "page_00",
+      "rect": [
+        88,
+        0,
+        25,
+        12
+      ],
+      "anchor": [
+        12,
+        11
+      ],
+      "body": "prop"
+    },
+    {
+      "id": "market_2",
+      "page": "page_00",
+      "rect": [
+        0,
+        44,
+        25,
+        16
+      ],
+      "anchor": [
+        12,
+        15
+      ],
+      "body": "prop"
+    },
+    {
+      "id": "market_3",
+      "page": "page_00",
+      "rect": [
+        26,
+        44,
+        25,
+        21
+      ],
+      "anchor": [
+        12,
+        20
+      ],
+      "body": "prop"
+    },
+    {
+      "id": "stall_1",
+      "page": "page_00",
+      "rect": [
+        52,
+        44,
+        23,
+        8
+      ],
+      "anchor": [
+        11,
+        6
+      ],
+      "body": "prop"
+    },
+    {
+      "id": "stall_2",
+      "page": "page_00",
+      "rect": [
+        76,
+        44,
+        23,
+        21
+      ],
+      "anchor": [
+        11,
+        19
+      ],
+      "body": "prop"
+    },
+    {
+      "id": "stall_3",
+      "page": "page_00",
+      "rect": [
+        100,
+        44,
+        24,
+        25
+      ],
+      "anchor": [
+        11,
+        23
+      ],
+      "body": "prop"
+    },
+    {
+      "id": "guesthouse_1",
+      "page": "page_00",
+      "rect": [
+        0,
+        70,
+        30,
+        9
+      ],
+      "anchor": [
+        15,
+        6
+      ],
+      "body": "prop"
+    },
+    {
+      "id": "guesthouse_2",
+      "page": "page_00",
+      "rect": [
+        31,
+        70,
+        30,
+        29
+      ],
+      "anchor": [
+        15,
+        26
+      ],
+      "body": "prop"
+    },
+    {
+      "id": "guesthouse_3",
+      "page": "page_00",
+      "rect": [
+        62,
+        70,
+        31,
+        30
+      ],
+      "anchor": [
+        15,
+        27
+      ],
+      "body": "prop"
+    },
+    {
+      "id": "depot_1",
+      "page": "page_00",
+      "rect": [
+        94,
+        70,
+        30,
+        9
+      ],
+      "anchor": [
+        15,
+        6
+      ],
+      "body": "prop"
+    },
+    {
+      "id": "depot_2",
+      "page": "page_01",
+      "rect": [
+        0,
+        0,
+        30,
+        29
+      ],
+      "anchor": [
+        15,
+        26
+      ],
+      "body": "prop"
+    },
+    {
+      "id": "depot_3",
+      "page": "page_01",
+      "rect": [
+        31,
+        0,
+        31,
+        30
+      ],
+      "anchor": [
+        15,
+        27
+      ],
+      "body": "prop"
+    },
+    {
+      "id": "well_1",
+      "page": "page_01",
+      "rect": [
+        63,
+        0,
+        19,
+        11
+      ],
+      "anchor": [
+        9,
+        9
+      ],
+      "body": "prop"
+    },
+    {
+      "id": "well_2",
+      "page": "page_01",
+      "rect": [
+        83,
+        0,
+        19,
+        12
+      ],
+      "anchor": [
+        9,
+        10
+      ],
+      "body": "prop"
+    },
+    {
+      "id": "well_3",
+      "page": "page_01",
+      "rect": [
+        103,
+        0,
+        19,
+        24
+      ],
+      "anchor": [
+        9,
+        22
+      ],
+      "body": "prop"
+    },
+    {
+      "id": "garden_1",
+      "page": "page_01",
+      "rect": [
+        0,
+        31,
+        27,
+        17
+      ],
+      "anchor": [
+        13,
+        16
+      ],
+      "body": "prop"
+    },
+    {
+      "id": "garden_2",
+      "page": "page_01",
+      "rect": [
+        28,
+        31,
+        27,
+        18
+      ],
+      "anchor": [
+        13,
+        17
+      ],
+      "body": "prop"
+    },
+    {
+      "id": "garden_3",
+      "page": "page_01",
+      "rect": [
+        56,
+        31,
+        27,
+        18
+      ],
+      "anchor": [
+        13,
+        17
+      ],
+      "body": "prop"
+    }
+  ]
+}

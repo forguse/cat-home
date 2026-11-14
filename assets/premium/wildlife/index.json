@@ -1,0 +1,1410 @@
+{
+  "pages": [
+    {
+      "width": 256,
+      "height": 256
+    }
+  ],
+  "frames": [
+    {
+      "id": "wild_grey_cat_idle_0",
+      "page": 0,
+      "rect": [
+        0,
+        0,
+        19,
+        19
+      ],
+      "anchor": [
+        9,
+        19
+      ]
+    },
+    {
+      "id": "wild_grey_cat_look_0",
+      "page": 0,
+      "rect": [
+        20,
+        0,
+        18,
+        18
+      ],
+      "anchor": [
+        8,
+        18
+      ]
+    },
+    {
+      "id": "wild_grey_cat_walk_0",
+      "page": 0,
+      "rect": [
+        39,
+        0,
+        21,
+        17
+      ],
+      "anchor": [
+        11,
+        17
+      ]
+    },
+    {
+      "id": "wild_grey_cat_walk_1",
+      "page": 0,
+      "rect": [
+        61,
+        0,
+        22,
+        17
+      ],
+      "anchor": [
+        11,
+        17
+      ]
+    },
+    {
+      "id": "wild_grey_cat_sleep_0",
+      "page": 0,
+      "rect": [
+        84,
+        0,
+        17,
+        13
+      ],
+      "anchor": [
+        9,
+        13
+      ]
+    },
+    {
+      "id": "wild_grey_cat_stretch_0",
+      "page": 0,
+      "rect": [
+        102,
+        0,
+        20,
+        20
+      ],
+      "anchor": [
+        8,
+        19
+      ]
+    },
+    {
+      "id": "wild_black_cat_idle_0",
+      "page": 0,
+      "rect": [
+        123,
+        0,
+        19,
+        19
+      ],
+      "anchor": [
+        9,
+        19
+      ]
+    },
+    {
+      "id": "wild_black_cat_look_0",
+      "page": 0,
+      "rect": [
+        143,
+        0,
+        18,
+        18
+      ],
+      "anchor": [
+        9,
+        18
+      ]
+    },
+    {
+      "id": "wild_black_cat_walk_0",
+      "page": 0,
+      "rect": [
+        162,
+        0,
+        21,
+        17
+      ],
+      "anchor": [
+        11,
+        17
+      ]
+    },
+    {
+      "id": "wild_black_cat_walk_1",
+      "page": 0,
+      "rect": [
+        184,
+        0,
+        22,
+        17
+      ],
+      "anchor": [
+        11,
+        17
+      ]
+    },
+    {
+      "id": "wild_black_cat_sleep_0",
+      "page": 0,
+      "rect": [
+        207,
+        0,
+        17,
+        13
+      ],
+      "anchor": [
+        8,
+        13
+      ]
+    },
+    {
+      "id": "wild_black_cat_stretch_0",
+      "page": 0,
+      "rect": [
+        225,
+        0,
+        20,
+        20
+      ],
+      "anchor": [
+        8,
+        20
+      ]
+    },
+    {
+      "id": "wild_squirrel_idle_0",
+      "page": 0,
+      "rect": [
+        0,
+        21,
+        14,
+        14
+      ],
+      "anchor": [
+        9,
+        14
+      ]
+    },
+    {
+      "id": "wild_squirrel_forage_0",
+      "page": 0,
+      "rect": [
+        15,
+        21,
+        15,
+        13
+      ],
+      "anchor": [
+        9,
+        13
+      ]
+    },
+    {
+      "id": "wild_squirrel_leap_0",
+      "page": 0,
+      "rect": [
+        31,
+        21,
+        19,
+        12
+      ],
+      "anchor": [
+        11,
+        12
+      ]
+    },
+    {
+      "id": "wild_squirrel_land_0",
+      "page": 0,
+      "rect": [
+        51,
+        21,
+        16,
+        13
+      ],
+      "anchor": [
+        10,
+        13
+      ]
+    },
+    {
+      "id": "wild_squirrel_leap_1",
+      "page": 0,
+      "rect": [
+        68,
+        21,
+        18,
+        13
+      ],
+      "anchor": [
+        10,
+        13
+      ]
+    },
+    {
+      "id": "wild_hedgehog_idle_0",
+      "page": 0,
+      "rect": [
+        87,
+        21,
+        14,
+        10
+      ],
+      "anchor": [
+        7,
+        10
+      ]
+    },
+    {
+      "id": "wild_hedgehog_sniff_0",
+      "page": 0,
+      "rect": [
+        102,
+        21,
+        13,
+        10
+      ],
+      "anchor": [
+        7,
+        10
+      ]
+    },
+    {
+      "id": "wild_hedgehog_walk_0",
+      "page": 0,
+      "rect": [
+        116,
+        21,
+        14,
+        9
+      ],
+      "anchor": [
+        7,
+        9
+      ]
+    },
+    {
+      "id": "wild_hedgehog_walk_1",
+      "page": 0,
+      "rect": [
+        131,
+        21,
+        14,
+        10
+      ],
+      "anchor": [
+        7,
+        10
+      ]
+    },
+    {
+      "id": "wild_hedgehog_curl_0",
+      "page": 0,
+      "rect": [
+        146,
+        21,
+        12,
+        11
+      ],
+      "anchor": [
+        7,
+        11
+      ]
+    },
+    {
+      "id": "wild_rabbit_idle_0",
+      "page": 0,
+      "rect": [
+        159,
+        21,
+        11,
+        16
+      ],
+      "anchor": [
+        6,
+        16
+      ]
+    },
+    {
+      "id": "wild_rabbit_crouch_0",
+      "page": 0,
+      "rect": [
+        171,
+        21,
+        14,
+        12
+      ],
+      "anchor": [
+        7,
+        12
+      ]
+    },
+    {
+      "id": "wild_rabbit_hop_0",
+      "page": 0,
+      "rect": [
+        186,
+        21,
+        18,
+        15
+      ],
+      "anchor": [
+        9,
+        15
+      ]
+    },
+    {
+      "id": "wild_rabbit_hop_1",
+      "page": 0,
+      "rect": [
+        205,
+        21,
+        12,
+        15
+      ],
+      "anchor": [
+        5,
+        15
+      ]
+    },
+    {
+      "id": "wild_rabbit_land_0",
+      "page": 0,
+      "rect": [
+        218,
+        21,
+        14,
+        13
+      ],
+      "anchor": [
+        7,
+        13
+      ]
+    },
+    {
+      "id": "wild_rabbit_groom_0",
+      "page": 0,
+      "rect": [
+        233,
+        21,
+        10,
+        15
+      ],
+      "anchor": [
+        6,
+        15
+      ]
+    },
+    {
+      "id": "wild_frog_idle_0",
+      "page": 0,
+      "rect": [
+        244,
+        21,
+        9,
+        6
+      ],
+      "anchor": [
+        4,
+        6
+      ]
+    },
+    {
+      "id": "wild_frog_call_0",
+      "page": 0,
+      "rect": [
+        0,
+        38,
+        9,
+        6
+      ],
+      "anchor": [
+        5,
+        6
+      ]
+    },
+    {
+      "id": "wild_frog_hop_0",
+      "page": 0,
+      "rect": [
+        10,
+        38,
+        13,
+        7
+      ],
+      "anchor": [
+        6,
+        7
+      ]
+    },
+    {
+      "id": "wild_frog_hop_1",
+      "page": 0,
+      "rect": [
+        24,
+        38,
+        7,
+        8
+      ],
+      "anchor": [
+        3,
+        8
+      ]
+    },
+    {
+      "id": "wild_frog_land_0",
+      "page": 0,
+      "rect": [
+        32,
+        38,
+        9,
+        6
+      ],
+      "anchor": [
+        4,
+        6
+      ]
+    },
+    {
+      "id": "wild_lizard_idle_0",
+      "page": 0,
+      "rect": [
+        42,
+        38,
+        13,
+        6
+      ],
+      "anchor": [
+        7,
+        6
+      ]
+    },
+    {
+      "id": "wild_lizard_scurry_0",
+      "page": 0,
+      "rect": [
+        56,
+        38,
+        14,
+        5
+      ],
+      "anchor": [
+        8,
+        5
+      ]
+    },
+    {
+      "id": "wild_lizard_scurry_1",
+      "page": 0,
+      "rect": [
+        71,
+        38,
+        15,
+        5
+      ],
+      "anchor": [
+        8,
+        5
+      ]
+    },
+    {
+      "id": "wild_lizard_flatten_0",
+      "page": 0,
+      "rect": [
+        87,
+        38,
+        15,
+        4
+      ],
+      "anchor": [
+        8,
+        4
+      ]
+    },
+    {
+      "id": "wild_lizard_scurry_2",
+      "page": 0,
+      "rect": [
+        103,
+        38,
+        15,
+        5
+      ],
+      "anchor": [
+        8,
+        5
+      ]
+    },
+    {
+      "id": "wild_field_mouse_idle_0",
+      "page": 0,
+      "rect": [
+        119,
+        38,
+        11,
+        9
+      ],
+      "anchor": [
+        6,
+        9
+      ]
+    },
+    {
+      "id": "wild_field_mouse_forage_0",
+      "page": 0,
+      "rect": [
+        131,
+        38,
+        12,
+        6
+      ],
+      "anchor": [
+        6,
+        6
+      ]
+    },
+    {
+      "id": "wild_field_mouse_run_0",
+      "page": 0,
+      "rect": [
+        144,
+        38,
+        13,
+        6
+      ],
+      "anchor": [
+        7,
+        6
+      ]
+    },
+    {
+      "id": "wild_field_mouse_run_1",
+      "page": 0,
+      "rect": [
+        158,
+        38,
+        12,
+        7
+      ],
+      "anchor": [
+        7,
+        7
+      ]
+    },
+    {
+      "id": "wild_field_mouse_run_2",
+      "page": 0,
+      "rect": [
+        171,
+        38,
+        12,
+        7
+      ],
+      "anchor": [
+        6,
+        7
+      ]
+    },
+    {
+      "id": "wild_field_mouse_groom_0",
+      "page": 0,
+      "rect": [
+        184,
+        38,
+        9,
+        8
+      ],
+      "anchor": [
+        4,
+        7
+      ]
+    },
+    {
+      "id": "wild_sparrow_perch_0",
+      "page": 0,
+      "rect": [
+        194,
+        38,
+        10,
+        8
+      ],
+      "anchor": [
+        6,
+        8
+      ]
+    },
+    {
+      "id": "wild_sparrow_peck_0",
+      "page": 0,
+      "rect": [
+        205,
+        38,
+        11,
+        6
+      ],
+      "anchor": [
+        6,
+        6
+      ]
+    },
+    {
+      "id": "wild_sparrow_fly_0",
+      "page": 0,
+      "rect": [
+        217,
+        38,
+        10,
+        11
+      ],
+      "anchor": [
+        6,
+        8
+      ]
+    },
+    {
+      "id": "wild_sparrow_fly_1",
+      "page": 0,
+      "rect": [
+        228,
+        38,
+        15,
+        7
+      ],
+      "anchor": [
+        8,
+        3
+      ]
+    },
+    {
+      "id": "wild_sparrow_fly_2",
+      "page": 0,
+      "rect": [
+        244,
+        38,
+        11,
+        8
+      ],
+      "anchor": [
+        7,
+        4
+      ]
+    },
+    {
+      "id": "wild_sparrow_land_0",
+      "page": 0,
+      "rect": [
+        0,
+        50,
+        11,
+        10
+      ],
+      "anchor": [
+        7,
+        9
+      ]
+    },
+    {
+      "id": "wild_swallow_perch_0",
+      "page": 0,
+      "rect": [
+        12,
+        50,
+        13,
+        9
+      ],
+      "anchor": [
+        9,
+        8
+      ]
+    },
+    {
+      "id": "wild_swallow_fly_0",
+      "page": 0,
+      "rect": [
+        26,
+        50,
+        14,
+        10
+      ],
+      "anchor": [
+        8,
+        6
+      ]
+    },
+    {
+      "id": "wild_swallow_fly_1",
+      "page": 0,
+      "rect": [
+        41,
+        50,
+        12,
+        15
+      ],
+      "anchor": [
+        8,
+        10
+      ]
+    },
+    {
+      "id": "wild_swallow_fly_2",
+      "page": 0,
+      "rect": [
+        54,
+        50,
+        13,
+        10
+      ],
+      "anchor": [
+        8,
+        4
+      ]
+    },
+    {
+      "id": "wild_swallow_land_0",
+      "page": 0,
+      "rect": [
+        68,
+        50,
+        13,
+        13
+      ],
+      "anchor": [
+        8,
+        11
+      ]
+    },
+    {
+      "id": "wild_duckling_idle_0",
+      "page": 0,
+      "rect": [
+        82,
+        50,
+        12,
+        12
+      ],
+      "anchor": [
+        5,
+        12
+      ]
+    },
+    {
+      "id": "wild_duckling_walk_0",
+      "page": 0,
+      "rect": [
+        95,
+        50,
+        12,
+        12
+      ],
+      "anchor": [
+        6,
+        12
+      ]
+    },
+    {
+      "id": "wild_duckling_walk_1",
+      "page": 0,
+      "rect": [
+        108,
+        50,
+        12,
+        12
+      ],
+      "anchor": [
+        6,
+        12
+      ]
+    },
+    {
+      "id": "wild_duckling_swim_0",
+      "page": 0,
+      "rect": [
+        121,
+        50,
+        13,
+        9
+      ],
+      "anchor": [
+        6,
+        8
+      ]
+    },
+    {
+      "id": "wild_duckling_swim_1",
+      "page": 0,
+      "rect": [
+        135,
+        50,
+        14,
+        16
+      ],
+      "anchor": [
+        7,
+        14
+      ]
+    },
+    {
+      "id": "wild_duckling_dabble_0",
+      "page": 0,
+      "rect": [
+        150,
+        50,
+        14,
+        8
+      ],
+      "anchor": [
+        8,
+        6
+      ]
+    },
+    {
+      "id": "wild_crow_idle_0",
+      "page": 0,
+      "rect": [
+        165,
+        50,
+        16,
+        11
+      ],
+      "anchor": [
+        9,
+        11
+      ]
+    },
+    {
+      "id": "wild_crow_walk_0",
+      "page": 0,
+      "rect": [
+        182,
+        50,
+        14,
+        12
+      ],
+      "anchor": [
+        7,
+        12
+      ]
+    },
+    {
+      "id": "wild_crow_fly_0",
+      "page": 0,
+      "rect": [
+        197,
+        50,
+        15,
+        16
+      ],
+      "anchor": [
+        9,
+        10
+      ]
+    },
+    {
+      "id": "wild_crow_fly_1",
+      "page": 0,
+      "rect": [
+        213,
+        50,
+        21,
+        12
+      ],
+      "anchor": [
+        12,
+        7
+      ]
+    },
+    {
+      "id": "wild_crow_fly_2",
+      "page": 0,
+      "rect": [
+        235,
+        50,
+        16,
+        11
+      ],
+      "anchor": [
+        9,
+        5
+      ]
+    },
+    {
+      "id": "wild_crow_land_0",
+      "page": 0,
+      "rect": [
+        0,
+        67,
+        16,
+        15
+      ],
+      "anchor": [
+        9,
+        14
+      ]
+    },
+    {
+      "id": "wild_great_tit_perch_0",
+      "page": 0,
+      "rect": [
+        17,
+        67,
+        11,
+        8
+      ],
+      "anchor": [
+        7,
+        8
+      ]
+    },
+    {
+      "id": "wild_great_tit_peck_0",
+      "page": 0,
+      "rect": [
+        29,
+        67,
+        11,
+        6
+      ],
+      "anchor": [
+        7,
+        6
+      ]
+    },
+    {
+      "id": "wild_great_tit_fly_0",
+      "page": 0,
+      "rect": [
+        41,
+        67,
+        10,
+        12
+      ],
+      "anchor": [
+        6,
+        8
+      ]
+    },
+    {
+      "id": "wild_great_tit_fly_1",
+      "page": 0,
+      "rect": [
+        52,
+        67,
+        15,
+        8
+      ],
+      "anchor": [
+        8,
+        4
+      ]
+    },
+    {
+      "id": "wild_great_tit_fly_2",
+      "page": 0,
+      "rect": [
+        68,
+        67,
+        12,
+        9
+      ],
+      "anchor": [
+        7,
+        4
+      ]
+    },
+    {
+      "id": "wild_great_tit_land_0",
+      "page": 0,
+      "rect": [
+        81,
+        67,
+        10,
+        10
+      ],
+      "anchor": [
+        6,
+        9
+      ]
+    },
+    {
+      "id": "wild_white_pigeon_idle_0",
+      "page": 0,
+      "rect": [
+        92,
+        67,
+        13,
+        12
+      ],
+      "anchor": [
+        8,
+        12
+      ]
+    },
+    {
+      "id": "wild_white_pigeon_walk_0",
+      "page": 0,
+      "rect": [
+        106,
+        67,
+        14,
+        11
+      ],
+      "anchor": [
+        8,
+        11
+      ]
+    },
+    {
+      "id": "wild_white_pigeon_fly_0",
+      "page": 0,
+      "rect": [
+        121,
+        67,
+        14,
+        17
+      ],
+      "anchor": [
+        9,
+        11
+      ]
+    },
+    {
+      "id": "wild_white_pigeon_fly_1",
+      "page": 0,
+      "rect": [
+        136,
+        67,
+        20,
+        12
+      ],
+      "anchor": [
+        10,
+        7
+      ]
+    },
+    {
+      "id": "wild_white_pigeon_fly_2",
+      "page": 0,
+      "rect": [
+        157,
+        67,
+        15,
+        13
+      ],
+      "anchor": [
+        9,
+        6
+      ]
+    },
+    {
+      "id": "wild_white_pigeon_land_0",
+      "page": 0,
+      "rect": [
+        173,
+        67,
+        14,
+        15
+      ],
+      "anchor": [
+        9,
+        14
+      ]
+    },
+    {
+      "id": "wild_snail_idle_0",
+      "page": 0,
+      "rect": [
+        188,
+        67,
+        8,
+        5
+      ],
+      "anchor": [
+        4,
+        5
+      ]
+    },
+    {
+      "id": "wild_snail_crawl_0",
+      "page": 0,
+      "rect": [
+        197,
+        67,
+        10,
+        5
+      ],
+      "anchor": [
+        5,
+        5
+      ]
+    },
+    {
+      "id": "wild_snail_feel_0",
+      "page": 0,
+      "rect": [
+        208,
+        67,
+        8,
+        5
+      ],
+      "anchor": [
+        4,
+        5
+      ]
+    },
+    {
+      "id": "wild_snail_retract_0",
+      "page": 0,
+      "rect": [
+        217,
+        67,
+        6,
+        5
+      ],
+      "anchor": [
+        3,
+        5
+      ]
+    },
+    {
+      "id": "wild_ladybird_idle_0",
+      "page": 0,
+      "rect": [
+        224,
+        67,
+        8,
+        5
+      ],
+      "anchor": [
+        4,
+        4
+      ]
+    },
+    {
+      "id": "wild_ladybird_crawl_0",
+      "page": 0,
+      "rect": [
+        233,
+        67,
+        8,
+        6
+      ],
+      "anchor": [
+        4,
+        5
+      ]
+    },
+    {
+      "id": "wild_ladybird_unfold_0",
+      "page": 0,
+      "rect": [
+        242,
+        67,
+        8,
+        6
+      ],
+      "anchor": [
+        4,
+        5
+      ]
+    },
+    {
+      "id": "wild_ladybird_fly_0",
+      "page": 0,
+      "rect": [
+        0,
+        85,
+        9,
+        7
+      ],
+      "anchor": [
+        6,
+        4
+      ]
+    },
+    {
+      "id": "wild_ladybird_fly_1",
+      "page": 0,
+      "rect": [
+        10,
+        85,
+        10,
+        7
+      ],
+      "anchor": [
+        5,
+        5
+      ]
+    },
+    {
+      "id": "wild_firefly_idle_0",
+      "page": 0,
+      "rect": [
+        21,
+        85,
+        8,
+        5
+      ],
+      "anchor": [
+        3,
+        4
+      ]
+    },
+    {
+      "id": "wild_firefly_unfold_0",
+      "page": 0,
+      "rect": [
+        30,
+        85,
+        9,
+        6
+      ],
+      "anchor": [
+        5,
+        3
+      ]
+    },
+    {
+      "id": "wild_firefly_fly_0",
+      "page": 0,
+      "rect": [
+        40,
+        85,
+        8,
+        7
+      ],
+      "anchor": [
+        4,
+        4
+      ]
+    },
+    {
+      "id": "wild_firefly_fly_1",
+      "page": 0,
+      "rect": [
+        49,
+        85,
+        9,
+        6
+      ],
+      "anchor": [
+        5,
+        2
+      ]
+    },
+    {
+      "id": "wild_honeybee_idle_0",
+      "page": 0,
+      "rect": [
+        59,
+        85,
+        9,
+        6
+      ],
+      "anchor": [
+        4,
+        5
+      ]
+    },
+    {
+      "id": "wild_honeybee_fly_0",
+      "page": 0,
+      "rect": [
+        69,
+        85,
+        10,
+        7
+      ],
+      "anchor": [
+        5,
+        4
+      ]
+    },
+    {
+      "id": "wild_honeybee_fly_1",
+      "page": 0,
+      "rect": [
+        80,
+        85,
+        9,
+        9
+      ],
+      "anchor": [
+        5,
+        5
+      ]
+    },
+    {
+      "id": "wild_honeybee_fly_2",
+      "page": 0,
+      "rect": [
+        90,
+        85,
+        10,
+        6
+      ],
+      "anchor": [
+        6,
+        2
+      ]
+    },
+    {
+      "id": "wild_butterfly_perch_0",
+      "page": 0,
+      "rect": [
+        101,
+        85,
+        9,
+        10
+      ],
+      "anchor": [
+        5,
+        9
+      ]
+    },
+    {
+      "id": "wild_butterfly_fly_0",
+      "page": 0,
+      "rect": [
+        111,
+        85,
+        12,
+        10
+      ],
+      "anchor": [
+        7,
+        6
+      ]
+    },
+    {
+      "id": "wild_butterfly_fly_1",
+      "page": 0,
+      "rect": [
+        124,
+        85,
+        11,
+        11
+      ],
+      "anchor": [
+        6,
+        8
+      ]
+    },
+    {
+      "id": "wild_butterfly_fly_2",
+      "page": 0,
+      "rect": [
+        136,
+        85,
+        11,
+        8
+      ],
+      "anchor": [
+        6,
+        4
+      ]
+    }
+  ]
+}

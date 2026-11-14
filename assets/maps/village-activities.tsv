@@ -1,0 +1,285 @@
+id	name	actor	sites	phases	effect	parameters	inputs	trigger
+RI001	门前投递到期信件	0	home_trade	day_1	service	1:change	letter / 0	把一封已存在的原信交给到场的家人，邮袋转为家庭托管。
+RI002	收取盖好章的回信	0	home_trade	day_1	service	1:change	reply / 20	已有封缄回信从家庭托管交给米信，容量一批。
+RI003	整理错投件	0	residence_mail_carrier.door	day_1	service	2:change	letter / 20	更址后取回原信，不复制件。
+RI004	张贴营业变动	0	market_notice	day_1	service	9:change	market_hours / open_count	公告显示现在实际营业摊位数，变更才更换牌。
+RI005	把预订凭条送回	0	stall_seed.door;home_trade	weekly_market	service	8:change	booking_slip / 1	按路线送回谷芽已持的预约凭条。
+RI006	传达桥上轻载限制	0	bridge_wait_e;market_notice	day_1	service	5:change	bridge_load / bridge_state	完成桥东至公告板巡查后同步当前货桥承载状态。
+RI007	查验外来件地址	0	outside_gate	day_1	observe	15:clear	手递信件、地址册	在村口有寄给本村的手递件，至少一个本地地址有同名可能
+RI008	递工程验收单	0	quarry_shelter.door;home_trade	day_1	observe	14:clear	料单1、防潮袋	石砾签好料石验收且阿榆尚未领取，安排备料窗
+RI009	收集迁居改址	0	home_xiaohe.door;new_shared_home.door	late_shared_home	service	1:change	address_card / 0	旧门与新门均到达，将改址卡交给当前住户。
+RI010	雨前把滞留件交托	0	residence_mail_carrier.door;craft_post.door	village_development	observe	2:wet	原信袋、锁箱槽、托管回执	驿站开放，现有邮件跨区运送遇强雨且托管位可用
+RI011	挑出潮种	1	residence_seed_merchant.door	day_1	service	2:change	dry_rack / seed_count	核对实际种袋库存和干燥架，保留原种不虚扣。
+RI012	送一小包季节种	1	home_trade	day_1	deliver	1:home>seeds	种包1、约定换物1、价签	周集前有上门预约，家里只缺当季一小包，且谷芽出门携有库存
+RI013	辨认混装种	1	crop_02	day_1	service	4:change	pickup_sheet / crop_stage	记录试种床真实生长态，显示种批核对结果。
+RI014	预约下一季的自留种	1	stall_seed.door	weekly_market	service	8:change	booking_slip / 1	到种档交接现有预约凭条，避免同单重复发放。
+RI015	收回换错的密封种包	1	stall_seed.door	weekly_market	service	8:change	seed_packet / 20	回收顾客目前持有的同一封装种包。
+RI016	做四格发芽对照	1	crop_00	day_1	plot	4:sow	同批种4份、标记签4、井水1	批次发芽率未知且空试床可用，准备判断是否留种
+RI017	把杂粮种分成轮作袋	1	crop_06;pantry_loading	farm_expansion	deliver	4:home>seeds	原种各1包、隔板、轮作牌	自家农田扩建且耕种计划要求轮作，粮仓有两批可用种
+RI018	给小禾查旧种来源	1	home_pantry.door	day_1	observe	1:clear	旧袋、批次簿、粉笔	雨天准备播种，仓里同名种有不同日期，需先处理临期
+RI019	为预售补齐装箱	1	stall_seed.door;market_loading	weekly_market	service	8:change	seed_packet / seeds*1	消耗一份谷芽种子，将等量装包供后续交接。
+RI020	回收种袋重复使用	1	home_trade	day_1	service	1:plant	empty_seed_bag / 20	家方实际交回原空袋，后续可持有复用。
+RI021	复紧松动的农具柄	2	home_workshop.door	day_1	service	1:change	tool_handle / wood*1	消耗一份木修到有磨损的工具柄。
+RI022	按实量裁架板	2	home_pantry.door;home_workshop.door	day_1	service	1:change	dry_rack / wood*1	到粮仓测量并在作坊裁板，修补粮架磨损。
+RI023	从林场挑结构木	2	forest_loading	day_1	supply	12:wood	采购凭证、量尺、原木托架	结构单允许林场批次，已有带编号木料可供挑选
+RI024	修一只透气果箱	2	orchard_tools	day_1	service	11:change	fruit_crate / wood*1	用木料修补现场果箱损伤。
+RI025	合做分段桥板	2	home_workshop.door;bridge_wait_w	day_1	craft	1:wood>rope	批准木料2、尺、刨刀、段号卡	主桥增宽项目已到备板阶段，岸上施工区可作业
+RI026	在门旁校正新家具	2	new_shared_home.door	late_shared_home	service	2:change	furniture / wood*1	共同屋已开时补实物家具，已有损坏才扣木。
+RI027	配制一件可交接榫样	2	craft_carpentry.door	village_development	service	10:change	wood_sample / wood*1	消耗原木制作可用榫样，且有空槽。
+RI028	验收门闩免卡	2	home_ayu.door	day_1	observe	1:clear	原门闩、油1、抹布	阿榆家门闩近两次开合记录有卡阻
+RI029	教一刀顺纹刨	2	home_workshop.door	day_1	service	1:change	wood_sample / wood*1	作坊练习消耗原木并留下榫样。
+RI030	拆分旧梁复用料	2	craft_carpentry.door	village_development	service	10:change	old_beam / 2	将同一拆下旧梁收入公共材料托管。
+RI031	教小禾看一锅熟度	3	home_kitchen.door	day_1	craft	1:crops>food	现有锅、锅盖、食材原批次	小禾正做当餐且同锅菜已到快熟时刻，双方预约协助
+RI032	兑现预约家餐	3	home_table	day_1	deliver	1:home>food	熟食1、票据1、三套餐具按人数	两主角约共餐，苏灶有可交的一份实物且仍在时效内
+RI033	验鱼是否还可用	3	home_trade	day_1	observe	1:clear	鱼1批、清洁砧板、批签	实际鱼批送到，预定用在当天餐，需验保鲜
+RI034	小火煮当季汤	3	home_kitchen.door;home_table	day_1	craft	1:crops>food	蔬菜2、水1、燃料1、锅	家庭临期蔬菜已有预约消耗且厨房未满
+RI035	雨日调整预订便饭	3	stall_meal.door;market_notice	weekly_market	observe	8:wet	原订单牌、替换菜单、可用成品	熟食摊已开，强雨改变到货且当日已有受影响预订
+RI036	共做一份便携干粮	3	home_kitchen.door	day_1	craft	1:crops>food	粮1、蔬菜1、燃料1、布包	阿榆次日有长程工程且缺轻便食物，双方共享厨房获批
+RI037	摆出当日熟食	3	stall_meal.door;market_loading	weekly_market	service	8:change	tray / 3	走完卸货、熟食站路线才放下原托盘。
+RI038	用有余量的烤面包换汤	3	craft_bakery.door	village_development	deliver	10:14>food	面包2、汤2、双向收据	面包坊营业且两边成品临期但仍可食，双方已确认换量
+RI039	收掉空盘并记损耗	3	stall_meal.door;market_loading	weekly_market	service	8:change	tray / 22	收回此前摆放的同一托盘。
+RI040	给早归钓者预留热水	3	home_kitchen.door	day_1	deliver	1:4>water	井水1、燃料1、热水壶、杯	陆澜完成清晨钓班返西岸，之前双方约了取暖且锅有余量
+RI041	报溪流可钓窗	4	creek_fishing;market_notice	day_1	service	2:change	fishing_window / weather_clear	到溪岸核天气，再到公告板更新许可窗口。
+RI042	教小禾下第一竿	4	home_fishing	day_1	observe	1:clear	两把竿、饵1、空篓	近池点允许教学且小禾已有钓竿、愿带一份饵
+RI043	看天气停溪钓	4	creek_fishing;bridge_wait_w	day_1	service	2:change	fishing_suspend / rain	暴雨下钓点预警，实际出行看到关闭记录。
+RI044	送清晨首批鱼	4	home_trade	day_1	deliver	1:home>fish	原鱼1批、湿布、可追溯捕捞签	常设鱼摊前已有近处约单且鱼在保鲜时限内
+RI045	修补缺口鱼篓	4	residence_fisher.door	day_1	service	2:change	fish_basket / rope*1	用实际纤维补鱼篓缺口并恢复寿命。
+RI046	共抬鱼箱绕开人流	4	market_loading;stall_fish.door	permanent_market	deliver	9:19>fish	原鱼箱1、提绳、交货单	常设鱼档营业前有大于单人限重但可两人搬的保鲜箱
+RI047	近池放回待放归鱼	4	home_fishing	day_1	service	2:change	release_fish / fish*1	到近宅池边放回一尾已有鱼类，池存量 +1。
+RI048	查是否过捕	4	creek_fishing;residence_fisher.door	day_1	observe	2:clear	捕捞簿、各轮时刻卡	近三轮实际可用鱼量低于保护线，限制续单
+RI049	借给熟人备用竿	4	residence_fisher.door	day_1	service	2:change	fishing_rod / 4	仅备用竿仍在柜且家方到场时转移借用权。
+RI050	与厨师退回过时鱼	4	stall_fish.door	permanent_market	service	8:change	tray / 22	将过期鱼货的已有装载器皿从摊台交回厨房。
+RI051	给空种袋补边	5	home_trade	day_1	craft	1:crops>rope	原种袋、线1、针	本周有种子预约且袋缘裂开
+RI052	织桥边识别带	5	bridge_wait_e	day_1	deliver	5:9>rope	已有织带1、绑绳	施工暂时改变候行规则且缺可回收标识
+RI053	加固木料捆扎绳	5	forest_loading	day_1	deliver	12:2>rope	原绳、短布条1、木梭	原搬运绳起毛且已卸载
+RI054	带回织物订单余料	5	home_workshop.door	day_1	deliver	1:home>rope	废布1–3、分拣袋	工坊原缝补已完成且有标记废布
+RI055	演示十字补洞	5	residence_weaver.door	day_1	service	2:change	mending_patch / rope*1	从现有纤维制作布片，留实物样本。
+RI056	完成周集织带订单	5	stall_cloth.door	weekly_market	deliver	8:home>rope	织带1、换物或货款、收据	周集织物摊开放且留有签单成品
+RI057	补耐用围裙肩带	5	craft_textile.door	village_development	deliver	10:3>rope	旧围裙1、耐磨带1、针	织缝工房开门，围裙已停用待补
+RI058	按衣片配色染布	5	craft_textile.door	village_development	deliver	10:11>rope	原坯布1、染料1、水1、晾绳	裁缝订单需要同色补布且工台空
+RI059	做果筐可拆提带	5	orchard_tools	day_1	deliver	11:6>rope	原果筐1、宽织带1、扣2	满筐需要两人交接且旧提带已拆
+RI060	拆洗冬季桌布	5	home_table	day_1	service	1:change	tablecloth / water*1	用一份净水清洗已有磨损污布。
+RI061	疏去长歪的嫩果	6	orchard_tools	day_1	observe	11:plant	剪、果篮、树签	指定果树达疏果期且枝条允许处理
+RI062	在长凳旁分熟果	6	orchard_rest	day_1	supply	11:crops	原果筐、隔片、批签	两人实际采到一筐熟果，按去向分等
+RI063	调换果园轮用工具	6	orchard_tools	day_1	service	11:change	orchard_tool / wood*1	果园轮换工具前补其损坏，消耗木。
+RI064	从林床挑补植树苗	6	forest_nursery	day_1	service	12:change	sapling / 6	移已有苗到登记育苗床托管，保留库存身份。
+RI065	从家门交付小果篮	6	home_trade	day_1	deliver	1:home>crops	熟果1小篮、旧篮回执、换物	尚未开果摊，家里有家庭用果预订
+RI066	看蜂访改疏花时段	6	south_apiary;orchard_tools	day_1	service	7:change	pollination / pollen	看实际传粉量后调整养护公告。
+RI067	在果摊兑现团单	6	stall_fruit_flower.door	permanent_market	deliver	8:7>crops	原熟果2篮、箱签、取货凭证	常设果花摊营业，买方有果篮团单且对应批次还在
+RI068	救起倒歪幼树撑杆	6	orchard_tools	day_1	service	11:change	sapling_support / wood*1	扶回支架并消耗替换木脚。
+RI069	记下叶面霜伤	6	orchard_rest	day_1	service	11:change	frost / frost	低温天记录实际季节冻害风险。
+RI070	把合规落果送厨房	6	orchard_tools;home_kitchen.door	day_1	deliver	11:3>crops	落果1批、带盖小筐、果批签	经实检的可食落果有余量，厨师愿当天加工
+RI071	为桌上换已蔫的花	7	home_table	day_1	service	1:change	flower_vase / water*1	用真实水让桌前花瓶用品状态恢复。
+RI072	认出试床混入野苗	7	crop_04	day_1	plot	4:weed	叶形卡、软标签1	试床长出未标记苗且作物保留方案未确定
+RI073	用地边野花做干花束	7	commons_garden	day_1	service	15:change	flower_stem / crops*1	在花园把已有花材做成一束小花。
+RI074	与果农共管双品摊	7	stall_fruit_flower.door	permanent_market	service	8:change	fruit_flower_shift / open_count	双品摊开放时登记实际营业。
+RI075	把小束送已入住客舍	7	craft_inn.door	village_development	service	10:change	flower_stem / 7	把已有花束转给有住客的客舍。
+RI076	检查蜜源花缺水	7	south_apiary	day_1	observe	7:clear	土湿签、原井水1、细嘴壶	蜜源缓冲带有干土且当前无强风，想保留花期
+RI077	让陶工按花盆底孔选垫	7	craft_pottery.door	village_development	service	10:change	clay_tray / stone*1	陶工作坊维修选配垫，消耗实际陶材代用。
+RI078	修补公告旁松动路牌	7	market_notice	day_1	service	9:change	sign_board / wood*1	在公告旁修整受损路标底板。
+RI079	送耐阴花苗到共居门	7	new_shared_home.door	late_shared_home	service	2:change	flower_stem / 7	带已有耐阴花到共居门且实际交给家人。
+RI080	收起要淋雨的摊花	7	stall_fruit_flower.door;market_loading	permanent_market	deliver	8:13>crops	原花箱、防水布、批签	营业中强降雨已预警且仍有未卖花箱
+RI081	记录开场家屋两扇门	8	home_gate	day_1	service	1:change	house_sketch / homes	校验两间房当前门址，发布写生卡。
+RI082	留取下雨后的桥影	8	bridge_wait_e	day_1	observe	5:wet	雨罩、速写纸1	小雨已停且主桥经巡检可步行，桥头有独立绘画候位
+RI083	为不同尺寸的市集做招贴	8	market_notice	day_1	service	9:change	market_hours / open_count	市集实际营业变化后更新招贴。
+RI084	画下果园第一片花	8	orchard_rest	day_1	observe	11:plant	素描本1页、炭笔	果园首花已真实出现且环路干燥，取季相样
+RI085	画一张湿地观测草图	8	wetland_observe;wetland_link	late+resident_arrival	observe	14:clear	纸1、细笔、观测笺	湿地路网验收，双方都能抵达，栖雨已入住并完成一次成功观测
+RI086	补齐工坊展品说明图	8	commons_hall.door	community	service	15:change	exhibit / community	开放阅览室中写持续有效的展台说明。
+RI087	归还借画板	8	residence_traveling_painter.door	day_1	service	2:change	sketchboard / 8	把家方已预约的同一画板交回。
+RI088	制成可复用路标原图	8	market_gate	day_1	service	9:change	exit_directions / boundary	以实际东界通行能力出具引路板。
+RI089	和阿榆复画旧屋用途	8	new_shared_home.door;home_ayu.door	late_shared_home	service	2:change	house_sketch / homes	走过新居和旧址后刷新门址图。
+RI090	替外来客指回村路	8	outside_gate	day_1	service	15:change	exit_directions / boundary	在村口更新接待牌，备用信息可查询。
+RI091	把轻载桥队交替放行	9	bridge_wait_w;bridge_wait_e	day_1	observe	5:crowd	候位牌、方向棒	旧桥两端各有排队，桥面可行且无重载进入
+RI092	补回松动路石	9	home_lane	day_1	service	1:change	road_stone / stone*1	修复主巷松石，消耗真正石料。
+RI093	查涨水是否到栏下	9	bridge_wait_w	day_1	observe	5:wet	水尺、检查簿	实际水位快速上升，行人路线仍可现场勘验
+RI094	复核桥板编号	9	bridge_wait_w	day_1	service	5:change	bridge_board / bridge_state	检查实际桥板维护状态和通行阶段。
+RI095	验收干砌料石批	9	quarry_work;quarry_shelter.door	day_1	supply	14:stone	原料石1批、量规、料签	丘陵有已许可出库料石且项目需一批验收
+RI096	开放桥宽重载试程	9	bridge_wait_w;bridge_wait_e;bridge_main	main_bridge_freight	service	5:change	bridge_load / bridge_state	以已生效的货桥宽度更新载重牌。
+RI097	修护东巷枝障警示支撑	9	east_lane	day_1	service	2:change	east_branch / wood*1	清理东巷枝障，消耗替换支撑材料。
+RI098	安置球场雨停警示	9	commons_court_gate	day_1	observe	15:wet	防滑告示1、巡检尺	场地已建且雨后积水实测超准入阈值
+RI099	带队走一趟南路	9	south_bridge;wetland_link	late	service	5:change	south_loop / south_open	亲自走完南桥和观察路才登记已经开通的替代路线。
+RI100	把远期宅地界桩交底	9	future_140_100;future_lane	late	service	13:change	lot_survey / lot_open	从明确入口进行远期地籍踏勘。
+RI101	给新菜畦翻土	10	crop_06	resident_arrival+farm_expansion	plot	4:till	已清理的原田畦	扩田已开放，阿谷抵达已清理的菜畦，翻土后可播种
+RI102	校正菜畦挖沟方向	10	crop_12	resident_arrival+farm_expansion	plot	4:drain	手铲、水准线、原标桩	农田已开放且真实有积水，批准沟线有有效出口
+RI103	和小禾分工收菜	10	crop_21;pantry_loading	resident_arrival+farm_expansion	plot	4:harvest	剪、两只空筐、同批收菜签	有三格实际成熟且家庭预约采收，容量足够
+RI104	捻查冬麦含水	10	south_grain	resident_arrival	observe	7:plant	取样袋、原麦样1撮、批次条	南田已开且麦批临收割，烘焙师需要预计接货日
+RI105	约借村田器具	10	south_barn.door	resident_arrival+cooperative_farm	service	7:change	tool / 10	在粮棚交接现有工具，容量一件。
+RI106	查同一块地上一季	10	crop_09	resident_arrival+farm_expansion	observe	4:clear	田牌、前季田历、笔	扩建田准备轮作且可读原收获记录
+RI107	把共享工具挂回	10	east_duplex_1.door	resident_arrival	service	2:change	tool / 20	同一借工具归入原持有者。
+RI108	清点分给合作粮棚的麦	10	south_grain;south_barn.door	resident_arrival+cooperative_farm	deliver	7:19>crops	已收麦1批、复用袋、签单	麦已收、干燥验收过，粮棚有确认的入库配额
+RI109	把受冻苗拨进护棚队	10	crop_03	resident_arrival	plot	4:inspect	手铲、原盆1、损伤记号	初霜后同批苗出现实际冻损且有未坏苗
+RI110	拿收菜凭条练交货	10	stall_produce.door	resident_arrival+weekly_market	deliver	8:13>crops	原菜箱1、托运凭条	周集蔬菜摊营业、阿谷受托交一笔真货
+RI111	在门边量干活袖长	11	east_duplex_1.door	resident_arrival	service	2:change	10	同屋农人到场时做量袖会合，提升两人关系。
+RI112	补农衣肘窝	11	craft_textile.door	resident_arrival+village_development	service	10:change	work_coat / rope*1	把已有布料耗入磨损农衣；耐用性恢复。
+RI113	裁随身小信袋	11	craft_textile.door;craft_post.door	resident_arrival+village_development	deliver	10:0>rope	布料1、线1、带扣1、量样	织缝工房与驿站已开，米信需要新尺寸的手递信袋
+RI114	缝布条标出个人储位	11	east_duplex_1.door	resident_arrival	service	2:change	loom_cloth / rope*1	消耗纤维制作可交付个人储位布标。
+RI115	清点周集取衣单	11	stall_cloth.door	resident_arrival+weekly_market	service	8:change	pickup_sheet / load_stock	公布当班织物真实库存，只在有效班次出现。
+RI116	把雨披接缝浸检	11	craft_textile.door;market_well	resident_arrival+village_development	observe	10:wet	原雨披1、实井水1、托盘	雨披修好且客户要在出货前确认不漏，公共井时段空
+RI117	做球赛识别袖带	11	commons_court_gate;craft_textile.door	resident_arrival+village_development	service	15:change	loom_cloth / rope*2	用实际纤维做活动衣带，受球场、织坊阶段约束。
+RI118	换回尺码不合的衣	11	stall_cloth.door	resident_arrival+weekly_market	service	8:change	loom_cloth / 14	原尺码试样从白柚处退回青缝，实物身份不变。
+RI119	评估旧衣能否再裁	11	craft_textile.door	resident_arrival+village_development	service	10:change	mending_patch / 5	把已评估的旧布补片由青梭转给裁缝。
+RI120	给客舍挂便签布袋	11	craft_inn.door	resident_arrival+village_development	service	10:change	loom_cloth / rope*1	在客舍制作可携布袋，消耗纤维。
+RI121	给归家门边掸掉瓦砂	12	east_duplex_2.door	resident_arrival	observe	2:clear	扫帚、废料簸箕	两人已入住，门前登记了从本屋落下的瓦砂
+RI122	确认新屋脊瓦包件	12	new_shared_home.door	resident_arrival+late_shared_home	service	2:change	furniture / shared_home	共住屋实际已启用后查屋脊构件状态。
+RI123	查近宅漏点和屋瓦	12	home_xiaohe.door	resident_arrival	observe	1:wet	原屋图、湿痕纸、望远镜	首场雨后小禾报了真实漏痕且天已转干
+RI124	更换阿榆门檐固定件	12	home_ayu.door	resident_arrival	service	1:change	door_latch / stone*1	更换阿榆原屋磨损的屋檐固定件。
+RI125	给共用粮棚翻檐	12	south_barn.door	resident_arrival+cooperative_farm	service	7:change	grainshed_eave / wood*1	实耗木料修补公共粮棚檐。
+RI126	联同陶工验烧瓦	12	craft_pottery.door	resident_arrival+village_development	deliver	10:18>stone	原瓦批、响锤、量尺	陶窑工房已开并冷却出窑一组脊瓦
+RI127	为雨前在建屋加盖	12	future_156_100;future_lane	resident_arrival+late	observe	13:wet	防水布1、压条2、材料清单	远期场地已批施工且预报大雨，已有暴露的工程材料
+RI128	把完好旧瓦给修桥料房	12	quarry_shelter.door	resident_arrival	deliver	14:9>stone	旧瓦1批、软垫、回收签	有合法拆屋留下完好旧瓦，棚内批准作为非承重挡雨件
+RI129	请秤商校瓦箱重量	12	market_loading	resident_arrival	deliver	9:13>stone	原瓦箱1、秤、限重牌	已有同箱真实瓦件，需知道可上桥的运输等级
+RI130	复查修瓦后的排水	12	home_xiaohe.door	resident_arrival	observe	1:clear	原维修凭证、试水壶、湿痕纸	同瓦段修完后经历一次雨且当前可干地观察
+RI131	在屋门前校空盘	13	east_duplex_2.door	resident_arrival	service	2:change	scale / stone*1	校正实际精度磨损的秤，以石砝码维护。
+RI132	核家庭菜筐皮重	13	stall_produce.door	resident_arrival+weekly_market	service	8:change	scale / load_stock	已在档口核对实有市场商品及秤状态。
+RI133	拆开混错两批菜	13	stall_produce.door	resident_arrival+weekly_market	observe	8:plant	原菜两批、空箱2、批签	交割处发现两个批次被混装且仍可由原标签区分
+RI134	核摊桌一日收入	13	market_depot.door	resident_arrival+permanent_market	service	9:change	market_hours / trades	以累计真实交易记待核账差。
+RI135	把满箱货分到预约车	13	market_loading	resident_arrival	deliver	9:19>crops	原货箱1、复用箱1、载重单	市场要向西送货，原箱超过当前桥载重且有可拆批次
+RI136	复秤鱼货避免水重	13	stall_fish.door	resident_arrival+permanent_market	deliver	8:4>fish	原鱼批、网篓、原秤	常设鱼档营业，湿容器皮重已可验证
+RI137	处理价格牌滞后	13	market_notice;stall_seed.door	resident_arrival+weekly_market	service	9:change	price_board / seed_count	以谷芽真实现存种货刷新可查公价牌字段。
+RI138	根据实交易次数发布补核单	13	market_depot.door	resident_arrival+permanent_market	service	9:change	repair_work / trades	实际交易后登记补核单，单据重复不写。
+RI139	给高峰排队分时标	13	market_gate;market_notice	resident_arrival	observe	9:crowd	分时卡、当日摊期、号码牌	有已排多个摊预订单且同一入口出现溢出
+RI140	随阿榆核对到账的货	13	pantry_loading	resident_arrival	service	2:change	house	家方在装卸点时交流实际货况，提升 rapport。
+RI141	出炉先留家用份	14	craft_bakery.door;east_duplex_3.door	resident_arrival+village_development	deliver	10:15>food	原面包2、布包、日期签	面包坊开放、有当炉已熟的自用份，合住者约晚餐
+RI142	查开工麦粉批签	14	south_barn.door;craft_bakery.door	resident_arrival+cooperative_farm+village_development	observe	7:plant	麦粉1袋、验签、封条	粮棚和面包房开门且有已确认烘焙麦粉单
+RI143	揉两份旅途面包	14	craft_bakery.door	resident_arrival+village_development	craft	10:crops>food	面粉2、水1、燃料1、烤盘	有付过或确认换物的远行干粮单，原料足
+RI144	给小禾辨醒发程度	14	craft_bakery.door	resident_arrival+village_development	service	10:change	house	双方到面包房门边后交流醒发，家方关系可参与回访选择。
+RI145	和苏灶搭配熟食单	14	stall_meal.door;craft_bakery.door	resident_arrival+weekly_market+village_development	deliver	8:3>food	原面包2、原汤2、配餐签	熟食摊营业且当日预订允许面包配汤，两批实货齐
+RI146	把多余面包交共餐	14	home_table	resident_arrival	deliver	1:home>food	原面包1、布包	白柚预先获访客许可、带来一份当天仍可食的多余面包
+RI147	收下可复用烘焙布	14	east_duplex_3.door	resident_arrival	service	2:change	loom_cloth / 14	已有烘焙布交给许苇缝修。
+RI148	预约雨天少做一炉	14	market_notice;craft_bakery.door	resident_arrival+village_development	observe	9:wet	订单册、雨改期签	雨警报使已锁订单减少，当日下一炉尚未耗料
+RI149	装一袋只宜当天吃的面包	14	craft_inn.door	resident_arrival+village_development	craft	10:crops>food	原面包1、日签、入住凭证	客舍营业并已预约当天面包，白柚有合格现成份
+RI150	教青缝用原布包换合口	14	craft_bakery.door;craft_textile.door	resident_arrival+village_development	deliver	10:11>rope	原布包1、短带1、针线、空盘	两个工坊开门且反复落屑的布包已清洗待修
+RI151	挑选未碰巢的干苇	15	wetland_observe;wetland_link	resident_arrival+late	supply	14:rope	剪、苇筐、采集配额卡	湿地道路可达，实际有非繁殖保护区许可的枯苇采额
+RI152	编修回家篮提耳	15	east_duplex_3.door	resident_arrival	service	2:change	packing_basket / rope*1	耗用一份苇绳修提耳，恢复篮筐可用状态。
+RI153	把可用苇晒到含水目标	15	east_duplex_3.door	resident_arrival	service	2:change	packing_basket / weather_clear	晴干才更新可用编料的维护状态。
+RI154	按原框配浅苇垫	15	craft_textile.door	resident_arrival+village_development	deliver	10:5>rope	原框1、干苇3、绑绳1	工房可开工，织物订单要求一块合框浅垫
+RI155	给钓位放临时防溅席	15	creek_fishing	resident_arrival	deliver	2:4>rope	既有可卷苇席1、压带	开放钓位有获准的岸上铺垫格且暂需挡泥溅
+RI156	按柄型补果筐	15	orchard_tools	resident_arrival	deliver	11:6>rope	原果筐1、苇条2、线1、尺	果筐完好但旧柄偏窄，林枝提供了尺寸
+RI157	回收用过的展席	15	commons_hall.door	resident_arrival+community	service	15:change	tray / 22	从公共使用位收回实际展物托盘。
+RI158	把烘焙运输筐交白柚	15	craft_bakery.door	resident_arrival+village_development	deliver	10:14>rope	成品筐1、空盘、领取单	面包房开放且订做运输筐已完成干燥
+RI159	拆坏网回原编料	15	craft_textile.door	resident_arrival+village_development	craft	10:crops>rope	原苇网1、拆钩、两只回收桶	有已退役且权属明确的旧苇网
+RI160	交门边折湿区地图	15	east_duplex_3.door;market_notice	resident_arrival	service	2:change	reed_boundary / south_open	按湿地可达与保护区阶段更新告示。
+RI161	把水壶交回同栋柜	16	east_duplex_4.door	resident_arrival	deliver	2:17>water	原水壶1、借条、抹布	已到共享便携水壶归还窗，水壶实在祁苗行囊
+RI162	清掉原排水出口叶团	16	crop_24	resident_arrival+farm_expansion	plot	4:drain	手铲、废叶筐、少量试水	自家田已扩建，批准排水出口被实际落叶堵
+RI163	复核住家用水来源	16	home_well	resident_arrival	supply	1:water	井标尺、用水簿、桶	宅井水量不足且小禾预约下一轮田用水
+RI164	试行雨后只浇干格	16	crop_05	resident_arrival	plot	4:water	湿度签2、细嘴壶、井水1	小雨后试床有干湿差且当前非继续降雨
+RI165	从公共井交接干旱用水	16	market_well;market_loading	resident_arrival	deliver	9:19>water	有盖水桶1、配额牌、运输签	公共井有批准配额，受旱方已有真实水运单
+RI166	重压松动菜沟挡条	16	crop_28	resident_arrival+farm_expansion	plot	4:drain	原挡条、木夯、扎带1	在扩建田批准沟线已发现挡条错位
+RI167	记录南田水渠水位	16	south_grain	resident_arrival	service	7:change	water_level / rain	按当前降水显示南田水渠风险。
+RI168	把塘边落叶移离水口	16	home_fishing	resident_arrival	service	1:change	pond_outlet / wood*1	修理近塘落叶造成的水口损耗，消耗替换木篦用料。
+RI169	救护晾干的蜜源盆	16	south_apiary	resident_arrival	observe	7:clear	原花盆、土湿签、井水1	蜂箱作业结束且蜜源区有实际干枯临界盆
+RI170	复查南桥排水去向	16	south_bridge;wetland_link	resident_arrival+late	observe	5:wet	巡检簿、水痕尺、挂牌	南环建成后已有一次强雨，需确认没有冲向保护区
+RI171	在门厅归还观测镜	17	east_duplex_4.door	resident_arrival	service	2:change	observation_scope / 17	归还同一观测镜，避免道具复制。
+RI172	和夏墨数一轮过鸟	17	wetland_observe	resident_arrival	service	14:change	8	两人同时到湿地观测线后交流，两者关系改变。
+RI173	给采苇许可划出繁殖缓冲	17	wetland_observe;market_notice	resident_arrival	service	14:change	reed_boundary / birds	有真实观测后提出有限保护窗口，影响采集。
+RI174	记巷树上的常见鸟	17	east_lane	resident_arrival	observe	2:clear	识别卡、记录笔	清晨派信窗有人实际看到巷鸟停树，栖雨经过可确认
+RI175	观察近池饮水	17	home_fishing	resident_arrival	observe	1:clear	观察卡、镜	已获家庭院落访问许可，近池实际有小鸟短停且无钓客
+RI176	带阿榆看春秋候鸟差异	17	quarry_view	resident_arrival	observe	14:clear	原上季观察本、双筒镜、风标	测风台可达、晴天且季节飞行事件已实际触发
+RI177	查果园驱鸟布带的位置	17	orchard_tools	resident_arrival	observe	11:clear	果园图、可拆布带1、计数签	保护与采摘排程可能冲突，已有可拆布带和真实鸟访
+RI178	查看外来客进村方向是否惊鸟	17	outside_gate	resident_arrival	observe	15:crowd	观察笺、可移告示1	村口有抵达小队且一处真实停鸟点被脚步扰动
+RI179	核南田蜂箱与鸟访记录	17	south_apiary	resident_arrival	observe	7:clear	时段记录表、计数器	蜂箱正常营业且园圃需分辨蜂与小鸟觅食时段
+RI180	把观察册送去公共展架	17	commons_hall.door	resident_arrival+community	observe	15:clear	原观测册1、展示签、出借凭证	阅读屋开门且已有至少一组带证据的当季观测页
+RI181	用原裂盆做试漏	18	craft_pottery.door	resident_arrival+village_development	observe	10:wet	原盆1、井水1、托盘	陶工房开门，客户带来一只已标轻裂花盆
+RI182	配做一只尚缺的浅托盘	18	craft_pottery.door	resident_arrival+village_development	service	10:change	ceramic_piece / stone*1	用实有陶材代用制作可交接托盘。
+RI183	在双户门内包陶件	18	east_duplex_5.door	resident_arrival	service	2:change	ceramic_piece / 18	把已制成陶件交给出现于双户门的递货员。
+RI184	收干棚的待烧坯	18	craft_pottery.door	resident_arrival+village_development	deliver	10:12>stone	干坯1批、托板、手套	工坊已开且一批瓦坯达到可装窑干度
+RI185	出窑后分掉不合品	18	craft_pottery.door	resident_arrival+village_development	observe	10:clear	同炉陶批、隔热手套、量规	一炉工件已到开窑温度，阿榆预约验一件
+RI186	配井边可拆滴水盘	18	home_well	resident_arrival	service	1:change	well_tray / stone*1	在真实井边维修滴水盘，消耗实际陶材代用。
+RI187	随阿榆验收粮仓罐	18	pantry_loading	resident_arrival	observe	2:clear	成品罐1、盖1、交割凭证	阿榆预约购买的一只已成型储粮罐抵达家仓
+RI188	将旧陶片回收分类	18	craft_pottery.door	resident_arrival+village_development	service	10:change	ceramic_piece / 19	将同一可回收陶件退回陶工托管。
+RI189	把泥坯订单延到晴后	18	craft_pottery.door;market_notice	resident_arrival+village_development	observe	10:wet	原坯批、湿度记录、改期通知	连续潮湿使当日干坯未达标准，已有客户预约
+RI190	给客舍修可换水盂	18	craft_inn.door	resident_arrival+village_development	service	10:change	inn_basin / stone*1	客舍开通后修原水盂，不创造设施。
+RI191	把易碎箱从屋门接出	19	east_duplex_5.door	resident_arrival	deliver	2:18>stone	原陶箱1、在途签	同住者预约交运的箱已实际封签且收货窗可赶到
+RI192	在村口交接外部批货	19	outside_gate	resident_arrival	observe	15:crowd	原外来箱1、双边凭证	跨村实货抵村门且有收货许可、单号有效
+RI193	走过主桥把货交到仓	19	bridge_wait_e;bridge_wait_w;pantry_loading	resident_arrival	deliver	5:home>wood	原货1批、背带、送达票	家庭订单已锁货且载重符合当前主桥规格
+RI194	卸未售果箱到托管位	19	market_loading;market_depot.door	resident_arrival+permanent_market	deliver	9:6>crops	原果箱1、托管签	集配仓开放且摊已关，剩果仍在保鲜期并有托管位
+RI195	把欠收的实物补送	19	craft_post.door;home_trade	resident_arrival+village_development	deliver	10:home>crops	补发货1份、原差额单、封袋	原交割单留确证差额且补发同批实物已在驿站
+RI196	与米信合并同向轻件	19	craft_post.door	resident_arrival+village_development	deliver	10:0>rope	实有轻件2、箱签、两原单	驿站开门且两人手上有同向轻件与合法同意
+RI197	登记破损箱并拒签	19	market_loading	resident_arrival	observe	9:crowd	原破箱1、封条、验损票	实际到卸货位才发现原箱破损且货量未知
+RI198	雨前把轻货改走南环	19	south_bridge;wetland_link;market_loading	resident_arrival+late	deliver	5:9>wood	同批手提货、负重牌、替代路签	南环各段验收且可步行，主桥候行过久，轻货单持有人能在雨前到场
+RI199	把麦袋空包带回	19	south_barn.door;craft_bakery.door	resident_arrival+cooperative_farm+village_development	deliver	7:14>crops	原空麦袋1–2、原运单	粮棚和面包坊开门，有上一单的编号空麦袋
+RI200	走一遍客舍晚到签收	19	craft_inn.door;craft_post.door	resident_arrival+village_development	service	10:change	pickup_sheet / guest_count	走实际客舍及驿站检查已到旅客。
+ME001	家人完成一席早饭	-	home_kitchen.door;home_table	day_1	native	1:	食材两份、锅、盘	05:50–07:20两人清醒且有两份早餐
+ME002	井边补猫水	16	home_well;cat_water	day_1	service	1:	fill_bowl / water*1	水工先到家井，再到猫碗。实际从家庭水量扣一份，碗加一份。
+ME003	清洗猫碗	16	home_well;cat_water	day_1	service	2:	clean_bowl / water*1	水工先到井边，再到猫碗旁清洗。实际耗自带净水一份，碗中水量单独计算。
+ME004	半成品工具交接	2	pantry_loading;home_workshop.door	day_1	service	1:	wood_sample / 2	在作坊与粮仓走完后交给实际到场家方。
+ME005	雨天开始备便餐	-	home_kitchen.door;home_table	day_1	native	1:	潮柴、既有熟粮	雨天灶柴潮，库存有冷餐原料
+ME006	修好松门闩	2	home_workshop.door;home_ayu.door	day_1	service	1:	door_latch / wood*1	在阿榆的门侧确有磨损才耗原料加固。
+ME007	搬入共住屋	-	home_xiaohe.door;home_ayu.door;new_shared_home.door	late_shared_home	native	1:	原有个人箱、猫垫	双床屋验收、两人同意、旧屋箱已装
+ME008	仓满候卸	-	pantry_loading;home_pantry.door	day_1	native	2:	已持货包、托盘、实际副仓	返家货包有货，主仓达到容量
+ME009	完成当日共餐后记交班	-	home_table	day_1	native	1:	餐点、交易收据或雨签	两人在家且当日有一条完成或中止的真实出行
+ME010	睡前查门与归床	-	home_xiaohe.door;home_ayu.door	day_1	native	1:	已有门灯、床位	20:30以后到当期住所门可达
+ME011	近池岸完成当天一竿	-	home_fishing;pantry_loading	day_1	native	1:	竿、饵一枚、鱼篓	周日清晨两人有空、池边干燥、持饵
+ME012	送出门与交守	-	pantry_loading;home_gate;cat_water	day_1	native	2:	真实包、值守待办	仅一人已接受远行且猫或田需要午间照管
+ME013	开春首畦	7	crop_00;home_well	day_1	plot	4:sow	锄、种一份、水一份	春季可播、土未耕、种水俱备
+ME014	给两块缺水的田浇水	10	crop_06;crop_15	farm_expansion	plot	4:water	实际库存净水两份	两块田均缺水。先后到各畦，每次浇水各耗一份；途中被其他人浇过则保留剩水。
+ME015	雨后积水回沟	16	crop_18;field_lower	farm_expansion+resident_arrival	plot	4:drain	量杆、耙、原沟	连续雨后有积水、排水边已授权
+ME016	播种行距纠正	10	crop_09	farm_expansion+resident_arrival	plot	4:sow	线、尺、种袋	未播床被标为教学床且有真实种子
+ME017	南畦雨前实收	10	crop_21;pantry_loading	farm_expansion	plot	4:harvest	两篮、刀	预测降雨将至且菜成熟、容器有余位
+ME018	移到屋檐后修补晒架	2	pantry_loading;home_pantry.door	day_1	service	2:	dry_rack / wood*1	把已有晾晒区移到屋檐后补架，耗实际木。
+ME019	检查菜叶虫压	7	crop_02	day_1	plot	4:inspect	放大镜、挂牌	实测叶面有虫且家庭接受查看
+ME020	秋播留种	1	crop_04;home_trade	day_1	supply	4:seeds	干纸袋、种签、原收成	成熟非杂交批有留种份额，谷芽到场
+ME021	南田送麦到面包房	10	south_grain;south_barn.door;craft_bakery.door	cooperative_farm+village_development+resident_arrival	deliver	7:14>crops	干麦批、袋、仓票	南田仓有晾干粮，面包房有空仓和有效收货单
+ME022	修好粮架绑扎封口	5	pantry_loading;home_pantry.door	day_1	service	2:	dry_rack / rope*1	已有粮架封口修复，耗实有绑扎材料。
+ME023	休地轮作约定	1	crop_12;home_trade	farm_expansion	plot	4:inspect	轮作牌、已有种录	收获结束且该床连续两季同族
+ME024	暖日看蜂箱	7	south_apiary;commons_garden	cooperative_farm+resident_arrival	observe	7:clear	蜂箱观察牌、护面用品	暖晴且蜂箱已开、花期有效
+ME025	春剪折枝	6	orchard_tools	day_1	observe	11:plant	剪、麻绳、果园柜	有登记折枝且非保护树
+ME026	盛花保留授粉区	6	orchard_tools;orchard_rest	day_1	observe	11:clear	场地标牌	目标树开花且正有活跃蜂访
+ME027	果筐分级	6	orchard_tools;pantry_loading	day_1	deliver	11:home>crops	现有果筐、软垫、标签	同筐混有鲜售果和碰伤果，家方可接
+ME028	热天树下歇	6	orchard_rest;home_well	day_1	observe	11:clear	自带水壶、长凳	热度高且两人刚完成搬筐
+ME029	选择性伐木交付	2	forest_loading;home_workshop.door	day_1	supply	12:wood	斧、搬运工具、标牌	树已标合法采伐且订单材料不足
+ME030	补栽断档幼树	2	forest_nursery;forest_loading	day_1	service	12:change	sapling / 22	搬运已登记苗到林地工作侧完成接收。
+ME031	标记暂缓砍伐	2	forest_loading;forest_nursery	resident_arrival	observe	12:plant	远观镜、暂停牌	预备采伐目标发现活跃巢或保护迹象
+ME032	雨后泥路返工	9	forest_loading;farm_lane	day_1	observe	12:wet	碎石一份、夯具	集散支路有明确冲刷且仍留行人绕行
+ME033	湿地芦苇留茬	15	wetland_observe;wetland_link	late+resident_arrival	supply	14:rope	剪、空筐、配额卡	栈道与授权采收侧可达，枯苇配额已批
+ME034	湿地风雨观测	17	wetland_observe;wetland_link	late+resident_arrival	observe	14:wet	望远镜、记录纸	雨止且台面通过安全检查
+ME035	清理果园落果	6	orchard_rest;orchard_tools	day_1	supply	11:crops	空筐、已有落果	地表真实落果超过管理阈值
+ME036	丘陵采石装袋	9	quarry_work;quarry_shelter.door	day_1	supply	14:stone	凿、重袋、水	石料工单有余额且配额够，晴朗可施工
+ME037	第一趟跨主桥交易并返家	-	home_gate;bridge_wait_w;bridge_main;bridge_wait_e;market_gate	day_1	native	1:	轻便袋、水	主角首次接受侦察，日光足且旧桥开放
+ME038	桥上占用让行	1	bridge_wait_w;bridge_main;bridge_wait_e	day_1	native	5:	携带原包	双侧有迎面预约且桥处单线状态
+ME039	主桥两岸量测	9	bridge_wait_w;bridge_wait_e;bridge_main	day_1	service	5:change	bridge_board / bridge_state	沿两岸及桥身完成测量后保存桥板状态。
+ME040	旧桥保通备料	2	bridge_wait_w;bridge_wait_e;bridge_main	day_1	service	5:change	wood_sample / wood*1	批准的有限木材进入桥工样材库存。
+ME041	验后公布桥面载重	9	bridge_main;market_loading	permanent_market+resident_arrival+main_bridge_freight	service	5:	bridge_load / bridge_state	验收后的实际承载位，写入卸货和桥头公布状态。
+ME042	遇雨停发重载预约	19	bridge_main;bridge_wait_w;market_loading	permanent_market+resident_arrival+main_bridge_freight	service	5:	bridge_load / rain	雨雪时在卸货牌登记不可发重载，货品留原库存。
+ME043	步检开放后的南环	9	south_bridge;wetland_link;south_spine	late+resident_arrival	service	5:	south_loop / south_open	实际走过南桥、湿地路和南路后登记已验收连接。
+ME044	沿南环送轻货	19	farm_lane;south_bridge;wetland_link;market_loading	late+permanent_market+resident_arrival	service	2:	ceramic_piece / 19	持已有陶件沿南环交至市场装卸托管，真实出货。
+ME045	桥头撤鱼单	4	bridge_wait_w;creek_fishing;pantry_loading	day_1	native	5:	待换货、撤单签	出发后急流或风使渔人收竿
+ME046	丘陵阵雨避险	9	quarry_view;quarry_shelter.door	resident_arrival	observe	14:wet	雨披、记录包	在丘陵已出勤，雨强超过坡道阈值
+ME047	雨后主路复检	9	bridge_wait_e;bridge_main;market_approach	day_1	observe	5:wet	测尺、检修牌	雨势已退且上次有积水风险记录
+ME048	夜归借灯	0	home_gate;home_ayu.door	day_1	observe	1:clear	已有灯、归家持物	天黑后同路返回，宅院门灯可用
+ME049	上门换种	1	home_trade;pantry_loading	day_1	native	1:	种袋一份、可交换菜一份	移动商贩持有种批，家方预约且有交换货
+ME050	周集开场	1	market_gate;market_notice;stall_seed.door;stall_meal.door;stall_cloth.door	weekly_market	native	9:	各自预留货包、营业牌	周六07:45后各摊实际到货且09:00前有在岗者
+ME051	到种档用余菜成交	1	stall_produce.door;stall_seed.door;pantry_loading	weekly_market	native	8:	菜篮、余额或约定货、空包位	有蔬菜余量、种子不足且两档营业
+ME052	秤偏冻结批次	13	market_loading;market_notice	permanent_market+resident_arrival	observe	9:crowd	校准砝码、实货、封签	同批两次称重差超容差
+ME053	市场候补重新公布	13	market_notice;stall_produce.door	permanent_market+resident_arrival	service	9:	pickup_sheet / load_stock	按菜摊真实当前可交易库存更新候补名额。
+ME054	鲜鱼售罄收档	4	stall_fish.door;market_notice	permanent_market	native	8:	鱼篓、营业牌	最后一批鱼真实成交且无补货
+ME055	熟食档到场领取并装袋	3	stall_meal.door;market_well	weekly_market	native	8:	热食一份、托盘、盖	有已预约熟食并需短时冷却，买方到场
+ME056	周集余货清场	1	market_south;stall_seed.door;stall_meal.door;stall_cloth.door	weekly_market	native	9:	原余货、布盖、垃圾篮	13:30关集且还有可带余货
+ME057	递货批从卸货位入集配仓	19	market_loading;market_depot.door	permanent_market+resident_arrival	service	9:	ceramic_piece / 19	递货员从原装卸转集配仓托管。
+ME058	果花摊午间换班	6	stall_fruit_flower.door;orchard_tools	permanent_market	native	8:	两类真实库存、值班单	店午班换班且两者都到场
+ME059	关门空返与改采	5	stall_cloth.door;market_notice;pantry_loading	weekly_market	native	8:	原换布品、看板	已出发后织摊因缺货提前关门
+ME060	同路种包改集配托管	19	stall_seed.door;market_depot.door;pantry_loading	permanent_market+resident_arrival	service	8:	seed_packet / 20	已有家庭种件从摊位与集配点完成改托管。
+ME061	门牌更址回执	0	home_xiaohe.door;home_ayu.door;new_shared_home.door	late_shared_home	service	2:	address_card / 0	查两个旧门和新门后由邮差交实物地址卡。
+ME062	北邻出门送件	0	residence_mail_carrier.door;residence_seed_merchant.door	day_1	service	2:	letter / 0	邮差到谷芽居家门旁，实际交原信。
+ME063	双户门口依次让行	10	east_duplex_1.door;east_lane	resident_arrival	native	2:	实际各自工具包、独立钥匙身份	两室都已入住，早班门请求重叠
+ME064	东邻新住户到门签床	18	east_duplex_5.door;outside_gate	resident_arrival	native	2:	带标签的各人行李、登记钥匙	双户屋验收且两室同意入住，有真实箱
+ME065	工匠试衣预约	11	craft_textile.door;east_duplex_1.door	village_development+resident_arrival	observe	10:clear	原样衣、软尺、针盒	有实际样衣与顾客来试，尺码待复核
+ME066	访客村口入场	0	outside_gate;market_notice	day_1	native	15:	订单牌、实际行李	并发有席、有目标与当日退路
+ME067	迟到住客交钥匙	19	craft_inn.door;outside_gate	village_development+resident_arrival	native	10:	床号、钥匙、原行李	已分到可用客床且实际到门
+ME068	旅行画家采风回村	8	outside_gate;residence_traveling_painter.door	day_1	native	15:	原画具、外采手记	有已安排外采目的，返期到且入口可达
+ME069	归家晚到留门灯	14	east_duplex_3.door;east_lane	resident_arrival	service	2:	15	白柚与许苇在家门相遇才记晚归照应。
+ME070	屋顶漏水诊断	12	home_ayu.door;home_workshop.door	resident_arrival	observe	1:wet	滴水桶、粉笔、测尺	真实雨后有漏点且住户同意检查
+ME071	邻里递交失物	0	residence_road_worker.door;market_notice	day_1	service	2:change	lost_property / 9	弄清真实失物后将其移入米信待认领库存。
+ME072	归还雨借斗篷	11	craft_textile.door;east_duplex_1.door	village_development+resident_arrival	deliver	10:19>rope	原斗篷、借单	先前借用的斗篷已干或同意带湿归还
+ME073	公共阅读日	8	commons_hall.door;commons_garden	community	service	15:	house	周日公共屋预约，双方同场会合后关系提升。
+ME074	球场预约与清退	-	commons_court_gate;plugin_basketball	community	native	15:	真实篮球、插件场地预约	已安装启用插件、场地干燥、两人预约
+ME075	花源访蜂并记有效传粉	7	commons_garden	community	native	15:	标牌、原花	夏季已有花源且本地蜂群活动范围覆盖
+ME076	近池雨后蛙跃	-	home_fishing;home_pond	day_1	native	1:	真实水缘与安全落点	暖季雨停、池边湿润且有可达水缘
+ME077	黄昏刺猬避光	-	orchard_rest;orchard_loop	day_1	native	11:	原灯、草边躲藏点	暖季黄昏刺猬觅食，有近距离移动光源
+ME078	燕子避阵雨	9	bridge_main;bridge_wait_e	day_1	native	5:	实际屋檐停栖点	暖季燕子巡桥上空，雨风超阈值
+ME079	田鼠沿田缘退洞	-	crop_00;home_lane	day_1	native	4:	原洞口、可触地面	暮色小鼠在家区试种床外围，橘子进入嗅闻范围
+ME080	树枝藏果观察	6	orchard_tools;orchard_loop	day_1	native	11:	既有自然果一枚、原藏点	秋季有自然落果且树冠落点空
+ME081	蜗牛雨后探叶	-	crop_03;crop_04	day_1	native	4:	湿叶、原个体	两叶相邻且保持湿润，小禾当日巡叶
+ME082	活动开场鸽群收翅	-	commons_court_gate;commons_hall.door	community	native	15:	实际场地与屋檐落点	球场已有预约且白鸽在活动边落地
+ME083	萤火虫静观	17	wetland_observe;wetland_link	late+resident_arrival	native	14:	低亮照明、观察本	夏夜低风无强灯，台面开放，真实群落在飞
+ME084	远期地籍踏勘	9	future_lane;future_140_100	late	service	13:change	lot_survey / lot_open	实地走完保留地入口，发布踏勘记录。

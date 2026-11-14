@@ -1,0 +1,132 @@
+{
+  "start": "invite",
+  "steps": [
+    {
+      "id": "invite", "op": "invite", "actor": "initiator", "duration_world_ms": 30000,
+      "frames": ["invite_0", "invite_1", "invite_2"],
+      "alternate_frames": ["invite_0_alt", "invite_1_alt", "invite_2_alt"],
+      "next": "accept", "on_failure": "decline"
+    },
+    {
+      "id": "accept", "op": "animate", "actor": "partner", "duration_world_ms": 22000,
+      "frames": ["accept_0", "accept_1", "accept_2"],
+      "alternate_frames": ["accept_0_alt", "accept_1_alt", "accept_2_alt"],
+      "next": "reserve"
+    },
+    {
+      "id": "reserve", "op": "reserve_slots", "actor": "both",
+      "facility": "org.cat-home.community.basketball:court", "next": "walk_origin"
+    },
+    {
+      "id": "walk_origin", "op": "move_to", "actor": "initiator", "slot": "origin", "next": "take"
+    },
+    {
+      "id": "take", "op": "take_prop", "actor": "initiator", "slot": "origin",
+      "prop": "org.cat-home.community.basketball:ball", "duration_world_ms": 32000,
+      "frames": ["take_0", "take_1", "take_2"],
+      "alternate_frames": ["take_0_alt", "take_1_alt", "take_2_alt"],
+      "next": "walk_a"
+    },
+    {
+      "id": "walk_a", "op": "move_to", "actor": "holder", "slot": "court_a",
+      "frames": ["carry_0", "carry_1", "carry_2"],
+      "alternate_frames": ["carry_0_alt", "carry_1_alt", "carry_2_alt"],
+      "next": "walk_b"
+    },
+    {
+      "id": "walk_b", "op": "move_to", "actor": "other", "slot": "court_b", "next": "ready"
+    },
+    {
+      "id": "ready", "op": "animate", "actor": "other", "duration_world_ms": 26000,
+      "frames": ["wait_0", "wait_1", "wait_2"],
+      "alternate_frames": ["wait_0_alt", "wait_1_alt", "wait_2_alt"],
+      "next": "dribble"
+    },
+    {
+      "id": "dribble", "op": "animate", "actor": "holder", "duration_world_ms": 34000,
+      "prop": "org.cat-home.community.basketball:ball",
+      "bounce_height": 14,
+      "frames": ["bounce_0", "bounce_1", "bounce_2"],
+      "alternate_frames": ["bounce_0_alt", "bounce_1_alt", "bounce_2_alt"],
+      "next": "pass"
+    },
+    {
+      "id": "pass", "op": "pass_arc", "actor": "holder", "slot": "court_b",
+      "prop": "org.cat-home.community.basketball:ball", "duration_world_ms": 30000,
+      "frames": ["pass_0", "pass_1", "pass_2"],
+      "alternate_frames": ["pass_0_alt", "pass_1_alt", "pass_2_alt"],
+      "next": "catch", "on_failure": "recover_pass"
+    },
+    {
+      "id": "catch", "op": "catch_or_ground", "actor": "other", "slot": "court_b",
+      "prop": "org.cat-home.community.basketball:ball", "duration_world_ms": 26000,
+      "frames": ["catch_0", "catch_1", "catch_2"],
+      "alternate_frames": ["catch_0_alt", "catch_1_alt", "catch_2_alt"],
+      "next": "shoot", "on_failure": "recover_pass"
+    },
+    {
+      "id": "recover_pass", "op": "retrieve_prop", "actor": "other", "slot": "prop_location",
+      "prop": "org.cat-home.community.basketball:ball", "duration_world_ms": 40000,
+      "frames": ["pickup_0", "pickup_1", "pickup_2"],
+      "alternate_frames": ["pickup_0_alt", "pickup_1_alt", "pickup_2_alt"],
+      "next": "shoot"
+    },
+    {
+      "id": "shoot", "op": "throw_arc", "actor": "holder", "slot": "target",
+      "prop": "org.cat-home.community.basketball:ball", "facility": "org.cat-home.community.basketball:court",
+      "duration_world_ms": 46000,
+      "frames": ["shoot_0", "shoot_1", "shoot_2"],
+      "alternate_frames": ["shoot_0_alt", "shoot_1_alt", "shoot_2_alt"],
+      "next": "cheer", "on_failure": "miss"
+    },
+    {
+      "id": "cheer", "op": "animate", "actor": "both", "duration_world_ms": 36000,
+      "frames": ["cheer_0", "cheer_1", "cheer_2"],
+      "alternate_frames": ["cheer_0_alt", "cheer_1_alt", "cheer_2_alt"],
+      "next": "retrieve"
+    },
+    {
+      "id": "miss", "op": "animate", "actor": "both", "duration_world_ms": 32000,
+      "frames": ["miss_0", "miss_1", "miss_2"],
+      "alternate_frames": ["miss_0_alt", "miss_1_alt", "miss_2_alt"],
+      "next": "retrieve"
+    },
+    {
+      "id": "retrieve", "op": "retrieve_prop", "actor": "holder", "slot": "prop_location",
+      "prop": "org.cat-home.community.basketball:ball", "duration_world_ms": 44000,
+      "frames": ["pickup_0", "pickup_1", "pickup_2"],
+      "alternate_frames": ["pickup_0_alt", "pickup_1_alt", "pickup_2_alt"],
+      "next": "rotate"
+    },
+    {
+      "id": "rotate", "op": "rotate_roles", "actor": "both",
+      "repeat": {"target": "walk_a", "count": 2}, "next": "walk_back"
+    },
+    {
+      "id": "walk_back", "op": "move_to", "actor": "holder", "slot": "origin",
+      "frames": ["carry_0", "carry_1", "carry_2"],
+      "alternate_frames": ["carry_0_alt", "carry_1_alt", "carry_2_alt"],
+      "next": "return"
+    },
+    {
+      "id": "return", "op": "return_prop", "actor": "holder", "slot": "origin",
+      "prop": "org.cat-home.community.basketball:ball", "duration_world_ms": 34000,
+      "frames": ["return_0", "return_1", "return_2"],
+      "alternate_frames": ["return_0_alt", "return_1_alt", "return_2_alt"],
+      "next": "rest"
+    },
+    {
+      "id": "rest", "op": "rest", "actor": "both", "duration_world_ms": 65000,
+      "frames": ["rest_0", "rest_1", "rest_2"],
+      "alternate_frames": ["rest_0_alt", "rest_1_alt", "rest_2_alt"],
+      "next": "done"
+    },
+    {
+      "id": "decline", "op": "animate", "actor": "partner", "duration_world_ms": 28000,
+      "frames": ["decline_0", "decline_1", "decline_2"],
+      "alternate_frames": ["decline_0_alt", "decline_1_alt", "decline_2_alt"],
+      "next": "done"
+    },
+    {"id": "done", "op": "end"}
+  ]
+}

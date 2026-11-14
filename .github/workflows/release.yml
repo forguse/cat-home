@@ -1,0 +1,70 @@
+name: Build Windows and publish on request
+
+on:
+  push:
+    branches: [main]
+    paths: ['Cargo.*', build.rs, 'src/**', 'examples/**', 'assets/**', 'tools/**', .github/workflows/release.yml]
+  pull_request:
+    paths: ['Cargo.*', build.rs, 'src/**', 'examples/**', 'assets/**', 'tools/**', .github/workflows/release.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cat-home-release
+  cancel-in-progress: false
+
+jobs:
+  windows:
+    runs-on: windows-2022
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Select Windows resource compiler
+        run: |
+          $compiler = Get-ChildItem -Path "${env:ProgramFiles(x86)}/Windows Kits/10/bin/*/x64/rc.exe" -File | Sort-Object FullName -Descending | Select-Object -First 1
+          if (!$compiler) { throw 'Windows SDK resource compiler missing' }
+          "RC=$($compiler.FullName)" >> $env:GITHUB_ENV
+          rustup update stable --no-self-update
+          if ($LASTEXITCODE -ne 0) { throw 'Rust update failed' }
+      - name: Validate authoritative map
+        run: |
+          python tools/compile_map.py --check
+          if ($LASTEXITCODE -ne 0) { throw 'Map validation failed' }
+          python -m unittest discover -s tools -p test_compile_map.py
+          if ($LASTEXITCODE -ne 0) { throw 'Map tests failed' }
+      - name: Test simulation and Windows adapter
+        run: |
+          cargo +stable test --locked --release --lib --bins
+          if ($LASTEXITCODE -ne 0) { throw 'Rust tests failed' }
+          cargo +stable run --locked --release --example village_host_probe -- target/host-proof
+          if ($LASTEXITCODE -ne 0) { throw 'Native host integration failed' }
+      - name: Build standalone EXE
+        run: |
+          cargo +stable build --locked --release --bin cat-home
+          if ($LASTEXITCODE -ne 0) { throw 'Release build failed' }
+          New-Item -ItemType Directory -Path release-files -Force | Out-Null
+          Copy-Item -LiteralPath target/release/cat-home.exe -Destination release-files/cat-home-windows-x64.exe
+          $digest = (Get-FileHash -Algorithm SHA256 -LiteralPath release-files/cat-home-windows-x64.exe).Hash.ToLowerInvariant()
+          "$digest  cat-home-windows-x64.exe" | Set-Content -Encoding utf8NoBOM -LiteralPath release-files/SHA256SUMS.txt
+      - name: Publish once for this version
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $metadata = cargo +stable metadata --locked --no-deps --format-version 1 | ConvertFrom-Json
+          if ($LASTEXITCODE -ne 0) { throw 'Version metadata failed' }
+          $version = ($metadata.packages | Where-Object name -eq cat-home).version
+          $tag = "v$version"
+          gh release view $tag --repo $env:GITHUB_REPOSITORY *> $null
+          if ($LASTEXITCODE -eq 0) { throw "Release $tag already exists; refusing to replace published files." }
+          gh release create $tag release-files/cat-home-windows-x64.exe release-files/SHA256SUMS.txt --repo $env:GITHUB_REPOSITORY --target $env:GITHUB_SHA --title "Cat Home $version · 柳溪村" --notes-file docs/RELEASE.md
+          if ($LASTEXITCODE -ne 0) { throw 'GitHub release creation failed' }

@@ -1,0 +1,9 @@
+* text=auto eol=lf
+*.bgra -text
+*.png -text
+*.ico -text
+*.zip -text
+*.catpack -text
+*.tiles -text
+# Map source digests and embedded metadata require their original bytes.
+*.json -text

@@ -13,6 +13,9 @@ mod renderer;
 mod simulation;
 mod startup;
 mod world;
+mod home_host;
+mod living_menu;
+mod native_metrics;
 
 use std::{
     cell::RefCell,
@@ -38,7 +41,7 @@ use windows_sys::{
         UI::{
             Accessibility::{HWINEVENTHOOK, SetWinEventHook, UnhookWinEvent},
             HiDpi::{DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2, SetProcessDpiAwarenessContext},
-            Input::KeyboardAndMouse::{GetAsyncKeyState, ReleaseCapture, SetCapture, VK_LBUTTON},
+            Input::KeyboardAndMouse::{GetAsyncKeyState, ReleaseCapture, SetCapture, VK_LBUTTON, VK_SHIFT},
             Shell::{
                 NIF_ICON, NIF_MESSAGE, NIF_TIP, NIM_ADD, NIM_DELETE, NOTIFYICONDATAW,
                 Shell_NotifyIconW,
@@ -56,6 +59,11 @@ const TITLE: *const u16 = w!("猫咪小屋");
 const TRAY_MESSAGE: u32 = WM_APP + 1;
 const RESTORE_MESSAGE: u32 = WM_APP + 2;
 const UPDATE_TIMER: usize = 1;
+const HOME_IDLE_FRAME_MS: u32 = 100;
+const HOME_MOVING_FRAME_MS: u32 = 15;
+const HOME_LARGE_FRAME_MS: u32 = 32;
+const BACKLOG_WAKE_MS: u32 = 16;
+const LARGE_VIEW_AREA: i32 = 1_300_000;
 const MAX_SIDECAR_BYTES: usize = 4096;
 const MENU_TREAT: usize = 1;
 const MENU_TOGGLE: usize = 2;
@@ -336,6 +344,7 @@ enum YardAction {
 enum DragKind {
     Move,
     Resize,
+    Pan,
 }
 
 struct Drag {
@@ -345,25 +354,49 @@ struct Drag {
     size: (i32, i32),
     moved: bool,
     last_resize: Option<Instant>,
+    camera_origin: (f32, f32),
+}
+
+fn home_frame_interval((width, height): (i32, i32), moving: bool) -> u32 {
+    if !moving {
+        HOME_IDLE_FRAME_MS
+    } else if width.saturating_mul(height) >= LARGE_VIEW_AREA {
+        HOME_LARGE_FRAME_MS
+    } else {
+        HOME_MOVING_FRAME_MS
+    }
+}
+
+#[cfg(test)]
+#[test]
+fn village_frame_rate_tracks_motion_and_caps_large_windows() {
+    assert_eq!(home_frame_interval((724, 540), false), 100);
+    assert_eq!(home_frame_interval((724, 540), true), 15);
+    assert_eq!(home_frame_interval((1920, 1080), true), 32);
+    assert_eq!(home_frame_interval((1920, 1080), false), 100);
 }
 
 struct App {
+    home: Option<home_host::HomeHost>,
     renderer: Renderer,
     scene: world::Scene,
     tray: Tray,
     settings: Settings,
     position: POINT,
     timer_ms: u32,
+    last_home_frame: Instant,
     drag: Option<Drag>,
     user_hidden: bool,
     preview: bool,
     foreground: HWND,
+    metrics: Option<native_metrics::NativeMetrics>,
 }
 
 thread_local! { static APP: RefCell<Option<App>> = const { RefCell::new(None) }; }
 
 impl App {
     fn unlock_visible_plots(&mut self) {
+        if self.home.is_some() { return; }
         let (width, height) = self.renderer.logical_size();
         let visible = ecology::visible_sites(width as usize, height as usize);
         let age = self
@@ -380,7 +413,8 @@ impl App {
         }
     }
 
-    fn save_settings(&self) {
+    fn save_settings(&mut self) {
+        if let Some(home) = &mut self.home { home.last_error=home.save_with_size(self.renderer.size()).err().map(|e|e.to_string()); return; }
         if !self.preview {
             self.settings.save();
         }
@@ -424,6 +458,36 @@ impl App {
     }
 
     fn render(&mut self, hwnd: HWND) -> io::Result<u32> {
+        if let Some(home) = &mut self.home {
+            let size = self.renderer.size();
+            let damage = home.render_physical(size).map(|r| renderer::Damage {
+                left: r[0],
+                top: r[1],
+                right: r[2],
+                bottom: r[3],
+            });
+            let origin = home.pixel_origin();
+            let moving = home.visible_motion();
+            self.renderer.draw_premium(
+                hwnd,
+                self.position,
+                home.view.pixels(),
+                damage,
+                origin.map(|o| o.phase),
+            )?;
+            if let Some(metrics) = &mut self.metrics {
+                metrics.record_world_frame(home.world.world_ms());
+                if let Some(origin) = origin {
+                    metrics.record_camera_frame(origin.physical(), moving);
+                }
+            }
+            self.last_home_frame = Instant::now();
+            return Ok(if home.offline_backlog() {
+                BACKLOG_WAKE_MS
+            } else {
+                home_frame_interval(size, moving)
+            });
+        }
         let now = world::unix_millis();
         let snapshot = self.snapshot(now / 1_000, self.settings.clock.time());
         let size = self.renderer.logical_size();
@@ -483,7 +547,11 @@ impl App {
             }
             Err(_) => 900,
         };
-        self.set_timer(hwnd, if self.drag.is_some() { 32 } else { interval });
+        let drag_interval = self.drag.as_ref().map_or(interval, |drag| match drag.kind {
+            DragKind::Pan => home_frame_interval(self.renderer.size(), true),
+            DragKind::Move | DragKind::Resize => 32,
+        });
+        self.set_timer(hwnd, drag_interval);
     }
 
     fn place_home(&mut self, hwnd: HWND, needs_show: bool) {
@@ -527,14 +595,26 @@ impl App {
     }
 
     fn tick(&mut self, hwnd: HWND) {
+        if let Some(home) = &mut self.home { home.tick(world::unix_millis()); }
         if self.drag.is_some() {
             if unsafe { GetAsyncKeyState(VK_LBUTTON as i32) } >= 0 {
                 self.end_drag(hwnd);
             } else if !self.apply_pointer(hwnd, false) {
                 self.refresh(hwnd);
             }
+        } else if self.home.as_ref().is_some_and(home_host::HomeHost::offline_backlog)
+            && self.last_home_frame.elapsed() < Duration::from_millis(u64::from(HOME_IDLE_FRAME_MS))
+        {
+            self.set_timer(hwnd, BACKLOG_WAKE_MS);
         } else {
             self.refresh(hwnd);
+        }
+        if let Some(metrics)=&mut self.metrics {
+            match metrics.update(self.renderer.size()) {
+                Ok(true)=>{unsafe{PostMessageW(hwnd,WM_CLOSE,0,0);}},
+                Ok(false)=>{},
+                Err(error)=>{eprintln!("measurement failed: {error}");self.metrics=None;}
+            }
         }
     }
 
@@ -603,7 +683,7 @@ impl App {
     fn start_drag(&mut self, hwnd: HWND) {
         if let Some(pointer) = cursor() {
             self.drag = Some(Drag {
-                kind: if self.in_resize_corner(pointer) {
+                kind: if self.home.is_some() && unsafe { GetAsyncKeyState(VK_SHIFT as i32) } < 0 { DragKind::Pan } else if self.in_resize_corner(pointer) {
                     DragKind::Resize
                 } else {
                     DragKind::Move
@@ -613,6 +693,10 @@ impl App {
                 size: self.renderer.size(),
                 moved: false,
                 last_resize: None,
+                camera_origin: self
+                    .home
+                    .as_ref()
+                    .map_or((0.0, 0.0), |home| home.camera_origin(cat_home::viewport::logical_size(self.renderer.size()))),
             });
             unsafe { SetCapture(hwnd) };
             self.set_timer(hwnd, 32);
@@ -625,6 +709,7 @@ impl App {
             return false;
         }
         (self.settings.width, self.settings.height) = self.renderer.size();
+        if let Some(home)=&mut self.home {home.size=self.renderer.size();}
         self.position = clamp_position(self.position, self.renderer.size());
         true
     }
@@ -645,6 +730,17 @@ impl App {
             return false;
         }
         match drag.kind {
+            DragKind::Pan => {
+                if let Some(home)=&mut self.home {
+                    home.pan_camera(
+                        drag.camera_origin.0 - dx as f32 / cat_home::viewport::WORLD_PIXEL as f32,
+                        drag.camera_origin.1 - dy as f32 / cat_home::viewport::WORLD_PIXEL as f32,
+                        cat_home::viewport::logical_size(self.renderer.size()),
+                    );
+                    self.refresh(hwnd);
+                    return true;
+                }
+            }
             DragKind::Move => {
                 let position = clamp_position(
                     POINT {
@@ -702,10 +798,14 @@ impl App {
         if let Some(drag) = self.drag.take() {
             unsafe { ReleaseCapture() };
             if drag.moved {
-                self.save_position();
-                if matches!(drag.kind, DragKind::Resize) {
-                    self.unlock_visible_plots();
-                    self.save_settings();
+                match drag.kind {
+                    DragKind::Pan => self.save_settings(),
+                    DragKind::Move => self.save_position(),
+                    DragKind::Resize => {
+                        self.save_position();
+                        self.unlock_visible_plots();
+                        self.save_settings();
+                    }
                 }
                 self.refresh(hwnd);
             } else if matches!(drag.kind, DragKind::Move) {
@@ -866,7 +966,7 @@ impl Tray {
         data.uFlags = NIF_MESSAGE | NIF_ICON | NIF_TIP;
         data.uCallbackMessage = TRAY_MESSAGE;
         // LoadIconW returns a shared icon, which the app must not destroy.
-        data.hIcon = unsafe { LoadIconW(ptr::null_mut(), IDI_APPLICATION) };
+        data.hIcon = unsafe { LoadIconW(GetModuleHandleW(ptr::null()), 1usize as *const u16) };
         for (output, unit) in data.szTip.iter_mut().zip("猫咪小屋".encode_utf16()) {
             *output = unit;
         }
@@ -982,6 +1082,9 @@ fn pick_menu(hwnd: HWND, menu: HMENU, point: POINT) -> usize {
 }
 
 fn tray_menu(hwnd: HWND) {
+    let mut living=false;
+    with_app(|app|living=app.home.is_some());
+    if living { living_menu::show_tray(hwnd);return; }
     let Some(point) = cursor() else {
         return;
     };
@@ -1066,6 +1169,9 @@ fn show_notebook(hwnd: HWND) {
 }
 
 fn show_menu(hwnd: HWND) {
+    let mut current=false;
+    with_app(|app|current=app.home.is_some());
+    if current { living_menu::show(hwnd); return; }
     let Some(point) = cursor() else {
         return;
     };
@@ -1419,8 +1525,16 @@ fn run() -> io::Result<()> {
     let mut requested_size = None;
     let mut preview = false;
     let mut window_class = CLASS;
+    let mut legacy = false;
+    let mut recover_v3 = false;
+    let mut quit = false;
+    let mut measure_seconds = None;
     while let Some(arg) = args.next() {
         match arg.as_str() {
+            "--quit" => quit = true,
+            "--measure-seconds" => measure_seconds=args.next().and_then(|s|s.parse::<u64>().ok()),
+            "--legacy" => legacy = true,
+            "--recover-v3" => recover_v3 = true,
             "--position" => position = args.next().as_deref().and_then(position_arg),
             "--size" => requested_size = args.next().as_deref().and_then(size_arg),
             "--preview" => preview = true,
@@ -1444,6 +1558,10 @@ fn run() -> io::Result<()> {
     unsafe {
         SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
         let previous = FindWindowW(window_class, ptr::null());
+        if quit {
+            if !previous.is_null() { PostMessageW(previous, WM_CLOSE, 0, 0); }
+            return Ok(());
+        }
         if !previous.is_null() {
             PostMessageW(previous, RESTORE_MESSAGE, 0, 0);
             return Ok(());
@@ -1457,11 +1575,18 @@ fn run() -> io::Result<()> {
         class.lpszClassName = window_class;
         class.lpfnWndProc = Some(window_proc);
         class.hCursor = LoadCursorW(ptr::null_mut(), IDC_ARROW);
+        class.hIcon = LoadIconW(instance, 1usize as *const u16);
         if RegisterClassW(&class) == 0 {
             return Err(io::Error::last_os_error());
         }
 
         let mut settings = Settings::load(world::unix_millis() / 1_000, world::local_seconds());
+        let mut home = if legacy {None} else {
+            let root=std::env::current_exe()?.with_file_name("home-data-v2");
+            Some(if recover_v3 {home_host::HomeHost::open_compat(root,world::unix_millis(),preview)?}
+                else {home_host::HomeHost::open(root,world::unix_millis(),preview)?})
+        };
+        if let Some(home)=&home { (settings.width,settings.height)=dimensions(home.size.0,home.size.1); }
         if let Some((width, height)) = requested_size {
             (settings.width, settings.height) = dimensions(width, height);
         }
@@ -1473,11 +1598,12 @@ fn run() -> io::Result<()> {
         let renderer = Renderer::new(width, height)?;
         let (width, height) = renderer.size();
         (settings.width, settings.height) = (width, height);
+        if let Some(home)=&mut home {home.size=(width,height);}
         let position = clamp_position(requested_position, (width, height));
         let hwnd = CreateWindowExW(
-            WS_EX_LAYERED | WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE,
+            WS_EX_LAYERED | if preview { WS_EX_APPWINDOW } else { WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE },
             window_class,
-            TITLE,
+            if preview { w!("猫咪小屋 · 验收预览") } else { TITLE },
             WS_POPUP,
             position.x,
             position.y,
@@ -1492,16 +1618,19 @@ fn run() -> io::Result<()> {
             return Err(io::Error::last_os_error());
         }
         let mut app = App {
+            home,
             renderer,
             scene: world::Scene::new(),
             tray: Tray::add(hwnd),
             settings,
             position,
             timer_ms: 0,
+            last_home_frame: Instant::now(),
             drag: None,
             user_hidden: false,
             preview,
             foreground: ptr::null_mut(),
+            metrics: measure_seconds.map(native_metrics::NativeMetrics::new).transpose()?,
         };
         app.unlock_visible_plots();
         app.save_settings();
@@ -1532,11 +1661,13 @@ fn run() -> io::Result<()> {
         if !foreground_hook.is_null() {
             UnhookWinEvent(foreground_hook);
         }
-        APP.with(|cell| {
+        APP.with(|cell| -> io::Result<()> {
             if let Some(app) = cell.borrow_mut().take() {
-                app.save_settings();
+                if let Some(home)=&app.home { home.save_with_size(app.renderer.size())?; }
+                else if !app.preview { app.settings.save(); }
             }
-        });
+            Ok(())
+        })?;
         result
     }
 }
@@ -1544,6 +1675,8 @@ fn run() -> io::Result<()> {
 fn main() {
     if let Err(error) = run() {
         eprintln!("{error}");
+        let message:Vec<u16>=format!("猫咪小屋未能启动或保存。原有存档已保留。\n\n{error}").encode_utf16().chain(Some(0)).collect();
+        unsafe {MessageBoxW(ptr::null_mut(),message.as_ptr(),TITLE,MB_OK|MB_ICONWARNING);}
         std::process::exit(1);
     }
 }

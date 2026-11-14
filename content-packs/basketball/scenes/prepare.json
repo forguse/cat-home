@@ -1,0 +1,22 @@
+{
+  "start": "prepare",
+  "steps": [
+    {
+      "id": "prepare",
+      "op": "prepare_facility",
+      "actor": "initiator",
+      "facility": "org.cat-home.community.basketball:court",
+      "duration_world_ms": 600000,
+      "next": "order_ball"
+    },
+    {
+      "id": "order_ball",
+      "op": "order_item",
+      "actor": "initiator",
+      "prop": "org.cat-home.community.basketball:ball",
+      "duration_world_ms": 300000,
+      "next": "done"
+    },
+    {"id": "done", "op": "end"}
+  ]
+}

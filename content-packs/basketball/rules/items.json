@@ -1,0 +1,16 @@
+{
+  "items": [
+    {
+      "id": "ball",
+      "title": "篮球",
+      "frame": "ball_0",
+      "source": {
+        "kind": "market_order",
+        "materials": [
+          {"item": "core:grain", "quantity": 6},
+          {"item": "core:wood", "quantity": 2}
+        ]
+      }
+    }
+  ]
+}

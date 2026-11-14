@@ -1,0 +1,22 @@
+{
+  "facilities": [
+    {
+      "id": "court",
+      "title": "篮球半场",
+      "frame": "court",
+      "width": 12,
+      "height": 8,
+      "target_offset": [40, -17],
+      "target_radius": 5,
+      "decorations": [
+        {"frame": "hoop", "offset": [48, 12], "depth_bias": 0},
+        {"frame": "rim_front", "offset": [40, -17], "depth_bias": 29}
+      ],
+      "materials": [
+        {"item": "core:wood", "quantity": 6},
+        {"item": "core:stone", "quantity": 2},
+        {"item": "core:rope", "quantity": 1}
+      ]
+    }
+  ]
+}

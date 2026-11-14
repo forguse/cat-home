@@ -1,0 +1,89 @@
+{
+  "schema_version": 1,
+  "id": "org.cat-home.community.basketball",
+  "version": "0.1.0",
+  "title": "庭院篮球",
+  "author": "Cat Home contributors",
+  "license": "MIT",
+  "license_file": "LICENSE.txt",
+  "description": "小禾和阿榆在干燥的午后相约打球。两人会准备球和练习场、交替投篮，再收球休息。",
+  "core_api": ">=1.0.0 <2.0.0",
+  "state_schema": 1,
+  "dependencies": [],
+  "requires_capabilities": [
+    "facility.prepare.v1",
+    "market.order.v1",
+    "scene.reserve_slots.v1",
+    "scene.invite.v1",
+    "actor.move_to_slot.v1",
+    "prop.acquire_return.v1",
+    "actor.animate.v1",
+    "prop.arc_throw.v1",
+    "prop.catch_or_ground.v1",
+    "scene.rotate_roles.v1",
+    "needs.activity_cost.v1"
+  ],
+  "budget": {
+    "autonomous_roots": 2,
+    "new_item_kinds": 1,
+    "new_facility_types": 1,
+    "active_instances": 1,
+    "active_flying_props": 1,
+    "state_bytes": 4096,
+    "compiled_bytes": 65536,
+    "package_bytes": 524288
+  },
+  "assets": "assets/index.json",
+  "items": "rules/items.json",
+  "facilities": "rules/facilities.json",
+  "activities": [
+    {
+      "id": "prepare_court",
+      "subscribe": ["wish.changed", "stock.changed", "facility.changed", "project.completed", "schedule.leisure_window"],
+      "participants": {"count": 1, "kind": "human", "requires_acceptance": false},
+      "when": {
+        "all": [
+          {"fact": "world.hour", "in_range": [15, 18]},
+          {"fact": "weather.surface_dry", "eq": true},
+          {"fact": "participants.all_available", "eq": true},
+          {"fact": "participants.urgent_needs", "eq": false},
+          {"fact": "household.essential_work_due", "eq": false},
+          {"any": [
+            {"fact": "facility.usable", "ref": "org.cat-home.community.basketball:court", "eq": false},
+            {"fact": "item.obtainable", "ref": "org.cat-home.community.basketball:ball", "eq": false}
+          ]}
+        ]
+      },
+      "chance": {"numerator": 1, "denominator": 1, "window": "world_day_afternoon", "draw_at_first_eligible_opportunity_only": true},
+      "cooldown_world_ms": 0,
+      "scene": "scenes/prepare.json",
+      "max_rounds": 1,
+      "max_duration_world_ms": 2700000,
+      "priority_band": "preparation",
+      "allow_user_suggestion": true
+    },
+    {
+      "id": "friendly_game",
+      "subscribe": ["actor.available", "schedule.leisure_window", "weather.changed", "facility.changed", "cooldown.expired"],
+      "participants": {"count": 2, "kind": "human", "requires_acceptance": true},
+      "when": {
+        "all": [
+          {"fact": "world.hour", "in_range": [15, 18]},
+          {"fact": "weather.surface_dry", "eq": true},
+          {"fact": "participants.all_available", "eq": true},
+          {"fact": "participants.urgent_needs", "eq": false},
+          {"fact": "household.essential_work_due", "eq": false},
+          {"fact": "facility.usable", "ref": "org.cat-home.community.basketball:court", "eq": true},
+          {"fact": "item.obtainable", "ref": "org.cat-home.community.basketball:ball", "eq": true}
+        ]
+      },
+      "chance": {"numerator": 1, "denominator": 5, "window": "world_day_afternoon", "draw_at_first_eligible_opportunity_only": true},
+      "cooldown_world_ms": 172800000,
+      "scene": "scenes/friendly_game.json",
+      "max_rounds": 3,
+      "max_duration_world_ms": 2700000,
+      "priority_band": "leisure",
+      "allow_user_suggestion": true
+    }
+  ]
+}

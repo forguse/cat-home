@@ -1,5 +1,11 @@
 /target/
-__pycache__/
+/__pycache__/
+**/__pycache__/
 *.exe
+*.pending
+*.log
+/home-data-v2/
+/world-v*.json
 cat-home-position.txt
 cat-home-settings.txt
+/one-year-smoke/
