@@ -2,6 +2,7 @@
 
 use serde::{Deserialize, Serialize};
 
+use super::super::land_reuse::RECLAIMED_HOME_ORIGIN;
 use super::{DAY, Material};
 
 const LEGACY_LOTS: [[u8; 2]; 3] = [[16, 5], [38, 6], [4, 6]];
@@ -141,6 +142,13 @@ pub(crate) struct Order {
     /// Older saves and in-flight tasks stored a lot slot without its coordinates.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     origin: Option<[u8; 2]>,
+    /// Commission the reclaimed building as agricultural storage.
+    #[serde(default, skip_serializing_if = "is_false")]
+    farm_store: bool,
+}
+
+fn is_false(value: &bool) -> bool {
+    !value
 }
 
 impl Order {
@@ -150,6 +158,7 @@ impl Order {
             lot,
             phase: HousingPhase::Clear,
             origin: Some(LOTS[usize::from(lot)]),
+            farm_store: false,
         }
     }
 
@@ -176,7 +185,8 @@ impl Order {
 
     pub(crate) fn valid(self) -> bool {
         let lot = usize::from(self.lot);
-        lot < LOTS.len()
+        !self.farm_store
+            && lot < LOTS.len()
             && self
                 .origin
                 .is_none_or(|origin| origin == LOTS[lot] || origin == LEGACY_LOTS[lot])
@@ -187,9 +197,21 @@ impl Order {
             return self.valid();
         }
         usize::from(self.lot) < LOTS.len()
-            && self
-                .origin
-                .is_some_and(|origin| COMPATIBLE_HOME_ORIGINS.contains(&origin))
+            && self.origin.is_some_and(|origin| {
+                if origin == RECLAIMED_HOME_ORIGIN {
+                    self.plan == HousePlan::Single
+                } else {
+                    !self.farm_store && COMPATIBLE_HOME_ORIGINS.contains(&origin)
+                }
+            })
+    }
+
+    pub(crate) fn is_reclaimed(self) -> bool {
+        self.origin == Some(RECLAIMED_HOME_ORIGIN)
+    }
+
+    pub(crate) fn is_farm_store(self) -> bool {
+        self.farm_store
     }
 
     pub(crate) fn with_village_origin(mut self, origin: [u8; 2]) -> Self {
@@ -273,30 +295,61 @@ impl HousingState {
     ) -> impl Iterator<Item = Order> + '_ {
         let day = now / DAY;
         let shared = self.homes[0].is_some();
+        let both_housed = self.homes.iter().all(Option::is_some);
         let allowed = self.active.is_none()
-            && if shared {
+            && if both_housed {
+                village
+            } else if shared {
                 self.homes[1].is_none()
                     && day >= 230
                     && now.saturating_sub(self.last_complete) >= 50 * DAY
             } else {
                 day >= 100
             };
-        let plan = if shared {
+        let plan = if shared && !both_housed {
             HousePlan::Shared
         } else {
             HousePlan::Single
         };
-        LOTS.iter().enumerate().filter_map(move |(lot, _)| {
+        let reclaimed_used = self.orders().any(Order::is_reclaimed);
+        LOTS.iter().enumerate().flat_map(move |(lot, _)| {
             if !allowed || self.houses[lot].is_some() {
-                return None;
+                return [None, None].into_iter().flatten();
             }
             let order = Order::new(plan, lot as u8);
             if !village {
-                return Some(order);
+                return [Some(order), None].into_iter().flatten();
             }
+            let reclaimed = (!reclaimed_used && plan == HousePlan::Single).then(|| Order {
+                origin: Some(RECLAIMED_HOME_ORIGIN),
+                farm_store: both_housed,
+                ..order
+            });
             let origin = COMPATIBLE_HOME_ORIGINS[if plan == HousePlan::Shared { 0 } else { 2 }];
-            (!self.orders().any(|house| house.lot_origin() == origin))
-                .then(|| order.with_village_origin(origin))
+            let usual = (!both_housed && !self.orders().any(|house| house.lot_origin() == origin))
+                .then(|| order.with_village_origin(origin));
+            [reclaimed, usual].into_iter().flatten()
+        })
+    }
+
+    pub(crate) fn reclaimed_project_candidate(&self, now: u64) -> Option<Order> {
+        self.proposals_for(now, true)
+            .find(|order| order.is_reclaimed())
+    }
+
+    /// An empty reclaimed dwelling can serve the farm after the household
+    /// moves to its completed shared home.
+    pub(crate) fn farm_store_door(&self) -> Option<[u8; 2]> {
+        if self.homes.iter().any(Option::is_none) {
+            return None;
+        }
+        self.houses.iter().flatten().find_map(|house| {
+            let order = house.order;
+            (order.is_reclaimed()
+                && order.phase == HousingPhase::MoveIn
+                && self.active != Some(order.lot)
+                && house.moved_in == 0)
+                .then(|| order.door())
         })
     }
 
@@ -312,11 +365,16 @@ impl HousingState {
                     && self.proposals_for(now, village).any(|proposal| {
                         proposal.plan == order.plan
                             && proposal.lot == order.lot
+                            && proposal.farm_store == order.farm_store
                             && (proposal.origin == order.origin || order.origin.is_none())
                     })))
     }
 
     pub(crate) fn target_occupant(&self, order: Order) -> Option<usize> {
+        if order.is_farm_store() {
+            // Ayu completes commissioning without taking up residence.
+            return (self.active == Some(order.lot)).then_some(1);
+        }
         let expected = if order.plan == HousePlan::Single {
             0b01
         } else {
@@ -367,9 +425,7 @@ impl HousingState {
     }
 
     pub(crate) fn commit(&mut self, order: Order, person: usize, now: u64) {
-        let village = order
-            .origin
-            .is_some_and(|origin| COMPATIBLE_HOME_ORIGINS.contains(&origin));
+        let village = order.valid_for(true) && !order.valid();
         debug_assert!(self.accepts_for(order, now, village));
         let index = usize::from(order.lot);
         if order.phase == HousingPhase::Clear {
@@ -386,6 +442,10 @@ impl HousingState {
             let house = self.houses[index].as_mut().expect("current project");
             house.order.phase = phase;
             house.next_phase = now.saturating_add(order.phase.pause_days(order.plan) * DAY);
+        } else if order.is_farm_store() {
+            debug_assert_eq!(self.target_occupant(order), Some(person));
+            self.active = None;
+            self.last_complete = now;
         } else {
             debug_assert_eq!(self.target_occupant(order), Some(person));
             let house = self.houses[index].as_mut().expect("current project");
@@ -423,13 +483,14 @@ impl HousingState {
             return false;
         }
         if village {
-            let mut origins = [false; COMPATIBLE_HOME_ORIGINS.len()];
+            let mut origins = [false; COMPATIBLE_HOME_ORIGINS.len() + 1];
             for house in self.houses.iter().flatten() {
                 let Some(origin) = house.order.origin else {
                     return false;
                 };
                 let Some(parcel) = COMPATIBLE_HOME_ORIGINS
                     .iter()
+                    .chain(std::iter::once(&RECLAIMED_HOME_ORIGIN))
                     .position(|&candidate| candidate == origin)
                 else {
                     return false;
@@ -438,6 +499,11 @@ impl HousingState {
                     return false;
                 }
                 origins[parcel] = true;
+                if house.order.is_farm_store()
+                    && (house.moved_in != 0 || self.homes.iter().any(Option::is_none))
+                {
+                    return false;
+                }
             }
         }
         self.houses.iter().enumerate().all(|(index, house)| {
@@ -494,5 +560,89 @@ impl HousingState {
             }
         }
         Ok(origins)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn complete(housing: &mut HousingState, order: Order, mut clock: u64) -> u64 {
+        assert!(housing.accepts_for(order, clock, true));
+        housing.commit(order, 1, clock);
+        while housing.active_order().is_some() {
+            clock += 4 * DAY;
+            let next = housing.next_order(clock).unwrap();
+            let worker = if next.phase == HousingPhase::MoveIn {
+                housing.target_occupant(next).unwrap()
+            } else {
+                1
+            };
+            housing.commit(next, worker, clock);
+            assert!(housing.validate_for(clock, true));
+        }
+        clock
+    }
+
+    #[test]
+    fn existing_shared_residence_gets_one_store_without_changing_either_home() {
+        let mut housing = HousingState::default();
+        let initial = housing.reclaimed_project_candidate(100 * DAY).unwrap();
+        assert!(!initial.is_farm_store());
+        let original_single = housing
+            .proposals_for(100 * DAY, true)
+            .find(|order| !order.is_reclaimed())
+            .unwrap();
+        complete(&mut housing, original_single, 100 * DAY);
+        let shared = housing.proposals_for(230 * DAY, true).next().unwrap();
+        assert_eq!(shared.plan, HousePlan::Shared);
+        let complete_shared = complete(&mut housing, shared, 230 * DAY);
+        let homes = [housing.order_for_person(0), housing.order_for_person(1)];
+        assert_eq!(homes[0], homes[1]);
+        assert!(housing.farm_store_door().is_none());
+
+        let now = complete_shared;
+        let store = housing.reclaimed_project_candidate(now).unwrap();
+        assert!(store.is_farm_store());
+        assert_eq!(store.door(), [27, 37]);
+        let complete_store = complete(&mut housing, store, now);
+        assert_eq!(housing.farm_store_door(), Some(store.door()));
+        assert_eq!(
+            [housing.order_for_person(0), housing.order_for_person(1)],
+            homes
+        );
+        assert!(
+            housing
+                .reclaimed_project_candidate(complete_store + 100 * DAY)
+                .is_none()
+        );
+        let snapshot = serde_json::to_vec(&housing).unwrap();
+        let reloaded: HousingState = serde_json::from_slice(&snapshot).unwrap();
+        assert!(reloaded.validate_for(complete_store, true));
+        assert_eq!(reloaded, housing);
+    }
+
+    #[test]
+    fn reclaimed_first_home_is_used_by_xiaohe_then_reused_by_the_farm() {
+        let mut housing = HousingState::default();
+        let initial = housing.reclaimed_project_candidate(100 * DAY).unwrap();
+        assert_eq!(initial.lot_origin(), RECLAIMED_HOME_ORIGIN);
+        assert!(
+            !serde_json::to_string(&initial)
+                .unwrap()
+                .contains("farm_store")
+        );
+        complete(&mut housing, initial, 100 * DAY);
+        assert_eq!(housing.order_for_person(0).unwrap().door(), initial.door());
+        assert_eq!(housing.order_for_person(1), None);
+        assert!(housing.farm_store_door().is_none());
+        let shared = housing.proposals_for(230 * DAY, true).next().unwrap();
+        let now = complete(&mut housing, shared, 230 * DAY);
+        assert_eq!(housing.farm_store_door(), Some(initial.door()));
+        assert!(
+            housing
+                .reclaimed_project_candidate(now + 100 * DAY)
+                .is_none()
+        );
     }
 }

@@ -2103,7 +2103,8 @@ impl VillageLife {
     }
 
     pub fn apply_supply_requests(&self, world: &mut LivingWorld) {
-        world.set_market_crop_reserve(self.social.crop_reserve_for_market(world));
+        let (target, autumn) = self.social.market_crop_request(world);
+        world.set_market_crop_reserve(target, autumn);
         world.set_neighbour_food_reserve(self.social.neighbour_food_needed());
     }
 
@@ -2125,11 +2126,13 @@ impl VillageLife {
 
     /// Validate every physical commitment before dropping any planned tail.
     /// The next edge and its existing clock survive a map phase change.
-    pub fn prepare_dense_map_activation(&mut self, dense: PhaseMask, holdouts: &[TilePos]) -> bool {
-        let open = |tile| LivingWorld::map_density_tile(tile, dense, holdouts).is_some_and(|info| !info.blocked);
+    pub fn prepare_dense_map_activation(&mut self, world: &LivingWorld, dense: PhaseMask, holdouts: &[TilePos]) -> bool {
+        let open = |tile| world.map_density_tile(tile, dense, holdouts).is_some_and(|info| !info.blocked);
         let Some(density) = WILLOW_VILLAGE.phase("map_dense_r3") else { return false; };
         let before = dense.without(density);
-        let protected = |tile| holdouts.binary_search(&tile).is_ok() || keeps_existing_terrain(tile, before, dense);
+        let protected = |tile| world.map_density_tile(tile, before, holdouts)
+            .zip(world.map_density_tile(tile, dense, holdouts))
+            .is_some_and(|(old, new)| old.terrain == new.terrain && (old.blocked || !new.blocked));
         let walkers = self.people.iter().map(|r| &r.walk)
             .chain(self.guests.iter().flatten().map(|g| &g.walk));
         if !walkers.filter(|walk| !walk.hidden()).all(|walk| {
@@ -3007,7 +3010,7 @@ impl VillageLife {
             return;
         }
         let active_session = self.social.market_active(now / DAY_MS);
-        let reserve = self.social.crop_reserve_for_market(world);
+        let (reserve, _) = self.social.market_crop_request(world);
         let proposals = [MOBILE + 1, MOBILE + 2, MOBILE + 3, 1, 2, 3, 4, 0, 5, MOBILE];
         let needed = world.next_construction_material_shortfall();
         let trial_market = self.social.fixed_market_needs_sale(world)
@@ -5996,7 +5999,11 @@ mod tests {
         life.apply_supply_requests(&mut world);
         // At the slower walking pace Q35 first finished near world day 980.
         // The old 1,000-day cutoff left little time for its dependent visits.
-        let end = world.world_ms() + 2_000 * DAY_MS;
+        let replay_days = std::env::var("CAT_HOME_SOCIAL_REPLAY_DAYS")
+            .map(|value| value.parse::<u64>().expect("whole days"))
+            .unwrap_or(2_000);
+        assert!(matches!(replay_days, 2_000 | 3_000));
+        let end = world.world_ms() + replay_days * DAY_MS;
         let mut reported = 0;
         let mut reserve = [0_u64; 5];
         let mut max_crops_with_food = 0;
@@ -6007,12 +6014,144 @@ mod tests {
         let mut q47_max_crop = 0;
         let mut q47_last_stage = None;
         let mut q47_stages = Vec::new();
+        // Observe the two seed trials at the actual scheduler samples.
+        // Each row records independent gates, their intersection, and
+        // whether a real appointment/merchant/trip followed.
+        #[derive(Debug, Default)]
+        struct SeedTrialProbe {
+            ready_from: Option<u64>,
+            launch_samples: u64,
+            dry_launch: u64,
+            maximum_crops: u16,
+            maximum_dry_launch_crops: u16,
+            crop_ready: u64,
+            seed_ready: u64,
+            launch_crops: u64,
+            launch_seeds: u64,
+            full_launch: u64,
+            session_active: u64,
+            mobile_staffed: u64,
+            inventory_qualified: u64,
+            free_visit_slot: u64,
+            accepted_mobile: u64,
+            first: Vec<(u64, u16, u16, u16, bool, bool, Option<TripStage>)>,
+        }
+        let mut seed_trials = [SeedTrialProbe::default(), SeedTrialProbe::default()];
         let mut q65_nights = [0_u16; 4];
         let mut q65_last_day = None;
         let mut q65_food_floor = u16::MAX;
         let mut q65_food_ceiling = 0;
+        #[derive(Debug, Default)]
+        struct AutumnProbe {
+            first: u64,
+            last: u64,
+            crops_max: u16,
+            food_max: u16,
+            crops_ready: u64,
+            crops_ready_market_hours: u64,
+            ready_seller: u64,
+            accepted_crop_trade: u64,
+            meal_stock_ready: u64,
+        }
+        let mut autumns = std::collections::BTreeMap::<u64, AutumnProbe>::new();
+        let mut completion = [None; 4];
         run_until(&mut world, &mut life, end, |world, life| {
             let day = world.world_ms() / DAY_MS;
+            for (slot, id) in completion.iter_mut().zip(["Q53", "Q65", "Q67", "Q69"]) {
+                if slot.is_none() && life.village_chapter_completed(id) {
+                    *slot = Some(day);
+                }
+            }
+            if day >= 336 && world.season() == crate::living_world::YardSeason::Autumn
+                && life.village_chapter_completed("Q53")
+                && !life.village_chapter_completed("Q67")
+                && world.town_allows(TownEra::for_chapter(67))
+            {
+                let entry = autumns.entry(day / 112).or_insert_with(|| AutumnProbe {
+                    first: day, ..AutumnProbe::default()
+                });
+                debug_assert!(entry.first <= day);
+                entry.last = day;
+                let now = world.world_ms();
+                let crops = world.stock().count(Item::Crops);
+                let food = world.stock().count(Item::Food);
+                let merchant_food = life.people[shop(MEAL_SHOP).merchant].count(Item::Food);
+                let open = (450..960).contains(&world.minute_of_day())
+                    && !matches!(world.weather(), YardWeather::Rain | YardWeather::Snow);
+                entry.crops_max = entry.crops_max.max(crops);
+                entry.food_max = entry.food_max.max(food);
+                entry.crops_ready += u64::from(crops >= 8);
+                entry.crops_ready_market_hours += u64::from(crops >= 8 && open);
+                entry.meal_stock_ready += u64::from(food >= 7 && merchant_food > 0);
+                if crops >= 8 && open {
+                    entry.ready_seller += u64::from([1usize, 2].into_iter().any(|index| {
+                        let merchant = &life.people[merchant_at(index, now)];
+                        merchant.walk.at == booth_slot(index)
+                            && merchant.walk.state == State::AtWork
+                            && merchant.ready_to_exchange(index, false)
+                    }));
+                }
+                entry.accepted_crop_trade += u64::from(life.trip.is_some_and(|trip| {
+                    trip.accepted && usize::from(trip.shop) < MOBILE && trip.outgoing.item == Item::Crops
+                }));
+            }
+            let trial = if life.village_chapter_completed("Q47")
+                && !life.village_chapter_completed("Q48")
+            {
+                Some(0)
+            } else if ["Q49", "Q50", "Q51"]
+                .into_iter()
+                .all(|q| life.village_chapter_completed(q))
+                && !life.village_chapter_completed("Q52")
+            {
+                Some(1)
+            } else {
+                None
+            };
+            if let Some(i) = trial {
+                let entry = &mut seed_trials[i];
+                entry.ready_from.get_or_insert(day);
+                let minute = world.minute_of_day();
+                let launch = life.social.should_stage_seed_merchant(world, day)
+                    && (515..650).contains(&minute);
+                let dry = !matches!(world.weather(), YardWeather::Rain | YardWeather::Snow);
+                let merchant = &life.people[shop(MOBILE).merchant];
+                let crops = world.stock().count(Item::Crops);
+                let seeds = merchant.count(Item::Seeds);
+                let crop_ready = crops >= 8;
+                let seed_ready = seeds >= shop(MOBILE).goods.quantity;
+                let session = life.social.market_active(day);
+                let staffed = merchant.walk.at == booth_slot(MOBILE)
+                    && merchant.walk.state == State::AtWork;
+                let trip = life.trip.filter(|trip| usize::from(trip.shop) == MOBILE);
+                entry.launch_samples += u64::from(launch);
+                entry.dry_launch += u64::from(launch && dry);
+                entry.maximum_crops = entry.maximum_crops.max(crops);
+                if launch && dry {
+                    entry.maximum_dry_launch_crops = entry.maximum_dry_launch_crops.max(crops);
+                }
+                entry.crop_ready += u64::from(crop_ready);
+                entry.seed_ready += u64::from(seed_ready);
+                entry.launch_crops += u64::from(launch && dry && crop_ready);
+                entry.launch_seeds += u64::from(launch && dry && seed_ready);
+                entry.full_launch += u64::from(launch && dry && crop_ready && seed_ready);
+                entry.session_active += u64::from(session);
+                entry.mobile_staffed += u64::from(session && staffed);
+                entry.inventory_qualified +=
+                    u64::from(session && staffed && merchant.ready_to_exchange(MOBILE, false));
+                entry.free_visit_slot += u64::from(
+                    session && life.trip.is_none() && life.present() < MAX_HUMAN_VISITORS,
+                );
+                entry.accepted_mobile += u64::from(trip.is_some_and(|trip| trip.accepted));
+                if entry.first.len() < 12 && (session || launch && dry && crop_ready) {
+                    let stage = trip.map(|trip| trip.stage);
+                    if entry.first.last().is_none_or(|last| {
+                        (last.0, last.4, last.5, last.6) != (day, session, staffed, stage)
+                    }) {
+                        entry.first.push((day, minute, crops, seeds, session, staffed, stage));
+                    }
+                }
+            }
             if life.village_chapter_completed("Q64")
                 && !life.village_chapter_completed("Q65")
                 && world.minute_of_day() >= 1435
@@ -6145,6 +6284,8 @@ mod tests {
         eprintln!(
             "Q47 first eligible days={q47_days:?}, reserve windows={q47_windows:?}, peak crops={q47_max_crop}, stages={q47_stages:?}"
         );
+        eprintln!("Q48 and Q52 opportunities: {seed_trials:?}");
+        eprintln!("Q53/Q65/Q67/Q69 completion days {completion:?}; Q67 autumn opportunities {autumns:?}");
         eprintln!(
             "Q65 nights [neither, stock only, dinners only, both]={q65_nights:?}; bedtime food range={q65_food_floor}–{q65_food_ceiling}"
         );

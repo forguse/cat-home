@@ -3,6 +3,7 @@
 //! This is the new-map foundation. The legacy world deliberately keeps its own
 //! validation until save migration is proven. Rendering reads this view; it
 //! cannot advance the clock or change occupancy.
+use crate::living_world::ClearedScenery;
 use crate::map_data::{MapDef, PhaseMask, TileInfo, TilePos};
 use std::sync::atomic::{AtomicU64, Ordering};
 
@@ -34,6 +35,7 @@ pub struct MapView<'a> {
     // One fixed 6 KiB overlay, never one bitmap for every resident/search.
     blocked: [u64; MAX_TILES.div_ceil(64)],
     density_holdouts: Vec<TilePos>,
+    cleared_scenery: ClearedScenery,
     revision: u64,
     instance_id: u64,
 }
@@ -54,6 +56,7 @@ impl<'a> MapView<'a> {
             phases,
             blocked: [0; MAX_TILES.div_ceil(64)],
             density_holdouts: Vec::new(),
+            cleared_scenery: ClearedScenery::default(),
             revision: 1,
             instance_id,
         }
@@ -90,7 +93,7 @@ impl<'a> MapView<'a> {
         } else {
             self.phases
         };
-        let mut info = self.map.tile(pos, phases)?;
+        let mut info = self.map.tile_with_clearance(pos, phases, self.cleared_scenery.clears_tile(pos))?;
         info.blocked |= self.blocked[index / 64] & (1u64 << (index % 64)) != 0;
         Some(info)
     }
@@ -99,6 +102,13 @@ impl<'a> MapView<'a> {
         if self.density_holdouts != tiles {
             self.density_holdouts.clear();
             self.density_holdouts.extend_from_slice(tiles);
+            self.bump_revision();
+        }
+    }
+
+    pub(crate) fn set_cleared_scenery(&mut self, cleared: &ClearedScenery) {
+        if &self.cleared_scenery != cleared {
+            self.cleared_scenery = cleared.clone();
             self.bump_revision();
         }
     }

@@ -372,7 +372,7 @@ impl State {
             || self.completed(49) && self.completed(50) && self.completed(51) && !self.completed(52)
     }
 
-    pub(super) fn crop_reserve_for_market(&self, world: &LivingWorld) -> Option<u16> {
+    pub(super) fn market_crop_request(&self, world: &LivingWorld) -> (Option<u16>, bool) {
         let day = world.world_ms() / DAY_MS;
         let first_plan = !self.completed(47)
             && day >= 112
@@ -380,14 +380,12 @@ impl State {
             && world.village_chapter_completed("Q46")
             && world.village_chapter_completed("Q16");
         let trial = day >= 224 && self.awaiting_seed_session();
-        ((first_plan || trial) && world.town_allows(TownEra::Market)
+        let autumn = self.awaiting_autumn_trade(world);
+        let target = ((first_plan || trial) && world.town_allows(TownEra::Market)
             || self.fixed_market_needs_sale(world)
-            || self.completed(53)
-                && !self.completed(67)
-                && world.town_allows(TownEra::for_chapter(67))
-                && world.season() == YardSeason::Autumn
-                && self.market.autumn_trade_year != Some(day / DAYS_PER_CYCLE))
-        .then_some(10)
+            || autumn)
+            .then_some(10);
+        (target, autumn)
     }
 
     pub(super) fn guide_target(&self, mask: PhaseMask, index: usize) -> Option<TilePos> {
@@ -414,13 +412,16 @@ impl State {
             && world.village_chapter_completed("Q56")
     }
 
-    pub(super) fn autumn_market_needs_sale(&self, world: &LivingWorld) -> bool {
+    fn awaiting_autumn_trade(&self, world: &LivingWorld) -> bool {
         self.completed(53)
             && !self.completed(67)
             && world.town_allows(TownEra::for_chapter(67))
             && self.market.autumn_trade_year != Some(world.world_ms() / (DAYS_PER_CYCLE * DAY_MS))
             && world.season() == YardSeason::Autumn
-            && world.stock().count(Item::Crops) >= 8
+    }
+
+    pub(super) fn autumn_market_needs_sale(&self, world: &LivingWorld) -> bool {
+        self.awaiting_autumn_trade(world) && world.stock().count(Item::Crops) >= 8
     }
 
     pub(super) fn autumn_cook_preparing(&self, world: &LivingWorld, id: usize) -> bool {
@@ -2010,6 +2011,37 @@ mod tests {
         assert!(!s.market_active(day));
         assert!(s.market_shuttered(day));
         assert!(!s.market.fixed_use);
+    }
+
+    #[test]
+    fn autumn_crop_request_releases_only_after_the_qualified_market_sale() {
+        let mut world = LivingWorld::new_village_wall_ms(0);
+        let autumn_start = 392 * DAY_MS;
+        world.advance_world_ms(autumn_start - world.world_ms());
+        while world.is_catching_up() {
+            world.advance_world_ms(0);
+        }
+        let mut story = State::default();
+        story.complete(53);
+        world.set_test_town_age(TownEra::for_chapter(67).real_day() - 1);
+        assert_eq!(story.market_crop_request(&world), (None, false));
+        world.set_test_town_age(TownEra::for_chapter(67).real_day());
+        story.market.autumn_trade_year = Some(autumn_start / (DAYS_PER_CYCLE * DAY_MS) - 1);
+        assert_eq!(story.market_crop_request(&world), (Some(10), true));
+
+        world.exchange_stock_atomic(&[(Item::Crops, world.stock().count(Item::Crops))], &[(Item::Crops, 7)]);
+        assert_eq!(world.stock().count(Item::Crops), 7);
+        assert!(!story.autumn_market_needs_sale(&world));
+        assert!(world.exchange_stock_atomic(&[], &[(Item::Crops, 1)]));
+        assert!(story.autumn_market_needs_sale(&world));
+        let now = world.world_ms();
+        assert!(world.spend_stock(Item::Crops, 2));
+        story.witness_sale(MOBILE, &world, now);
+        assert_eq!(story.market_crop_request(&world), (Some(10), true));
+        story.witness_sale(1, &world, now);
+        assert_eq!(story.market_crop_request(&world), (None, false));
+        assert!(!story.autumn_market_needs_sale(&world));
+        assert!(!story.completed(67));
     }
 
     #[test]

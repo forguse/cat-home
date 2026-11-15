@@ -417,6 +417,15 @@ impl MapDef {
     }
 
     pub fn tile(&self, pos: TilePos, phases: PhaseMask) -> Option<TileInfo> {
+        self.tile_with_clearance(pos, phases, false)
+    }
+
+    pub(crate) fn tile_with_clearance(
+        &self,
+        pos: TilePos,
+        phases: PhaseMask,
+        scenery_cleared: bool,
+    ) -> Option<TileInfo> {
         let index = pos.index()?.0 as usize * 2;
         let region = self.tiles[index];
         let rule = self.rules[self.tiles[index + 1] as usize];
@@ -428,11 +437,15 @@ impl MapDef {
         } else {
             rule.base
         };
+        // The compiler prohibits overlapping solid owners on the same tile.
+        // A cleared object can remove its own collision bit only.
+        let scenic = if scenery_cleared { 0 } else { rule.scenic };
+        let solid = (rule.solid & !rule.scenic) | scenic;
         Some(TileInfo {
             terrain,
-            blocked: rule.solid & bits != 0
+            blocked: solid & bits != 0
                 || matches!(terrain, Terrain::Water | Terrain::Boundary),
-            scenic_obstacle: rule.scenic & bits != 0,
+            scenic_obstacle: scenic & bits != 0,
             region: self.regions.get(region as usize),
         })
     }

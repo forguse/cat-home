@@ -866,7 +866,11 @@ impl LivingView {
         let stamp = TerrainStamp {
             origin,
             size: (self.width, self.height),
-            revision: world.terrain_revision(),
+            revision: if world.is_village() {
+                world.village_ground_revision()
+            } else {
+                world.terrain_revision()
+            },
             village: world.is_village(),
         };
         let bytes = self.pixels.len();
@@ -1644,8 +1648,15 @@ impl LivingView {
         {
             return;
         }
+        let scenic_work = village
+            .and_then(|world| world.scenic_work_target(actor.kind))
+            .filter(|_| actor.pose == Pose::Work);
+        let fibre = village.is_some_and(|world| world.landscape_carried_fibre(actor.kind) > 0);
         let frame = match (village.is_some(), actor.walking_progress(time)) {
             (true, Some(progress)) => ((progress * 3.0).floor() as usize).min(2),
+            _ if scenic_work.is_some() || actor.activity == Activity::TwistFibre => {
+                (time / 19_000 % 3) as usize
+            }
             _ => (time / 8000 % 3) as usize,
         };
         if self.density == 2 {
@@ -1716,7 +1727,9 @@ impl LivingView {
         }
         if village.is_some() && actor.fishing_result().is_none() {
             action = village_actor_clip(actor);
-            if (hand_goods.is_some() || outside_payload.is_some()) && actor.pose == Pose::Walk {
+            if actor.pose == Pose::Walk
+                && (hand_goods.is_some() || outside_payload.is_some() || fibre)
+            {
                 action = "carry";
             }
         }
@@ -1758,6 +1771,10 @@ impl LivingView {
                 false
             } else if seated {
                 actor.kind == ActorKind::Ayu
+            } else if let Some(target) = scenic_work {
+                let target_x = i32::from(target.x) * TILE_PX + TILE_PX / 2;
+                let actor_x = actor.position.x as i32;
+                target_x < actor_x || (target_x == actor_x && actor.facing_left)
             } else {
                 actor.facing_left
             };
@@ -1774,6 +1791,7 @@ impl LivingView {
         let frame_key = format!("{prefix}_{action}_{frame}");
         let feet = (x, if seated { y - 2 } else { y });
         let hand = self.premium_hand_at_scale(&frame_key, feet, facing_left, actor_scale);
+        let forward = if facing_left { -1 } else { 1 };
         let bobber = format!("fish_bobber_{frame}");
         let cast = self.density == 2
             && actor.pose == Pose::Work
@@ -1822,6 +1840,11 @@ impl LivingView {
             let hand = hand.unwrap_or((x * self.density, (y - 7) * self.density));
             self.premium_at_texel("housing_moving_box", hand, facing_left, Palette::Unchanged);
         }
+        if fibre && actor.pose != Pose::Sleep && !moving_box && outside_payload.is_none() {
+            let anchor =
+                hand.unwrap_or((x * self.density, (y - actor_scale.apply(7)) * self.density));
+            self.resource_fibre_bundle((anchor.0 + 3 * forward, anchor.1 - 3), facing_left);
+        }
         if !moving_box
             && actor.pose != Pose::Sleep
             && let Some((key, scale)) = outside_payload.and_then(village_render::held_asset)
@@ -1866,12 +1889,22 @@ impl LivingView {
             }) {
                 let key = village_render::item_asset(item);
                 let carried = if actor.tool.is_some() { None } else { hand };
+                let mut anchor = carried
+                    .unwrap_or((x * self.density, (y - actor_scale.apply(8)) * self.density));
+                if village.is_some() && item == Item::Wood {
+                    anchor.0 += 4 * forward;
+                    anchor.1 -= 2;
+                }
+                let scale = if village.is_some() && item == Item::Stone {
+                    village_render::STONE_PROP_SCALE
+                } else {
+                    prop_scale
+                };
                 self.core_at_texel(
                     key,
-                    carried
-                        .unwrap_or((x * self.density, (y - actor_scale.apply(8)) * self.density)),
+                    anchor,
                     false,
-                    prop_scale,
+                    scale,
                     Palette::Unchanged,
                 );
             }
@@ -2772,6 +2805,9 @@ fn actor_clip(actor: &Actor) -> &'static str {
             Activity::FillBowl => "fill_bowl",
             Activity::GetWater => "water",
             Activity::FellTree => "axe",
+            Activity::MineScenic => "hammer",
+            Activity::ClearScenic => "hoe_clear",
+            Activity::GatherScenic | Activity::TwistFibre => "store",
             Activity::Build | Activity::Roadwork => "hammer",
             Activity::Fish => "fish",
             _ => "idle",
@@ -2792,6 +2828,8 @@ fn village_actor_clip(actor: &Actor) -> &'static str {
                 actor_clip(actor)
             }
             Activity::FellTree if actor.tool == Some(Tool::Axe) => "axe",
+            Activity::MineScenic if actor.tool == Some(Tool::Hammer) => "hammer",
+            Activity::ClearScenic if actor.tool == Some(Tool::Hoe) => "hoe_clear",
             Activity::Build | Activity::Roadwork if actor.tool == Some(Tool::Hammer) => "hammer",
             Activity::Fish if actor.tool == Some(Tool::FishingRod) => "fish",
             Activity::Water if actor.tool == Some(Tool::WateringCan) && has(Item::Water) => "water",
@@ -2801,6 +2839,8 @@ fn village_actor_clip(actor: &Actor) -> &'static str {
             | Activity::Till
             | Activity::TendGarden
             | Activity::FellTree
+            | Activity::MineScenic
+            | Activity::ClearScenic
             | Activity::Build
             | Activity::Roadwork
             | Activity::Fish

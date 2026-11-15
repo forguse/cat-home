@@ -42,7 +42,7 @@ pub(super) fn read_plots<'de, D: serde::Deserializer<'de>>(
     impl<'de> serde::de::Visitor<'de> for PlotList {
         type Value = Vec<Plot>;
         fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-            formatter.write_str("at most thirty plot records")
+            write!(formatter, "at most {VILLAGE_PLOT_CAP} plot records")
         }
         fn visit_seq<A: serde::de::SeqAccess<'de>>(
             self,
@@ -50,8 +50,8 @@ pub(super) fn read_plots<'de, D: serde::Deserializer<'de>>(
         ) -> Result<Vec<Plot>, A::Error> {
             let mut plots = Vec::new();
             while let Some(plot) = seq.next_element()? {
-                if plots.len() == 30 {
-                    return Err(serde::de::Error::invalid_length(31, &self));
+                if plots.len() == VILLAGE_PLOT_CAP {
+                    return Err(serde::de::Error::invalid_length(VILLAGE_PLOT_CAP + 1, &self));
                 }
                 plots.push(plot);
             }
@@ -59,6 +59,18 @@ pub(super) fn read_plots<'de, D: serde::Deserializer<'de>>(
         }
     }
     input.deserialize_seq(PlotList)
+}
+
+pub(super) const ORIGINAL_VILLAGE_PLOTS: usize = 30;
+pub(super) const VILLAGE_PLOT_CAP: usize = ORIGINAL_VILLAGE_PLOTS + land_reuse::RESTORED_FIELDS.len();
+
+pub(super) fn inactive_restored_plot(field: &land_reuse::RestoredField) -> Plot {
+    Plot {
+        position: Cell(field.rect.x, field.rect.y).point(),
+        stage: PlotStage::Grass,
+        due: 0,
+        watered: false,
+    }
 }
 
 #[derive(Default, Clone, Debug)]
@@ -70,8 +82,11 @@ impl PartialEq for Occupancy {
 }
 impl Occupancy {
     pub fn set(&mut self, list: &[TilePos]) {
+        self.set_iter(list.iter().copied(), 64);
+    }
+    pub fn set_iter(&mut self, tiles: impl Iterator<Item = TilePos>, limit: usize) {
         self.0.clear();
-        self.0.extend(list.iter().copied().take(64));
+        self.0.extend(tiles.take(limit));
     }
     pub fn contains(&self, tile: TilePos) -> bool {
         self.0.contains(&tile)
@@ -93,6 +108,7 @@ impl PartialEq for ReservedPlot {
 #[derive(Clone, Debug, Default)]
 pub(super) struct SupplyRequests {
     pub market_crops: Option<u16>,
+    pub autumn_market_crops: bool,
     pub neighbour_meals: bool,
 }
 
@@ -108,6 +124,10 @@ pub(super) struct State {
     pub revision: u16,
     #[serde(default, skip_serializing_if = "Vec::is_empty", deserialize_with = "read_density_holdouts")]
     pub density_holdouts: Vec<TilePos>,
+    #[serde(default, skip_serializing_if = "scenic_resources::State::is_empty")]
+    pub landscape: scenic_resources::State,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub inherited_landscape_house: Option<u8>,
     #[serde(default, skip_serializing_if = "is_false")]
     pub imported_pedestrian_bridge: bool,
     #[serde(default, skip_serializing_if = "is_false")]
@@ -363,6 +383,8 @@ impl State {
         Self {
             revision: WILLOW_VILLAGE.map_revision,
             density_holdouts: Vec::new(),
+            landscape: scenic_resources::State::default(),
+            inherited_landscape_house: None,
             imported_pedestrian_bridge: false,
             freight_inspected: false,
             freight_material_paid: false,

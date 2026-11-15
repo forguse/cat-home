@@ -1,6 +1,6 @@
 //! Fixed terrain and household simulation. Rendering reads this state without advancing it.
 
-use crate::map_data::{PhaseMask, Terrain, TilePos, WILLOW_VILLAGE};
+use crate::map_data::{PhaseMask, Terrain, TilePos, TileRect, WILLOW_VILLAGE};
 use crate::map_nav::{MapNav, SearchResult};
 use crate::map_view::MapView;
 use serde::{Deserialize, Serialize};
@@ -36,6 +36,12 @@ mod town_calendar;
 pub mod movement;
 #[path = "footprints.rs"]
 mod footprints;
+#[path = "scenic_resources.rs"]
+mod scenic_resources;
+#[path = "land_reuse.rs"]
+pub(crate) mod land_reuse;
+pub(crate) use scenic_resources::ClearedScenery;
+pub use scenic_resources::{ScenicResourceView, ScenicStage};
 pub use footprints::Footprint;
 pub use town_calendar::TownEra;
 pub use story::{
@@ -144,6 +150,10 @@ pub enum Activity {
     PackHarvest,
     Orchard,
     DrainField,
+    ClearScenic,
+    MineScenic,
+    GatherScenic,
+    TwistFibre,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -191,6 +201,10 @@ impl Activity {
             Self::PackHarvest => "收晒装袋",
             Self::Orchard => "果园养护与采果",
             Self::DrainField => "疏沟排水",
+            Self::ClearScenic => "清理树根与草木",
+            Self::MineScenic => "采石",
+            Self::GatherScenic => "收拾现场物料",
+            Self::TwistFibre => "在工坊搓绳",
         }
     }
 }
@@ -389,6 +403,8 @@ pub struct Actor {
     passing: Option<Passing>,
     #[serde(default, skip_serializing_if = "village::is_zero")]
     harvest_processing: u8,
+    #[serde(default, skip_serializing_if = "village::is_false")]
+    farm_shed_batch: bool,
     task: Option<Task>,
     stage: Stage,
     since: u64,
@@ -454,6 +470,7 @@ impl Actor {
             avoid_occupied: false,
             passing: None,
             harvest_processing: 0,
+            farm_shed_batch: false,
             task: None,
             stage: Stage::Idle,
             since: START_MS,
@@ -672,6 +689,10 @@ enum Task {
     DrinkAtWell,
     FellTree(u8),
     TakeTimber(u8),
+    Scenic(scenic_resources::Work),
+    StowLandscapeFibre,
+    TwistLandscapeFibre,
+    StoreAtReclaimed,
     Build(u8),
     Improve(ImprovementOrder),
     BuildHome(HousingOrder),
@@ -716,7 +737,7 @@ impl Task {
             Self::Sow(_) => Activity::Sow,
             Self::Water(_) => Activity::Water,
             Self::Harvest(_) => Activity::Harvest,
-            Self::Store => Activity::Store,
+            Self::Store | Self::StoreAtReclaimed => Activity::Store,
             Self::Cook | Self::CookHomeHarvest => Activity::Cook,
             Self::Eat | Self::SharedEat | Self::EatSavedPortion | Self::EatWhileDrying => Activity::Eat,
             Self::GetWater | Self::GetHomeWater => Activity::GetWater,
@@ -724,6 +745,9 @@ impl Task {
             Self::Drink | Self::DrinkAtWell => Activity::Drink,
             Self::FellTree(_) => Activity::FellTree,
             Self::TakeTimber(_) => Activity::CarryWood,
+            Self::Scenic(work) => work.activity(),
+            Self::StowLandscapeFibre => Activity::Store,
+            Self::TwistLandscapeFibre => Activity::TwistFibre,
             Self::BuildHome(order) if order.phase == HousingPhase::Clear => Activity::Clear,
             Self::BuildHome(order) if order.phase == HousingPhase::MoveIn => Activity::Store,
             Self::Build(_) | Self::Improve(_) | Self::BuildHome(_) => Activity::Build,
@@ -776,6 +800,7 @@ impl Task {
             Self::Clear(_) | Self::Till(_) | Self::Drain(_) => Some(Tool::Hoe),
             Self::Water(_) | Self::FillBowl | Self::GetWater | Self::GetHomeWater => Some(Tool::WateringCan),
             Self::FellTree(_) => Some(Tool::Axe),
+            Self::Scenic(work) => work.tool(),
             Self::Build(_) | Self::Improve(_) => Some(Tool::Hammer),
             Self::BuildHome(order) if order.phase == HousingPhase::Clear => Some(Tool::Hoe),
             Self::BuildHome(order) if order.phase != HousingPhase::MoveIn => Some(Tool::Hammer),
@@ -811,12 +836,15 @@ impl Task {
             Self::Till(_) => 8 * MINUTE,
             Self::Sow(_) | Self::Water(_) => 4 * MINUTE,
             Self::Harvest(_) => 6 * MINUTE,
-            Self::Store | Self::FillBowl => MINUTE,
+            Self::Store | Self::StoreAtReclaimed | Self::FillBowl => MINUTE,
             Self::Cook | Self::CookHomeHarvest => 22 * MINUTE,
             Self::Eat | Self::SharedEat | Self::EatSavedPortion | Self::EatWhileDrying => 10 * MINUTE,
             Self::GetWater | Self::GetHomeWater | Self::TakeTimber(_) => 3 * MINUTE,
             Self::Drink | Self::DrinkAtWell => 2 * MINUTE,
             Self::FellTree(_) => 22 * MINUTE,
+            Self::Scenic(work) => work.duration(),
+            Self::StowLandscapeFibre => MINUTE,
+            Self::TwistLandscapeFibre => 11 * MINUTE,
             Self::Build(_) => 24 * MINUTE,
             Self::Improve(order) => u64::from(order.minutes()) * MINUTE,
             Self::BuildHome(order) => order.phase.minutes(order.plan) * MINUTE,
@@ -856,12 +884,14 @@ impl Task {
             Self::Clear(i) | Self::Till(i) | Self::Sow(i) | Self::Water(i) | Self::Harvest(i) => {
                 usize::from(i)
                     < if village {
-                        WILLOW_VILLAGE.crops.len()
+                        village::VILLAGE_PLOT_CAP
                     } else {
                         PLOTS.len()
                     }
             }
             Self::FellTree(i) | Self::TakeTimber(i) => usize::from(i) < TREES.len(),
+            Self::Scenic(work) => village && work.valid(),
+            Self::StowLandscapeFibre | Self::TwistLandscapeFibre | Self::StoreAtReclaimed => village,
             Self::Build(i) => usize::from(i) < BUILDINGS.len(),
             Self::Improve(order) => order.phase <= 1,
             Self::BuildHome(order) => order.valid_for(village),
@@ -892,7 +922,7 @@ impl Task {
             Self::FreightBridge => village,
             Self::ProcessHarvest(phase) => village && (1..=4).contains(&phase),
             Self::CareOrchard(tree) => village && tree < 4,
-            Self::Drain(plot) => village && usize::from(plot) < WILLOW_VILLAGE.crops.len(),
+            Self::Drain(plot) => village && usize::from(plot) < village::VILLAGE_PLOT_CAP,
             _ => true,
         }
     }
@@ -948,6 +978,8 @@ pub struct LivingWorld {
     village_navigation: village::Navigation,
     #[serde(skip)]
     external_occupied: village::Occupancy,
+    #[serde(skip)]
+    land_use_custody: village::Occupancy,
     #[serde(skip)]
     social_harvest_plot: village::ReservedPlot,
     #[serde(skip)]
@@ -1014,6 +1046,7 @@ impl LivingWorld {
             village: None,
             village_navigation: village::Navigation::default(),
             external_occupied: village::Occupancy::default(),
+            land_use_custody: village::Occupancy::default(),
             social_harvest_plot: village::ReservedPlot::default(),
             supply_requests: village::SupplyRequests::default(),
             footprints: footprints::Tracks::default(),
@@ -1077,6 +1110,7 @@ impl LivingWorld {
                 });
             }
         }
+        self.plots.extend(land_reuse::RESTORED_FIELDS.iter().map(village::inactive_restored_plot));
         for (tree, cell) in self.trees.iter_mut().zip(village::tree_cells()) {
             tree.position = cell.point();
         }
@@ -1100,14 +1134,59 @@ impl LivingWorld {
             .map_or(PhaseMask::DAY_ONE, village::State::phases)
     }
 
+    pub fn accepts_working_landscape(&self, revision: u8) -> bool {
+        self.village.as_ref().is_some_and(|state| match revision {
+            0 => self.plots.len() == village::ORIGINAL_VILLAGE_PLOTS
+                && state.landscape.is_empty()
+                && state.inherited_landscape_house.is_none()
+                && !self.story.housing.orders().any(HousingOrder::is_reclaimed)
+                && self.actors.iter().all(|actor| {
+                    !actor.farm_shed_batch && !matches!(actor.task, Some(
+                        Task::Scenic(_) | Task::StowLandscapeFibre | Task::TwistLandscapeFibre | Task::StoreAtReclaimed
+                    ))
+                }),
+            1 => self.plots.len() == village::VILLAGE_PLOT_CAP,
+            _ => false,
+        })
+    }
+
+    pub fn migrate_working_landscape(&mut self) -> bool {
+        if !self.accepts_working_landscape(0) {
+            return false;
+        }
+        self.plots.extend(land_reuse::RESTORED_FIELDS.iter().map(village::inactive_restored_plot));
+        let inherited = self.story.housing.active_order().map(|order| order.lot);
+        self.village.as_mut().unwrap().inherited_landscape_house = inherited;
+        true
+    }
+
+    fn available_plot_rect(&self, index: usize) -> Option<TileRect> {
+        if let Some(crop) = WILLOW_VILLAGE.crops.get(index) {
+            self.phase_mask().contains(crop.phase).then_some(crop.rect)
+        } else {
+            self.restored_plot_site(index).map(|(rect, _)| rect)
+        }
+    }
+
+    fn plot_work_cell(index: usize) -> Cell {
+        WILLOW_VILLAGE.crops.get(index).map(|crop| crop.work)
+            .or_else(|| land_reuse::RESTORED_FIELDS.get(index.checked_sub(village::ORIGINAL_VILLAGE_PLOTS)?).map(|plot| plot.work))
+            .map(Cell::from).expect("validated finite plot identity")
+    }
+
     /// Validate the previous additive geometry with its new collision phase
     /// still disabled. This does not advance either clock or change custody.
     pub fn accepts_village_map_revision(&self, revision: u16) -> bool {
+        let count = if self.accepts_working_landscape(0) {
+            village::ORIGINAL_VILLAGE_PLOTS
+        } else {
+            village::VILLAGE_PLOT_CAP
+        };
         self.village.as_ref().is_some_and(|state| state.revision == revision)
-            && (revision == WILLOW_VILLAGE.map_revision && self.validate()
+            && (revision == WILLOW_VILLAGE.map_revision && self.validate_at_map_revision(revision, count)
                 || WILLOW_VILLAGE.map_revision == village::DENSE_MAP_REVISION
                     && revision == village::BEFORE_DENSITY_REVISION
-                    && !self.map_density_active() && self.validate_at_map_revision(revision))
+                    && !self.map_density_active() && self.validate_at_map_revision(revision, count))
     }
 
     /// Keep the old physical state until it can enter the denser map at the
@@ -1142,7 +1221,7 @@ impl LivingWorld {
             return None;
         }
         let proposed = phases.with(density);
-        let open = |at| Self::map_density_tile(at, proposed, holdouts).is_some_and(|info| !info.blocked);
+        let open = |at| self.map_density_tile(at, proposed, holdouts).is_some_and(|info| !info.blocked);
         (external.iter().copied().all(open) && self.actors.iter().enumerate().all(|(i, actor)| {
             open(actor.cell.tile())
                 && actor.route.get(actor.route_next).is_none_or(|&next| actor.waiting_edge || open(next.tile()))
@@ -1160,7 +1239,10 @@ impl LivingWorld {
     /// tiles. A walking edge already in progress retains its duration and foot.
     pub fn commit_map_density(&mut self, proposed: PhaseMask, holdouts: Vec<TilePos>) {
         let now = self.now_ms;
-        let open = |at: Cell| Self::map_density_tile(at.tile(), proposed, &holdouts).is_some_and(|info| !info.blocked);
+        let geometry = self.village.as_ref().expect("village map density").landscape.cleared.clone();
+        let open = |at: Cell| {
+            Self::landscape_tile(at.tile(), proposed, &holdouts, &geometry).is_some_and(|info| !info.blocked)
+        };
         for actor in &mut self.actors {
             if !actor.route.iter().skip(actor.route_next).copied().any(|at| !open(at)) {
                 continue;
@@ -1196,23 +1278,189 @@ impl LivingWorld {
         self.map_density_holdouts().binary_search(&tile).is_err()
     }
 
+    pub fn scenic_resource(&self, scenic_id: usize) -> Option<ScenicResourceView> {
+        let object = WILLOW_VILLAGE.scenic.get(scenic_id)?;
+        let state = self.village.as_ref()?;
+        (state.phases().contains(object.phase) && self.map_density_scenic_visible(object.tile))
+            .then(|| state.landscape.view(scenic_id))
+            .flatten()
+    }
+
+    pub fn scenic_work_target(&self, kind: ActorKind) -> Option<TilePos> {
+        let Some(Task::Scenic(work)) = self.actors[kind.index()].task else { return None; };
+        WILLOW_VILLAGE.scenic.get(usize::from(work.id)).map(|object| object.tile)
+    }
+
+    fn scenic_object_available(&self, index: usize) -> bool {
+        let Some(object) = WILLOW_VILLAGE.scenic.get(index) else { return false; };
+        if self.scenic_resource(index).is_none() {
+            return false;
+        }
+        !object.temporary_ground || (
+            self.ground(object.tile.x.into(), object.tile.y.into()) == Ground::Grass
+                && !WILLOW_VILLAGE.buildings.iter().any(|building| {
+                    self.phase_mask().contains(building.phase) && building.footprint.contains(object.tile)
+                })
+                && !self.story.housing.orders().any(|order| order.inside(object.tile.x.into(), object.tile.y.into()))
+        )
+    }
+
+    #[cfg(test)]
+    pub(crate) fn test_scenic_visual_fixture(&mut self, id: usize, stage: ScenicStage, working: bool) -> bool {
+        let today = self.now_ms / DAY_MS;
+        let Some(work) = self.scenic_candidate(1, id as u16, today) else { return false; };
+        let landscape = &mut self.village.as_mut().expect("village fixture").landscape;
+        // Advance real recipe transitions on separate prior work days.
+        for shift in 0..8 {
+            if landscape.view(id).is_some_and(|view| view.stage == stage) {
+                if working && let Some(kind) = landscape.next(work.id, today) {
+                    let work = scenic_resources::Work { kind, ..work };
+                    let actor = &mut self.actors[1];
+                    actor.cell = Cell::from(work.stand);
+                    actor.position = actor.cell.point();
+                    actor.task = Some(Task::Scenic(work));
+                    actor.activity = work.activity();
+                    actor.tool = work.tool();
+                    actor.pose = Pose::Work;
+                    actor.stage = Stage::Work;
+                    actor.since = self.now_ms;
+                    actor.until = self.now_ms + work.duration();
+                    actor.inside = false;
+                }
+                return true;
+            }
+            let day = today.saturating_sub(8 - shift);
+            let Some(kind) = landscape.next(work.id, day) else { return false; };
+            if !landscape.commit(scenic_resources::Work { kind, ..work }, day) {
+                return false;
+            }
+        }
+        false
+    }
+
+    pub fn landscape_carried_fibre(&self, kind: ActorKind) -> u8 {
+        self.village.as_ref().and_then(|state| state.landscape.fibre_held.get(kind.index()))
+            .copied().unwrap_or(0)
+    }
+
+    pub fn landscape_fibre_stock(&self) -> u8 {
+        self.village.as_ref().map_or(0, |state| state.landscape.fibre_stock)
+    }
+
+    pub fn farm_store_door(&self) -> Option<TilePos> {
+        self.story.housing.farm_store_door().map(|[x, y]| TilePos::new(x.into(), y.into()))
+    }
+
+    pub fn farm_store_harvest_station(&self, actor: ActorKind) -> Option<TilePos> {
+        let i = actor.index();
+        let person = self.actors.get(i)?;
+        if !person.farm_shed_batch {
+            return None;
+        }
+        let task = person.task?;
+        matches!(task, Task::ProcessHarvest(2..=4) | Task::StoreAtReclaimed)
+            .then(|| self.site(i, task).tile())
+    }
+
+    pub fn scenic_site_clear(&self, rect: TileRect) -> bool {
+        self.map_density_active()
+            && rect.w > 0 && rect.h > 0
+            && rect.x.saturating_add(rect.w) <= WILLOW_VILLAGE.width
+            && rect.y.saturating_add(rect.h) <= WILLOW_VILLAGE.height
+            && Self::landscape_tiles(rect).all(|tile| {
+                scenic_resources::object_at(tile).is_none_or(|id| {
+                    self.scenic_resource(usize::from(id)).is_some_and(|work| work.stage == ScenicStage::Cleared)
+                })
+            })
+    }
+
+    fn landscape_tiles(rect: TileRect) -> impl Iterator<Item = TilePos> {
+        (rect.y..rect.y + rect.h)
+            .flat_map(move |y| (rect.x..rect.x + rect.w).map(move |x| TilePos::new(x, y)))
+    }
+
+    fn land_use_conflicts(&self, rect: TileRect) -> bool {
+        self.external_occupied.iter().chain(self.land_use_custody.iter()).any(|tile| rect.contains(tile))
+            || self.actors.iter().any(|actor| {
+                std::iter::once(actor.cell)
+                    .chain(actor.route.iter().skip(actor.route_next).copied())
+                    .chain(actor.route_goal)
+                    .any(|at| rect.contains(at.tile()))
+            })
+    }
+
+    fn restored_planted_areas(&self) -> impl Iterator<Item = TileRect> + '_ {
+        land_reuse::RESTORED_FIELDS.iter().enumerate().filter_map(|(i, field)| {
+            self.plots.get(village::ORIGINAL_VILLAGE_PLOTS + i)
+                .is_some_and(|plot| plot.stage != PlotStage::Grass).then_some(field.rect)
+        })
+    }
+
+    pub fn restored_plot_site(&self, index: usize) -> Option<(TileRect, TilePos)> {
+        let field = land_reuse::RESTORED_FIELDS.get(index.checked_sub(WILLOW_VILLAGE.crops.len())?)?;
+        self.scenic_site_clear(field.rect).then_some((field.rect, field.work))
+    }
+
+    pub fn landscape_summary(&self) -> String {
+        let Some(state) = &self.village else { return String::new(); };
+        let fields = land_reuse::RESTORED_FIELDS.iter().filter(|field| self.scenic_site_clear(field.rect)).count();
+        let work = self.actors[..2].iter().filter_map(|actor| match actor.task {
+            Some(Task::Scenic(work)) => Some(work.activity().label()),
+            _ => None,
+        }).next().unwrap_or("暂无景物作业");
+        let home = if self.farm_store_door().is_some() {
+            "农储屋已启用"
+        } else if let Some(site) = self.housing_sites().find(|site| {
+            Cell::at(site.position).is_some_and(|at| at.tile() == land_reuse::RECLAIMED_HOME_DOOR)
+        }) {
+            match site.phase {
+                HousingPhase::Clear => "清整地基",
+                HousingPhase::Foundation => "地基已完成",
+                HousingPhase::Frame => "已立起框架",
+                HousingPhase::Roof => "已完成屋顶",
+                HousingPhase::FitOut => "正在准备启用",
+                HousingPhase::MoveIn if site.occupied => "已入住",
+                HousingPhase::MoveIn => "建筑已完成",
+            }
+        } else if self.scenic_site_clear(land_reuse::RECLAIMED_HOME) {
+            "净地待施工"
+        } else {
+            "待清地"
+        };
+        format!(
+            "开垦与采集 · {work}\n已清实心地貌 {} 处 · 草纤维库存 {} 束\n已清可种的田块 {}/{} · 池东{home}",
+            state.landscape.solid_cleared,
+            state.landscape.fibre_stock,
+            fields,
+            land_reuse::RESTORED_FIELDS.len(),
+        )
+    }
+
     pub fn map_density_adds_obstacle(&self, tile: TilePos) -> bool {
         let Some(density) = WILLOW_VILLAGE.phase(village::DENSE_MAP_PHASE) else { return false; };
         let phases = self.phase_mask();
-        WILLOW_VILLAGE.tile(tile, phases.with(density))
-            .zip(WILLOW_VILLAGE.tile(tile, phases.without(density)))
+        self.map_density_tile(tile, phases.with(density), &[])
+            .zip(self.map_density_tile(tile, phases.without(density), &[]))
             .is_some_and(|(new, old)| new.blocked && !old.blocked)
     }
 
     pub(crate) fn map_density_tile(
+        &self, tile: TilePos, phases: PhaseMask, holdouts: &[TilePos],
+    ) -> Option<crate::map_data::TileInfo> {
+        let state = self.village.as_ref()?;
+        Self::landscape_tile(tile, phases, holdouts, &state.landscape.cleared)
+    }
+
+    fn landscape_tile(
         tile: TilePos, phases: PhaseMask, holdouts: &[TilePos],
+        cleared: &ClearedScenery,
     ) -> Option<crate::map_data::TileInfo> {
         let effective = if holdouts.binary_search(&tile).is_ok() {
             WILLOW_VILLAGE.phase(village::DENSE_MAP_PHASE).map_or(phases, |phase| phases.without(phase))
         } else {
             phases
         };
-        WILLOW_VILLAGE.tile(tile, effective)
+        WILLOW_VILLAGE.tile_with_clearance(tile, effective, cleared.clears_tile(tile))
     }
 
     pub fn navigation_view(&self) -> Option<MapView<'static>> {
@@ -1228,6 +1476,7 @@ impl LivingWorld {
         if !self.can_commit_phases(state.phases()) {
             return false;
         }
+        Self::grade_new_facilities(&mut state, self.phase_mask());
         self.village = Some(state);
         true
     }
@@ -1274,6 +1523,12 @@ impl LivingWorld {
         self.external_occupied.set(tiles);
     }
 
+    pub fn set_land_use_custody(&mut self, tiles: impl Iterator<Item = TilePos>) {
+        // At most 79 old custody anchors plus 28 walkers and a few shared
+        // destinations. Retaining them does not make the tiles impassable.
+        self.land_use_custody.set_iter(tiles, 128);
+    }
+
     /// Rebuilt by the resident scheduler from its saved appointment before simulation.
     pub fn set_social_harvest_plot(&mut self, plot: Option<u8>) {
         self.social_harvest_plot.0 = plot.filter(|&plot| self.social_eligible_harvest(plot));
@@ -1281,8 +1536,10 @@ impl LivingWorld {
 
     /// The live market can request ordinary farm work while gathering a batch.
     /// This advisory target owns no stock and is rebuilt by the market on load.
-    pub fn set_market_crop_reserve(&mut self, target: Option<u16>) {
-        self.supply_requests.market_crops = target.filter(|_| self.is_village()).map(|amount| amount.min(12));
+    pub(crate) fn set_market_crop_reserve(&mut self, target: Option<u16>, autumn: bool) {
+        let target = target.filter(|_| self.is_village()).map(|amount| amount.min(12));
+        self.supply_requests.market_crops = target;
+        self.supply_requests.autumn_market_crops = autumn && target.is_some();
     }
 
     /// A new neighbour's trial can ask the household to prepare extra meals.
@@ -1364,7 +1621,7 @@ impl LivingWorld {
         let i = usize::from(plot);
         plot != grain::FIELD
             && self.village.as_ref().is_some_and(|state| {
-                WILLOW_VILLAGE.crops.get(i).is_some_and(|p| state.phases().contains(p.phase))
+                self.available_plot_rect(i).is_some()
                     && state.flooded_plots & (1 << i) == 0
             })
             && self.plots.get(i).is_some_and(|p| matches!(p.stage, PlotStage::Seed | PlotStage::Growing) && !p.watered)
@@ -1385,11 +1642,9 @@ impl LivingWorld {
         let Some(index) = plot.map(usize::from) else {
             return false;
         };
-        let Some(definition) = WILLOW_VILLAGE.crops.get(index) else {
-            return false;
-        };
+        let Some(plot_rect) = self.available_plot_rect(index) else { return false; };
         if !self.is_village()
-            || !self.phase_mask().contains(definition.phase)
+            || self.plots.get(index).is_none()
             || index == usize::from(grain::FIELD) && operation != "inspect"
             || self
                 .actors
@@ -1412,7 +1667,13 @@ impl LivingWorld {
         match (operation, phase) {
             ("inspect", _) => true,
             ("weed", PlotStage::Grass) => {
+                if index >= village::ORIGINAL_VILLAGE_PLOTS && self.land_use_conflicts(plot_rect) {
+                    return false;
+                }
                 self.plots[index].stage = PlotStage::Cleared;
+                if self.map_density_active() {
+                    self.village.as_mut().expect("village plots").landscape.grade(plot_rect);
+                }
                 true
             }
             ("till", PlotStage::Cleared) => {
@@ -1485,6 +1746,8 @@ impl LivingWorld {
             .expect("new layout")
             .apply_development(self.story.finished, true);
         let origins = candidate.story.housing.migrate_origins()?;
+        candidate.village.as_mut().unwrap().inherited_landscape_house =
+            candidate.story.housing.active_order().map(|order| order.lot);
         if (0..2).all(|i| {
             candidate
                 .story
@@ -1775,6 +2038,22 @@ impl LivingWorld {
         });
         next_development.map(|chapter| (chapter_item(chapter.material), chapter.amount))
             .or_else(|| self.village_project_material_requirement())
+            .or_else(|| self.housing_material_requirement())
+    }
+
+    fn housing_material_requirement(&self) -> Option<(Item, u16)> {
+        if !self.is_village() {
+            return None;
+        }
+        self.story.housing.next_order(self.now_ms)
+            .filter(|&order| self.landscape_supports_housing(order))
+            .and_then(|order| order.phase.material(order.plan))
+            .map(|(material, units)| (chapter_item(material), units))
+    }
+
+    fn landscape_supports_housing(&self, order: HousingOrder) -> bool {
+        order.is_reclaimed()
+            || self.village.as_ref().is_some_and(|state| state.inherited_landscape_house == Some(order.lot))
     }
 
     fn village_project_material_requirement(&self) -> Option<(Item, u16)> {
@@ -1799,7 +2078,8 @@ impl LivingWorld {
     /// Outstanding materials for the next actual development order. The market
     /// uses this to quote a real delivery from the supplier's own inventory.
     pub fn next_construction_material_shortfall(&self) -> Option<(Item, u16)> {
-        [self.next_construction_material_requirement(), self.village_project_material_requirement()]
+        [self.next_construction_material_requirement(), self.village_project_material_requirement(),
+            self.housing_material_requirement()]
             .into_iter().flatten().find_map(|(item, requirement)| {
                 let missing = requirement.saturating_sub(self.stock.count(item));
                 (missing > 0).then_some((item, missing))
@@ -2252,6 +2532,9 @@ impl LivingWorld {
             let [x, y] = order.door();
             let [left, top] = order.lot_origin();
             let material_position = self.is_village().then(|| {
+                if order.is_reclaimed() {
+                    return Cell::from(land_reuse::RECLAIMED_HOME_MATERIAL).point();
+                }
                 let id = match order.plan {
                     HousePlan::Shared => "new_shared_home",
                     HousePlan::Single => "new_single_home",
@@ -2278,6 +2561,11 @@ impl LivingWorld {
     }
 
     pub fn terrain_revision(&self) -> u32 {
+        self.village_ground_revision() ^ self.village.as_ref()
+            .map_or(0, |state| u32::from(state.landscape.solid_cleared).wrapping_mul(2_654_435_761))
+    }
+
+    pub fn village_ground_revision(&self) -> u32 {
         if self.is_village() {
             let state = self.village.as_ref().unwrap();
             let terrain = state.density_holdouts.iter().fold(u32::from(self.phase_mask().bits()), |digest, tile| {
@@ -2295,6 +2583,9 @@ impl LivingWorld {
                 ^ u32::from(self.village.as_ref().unwrap().road_story.stage).rotate_left(13)
                 ^ u32::from(self.village.as_ref().unwrap().market_story.stage).rotate_left(18)
                 ^ u32::from(self.market_lamps_stage()).rotate_left(22)
+                ^ self.plots.iter().skip(village::ORIGINAL_VILLAGE_PLOTS).enumerate().fold(0, |bits, (i, plot)| {
+                    bits | (u32::from(plot.stage != PlotStage::Grass) << (i + 10))
+                })
                 ^ self.trees.iter().enumerate().fold(0, |bits, (i, tree)| {
                 bits | (u32::from(tree.stage != TreeStage::Stump) << (i + 16))
             });
@@ -2455,6 +2746,10 @@ impl LivingWorld {
             if self.story.housing.blocks(x, y) {
                 return Ground::Building;
             }
+            let at = TilePos::new(x as u16, y as u16);
+            if self.restored_planted_areas().any(|rect| rect.contains(at)) {
+                return Ground::Soil;
+            }
             if tile.blocked && !tile.scenic_obstacle && tile.terrain == Terrain::Grass {
                 let pos = TilePos::new(x as u16, y as u16);
                 return if WILLOW_VILLAGE
@@ -2537,6 +2832,7 @@ impl LivingWorld {
     pub fn can_walk(&self, x: i32, y: i32) -> bool {
         if self.is_village() {
             return self.village_tile(x, y).is_some_and(|tile| !tile.blocked)
+                && !self.restored_planted_areas().any(|rect| rect.contains(TilePos::new(x as u16, y as u16)))
                 && !self.market_lamp_tiles().get(3..).is_some_and(|lamps| lamps.contains(&TilePos::new(x as u16,y as u16)))
                 && !self.story.housing.blocks(x, y)
                 && (y < 64
@@ -2555,12 +2851,18 @@ impl LivingWorld {
 
     fn village_tile(&self, x: i32, y: i32) -> Option<crate::map_data::TileInfo> {
         let pos = TilePos::new(x.try_into().ok()?, y.try_into().ok()?);
-        Self::map_density_tile(pos, self.phase_mask(), self.map_density_holdouts())
+        self.map_density_tile(pos, self.phase_mask(), self.map_density_holdouts())
     }
 
     fn village_map_view(&self) -> MapView<'static> {
         let mut view = MapView::new(&WILLOW_VILLAGE, self.phase_mask());
         view.set_density_holdouts(self.map_density_holdouts());
+        view.set_cleared_scenery(&self.village.as_ref().expect("village map").landscape.cleared);
+        for rect in self.restored_planted_areas() {
+            for tile in Self::landscape_tiles(rect) {
+                view.set_blocked(tile, true);
+            }
+        }
         for &tile in self.market_lamp_tiles().get(3..).unwrap_or_default() {
             view.set_blocked(tile,true);
         }
@@ -2635,11 +2937,11 @@ impl LivingWorld {
             std::iter::once(actor.cell)
                 .chain(actor.route.iter().skip(actor.route_next).copied())
                 .all(|at| {
-                    Self::map_density_tile(at.tile(), phases, self.map_density_holdouts())
+                    self.map_density_tile(at.tile(), phases, self.map_density_holdouts())
                         .is_some_and(|tile| !tile.blocked)
                 })
         }) && self.external_occupied.iter().all(|at| {
-            Self::map_density_tile(at, phases, self.map_density_holdouts())
+            self.map_density_tile(at, phases, self.map_density_holdouts())
                 .is_some_and(|tile| !tile.blocked)
         })
     }
@@ -2780,10 +3082,23 @@ impl LivingWorld {
                 if !self.can_commit_phases(village.phases()) {
                     return;
                 }
+                Self::grade_new_facilities(&mut village, self.phase_mask());
                 self.village = Some(village);
             }
             self.story.finished += 1;
             self.story.running = None;
+        }
+    }
+
+    fn grade_new_facilities(state: &mut village::State, previously_open: PhaseMask) {
+        if !state.phases().contains(WILLOW_VILLAGE.phase(village::DENSE_MAP_PHASE).unwrap()) {
+            return;
+        }
+        let phases = state.phases();
+        for building in WILLOW_VILLAGE.buildings.iter().filter(|building| {
+            phases.contains(building.phase) && !previously_open.contains(building.phase)
+        }) {
+            state.landscape.grade(building.footprint);
         }
     }
 
@@ -2896,6 +3211,15 @@ impl LivingWorld {
                 return;
             }
             self.drop_carry(i);
+            let footprint = match SITES[usize::from(chapter.site)].kind {
+                DevelopmentKind::Market | DevelopmentKind::Stall => WILLOW_VILLAGE.building("stall_produce"),
+                DevelopmentKind::Guesthouse => WILLOW_VILLAGE.building("craft_inn"),
+                DevelopmentKind::Depot => WILLOW_VILLAGE.building("market_depot"),
+                _ => None,
+            };
+            if self.map_density_active() && let Some(footprint) = footprint {
+                self.village.as_mut().unwrap().landscape.grade(footprint.footprint);
+            }
             self.story.running = Some(Project {
                 id,
                 begun: self.now_ms,
@@ -3232,15 +3556,14 @@ impl LivingWorld {
                 let phases = self.phase_mask();
                 let rain_spell = self.now_ms / (3 * HOUR);
                 let state = self.village.as_mut().expect("rain state");
-                for (i, (plot, definition)) in
-                    self.plots.iter_mut().zip(WILLOW_VILLAGE.crops).enumerate()
-                {
-                    if !phases.contains(definition.phase)
+                for (i, plot) in self.plots.iter_mut().enumerate() {
+                    if WILLOW_VILLAGE.crops.get(i).is_some_and(|definition| !phases.contains(definition.phase))
                         || !matches!(plot.stage, PlotStage::Seed | PlotStage::Growing)
                     {
                         continue;
                     }
-                    if rain_spell % 4 == 0 && i >= 6 && (rain_spell + i as u64) % 5 == 0
+                    if rain_spell % 4 == 0 && (6..village::ORIGINAL_VILLAGE_PLOTS).contains(&i)
+                        && (rain_spell + i as u64) % 5 == 0
                         && !state.soil.has_clear_outlet(i)
                     {
                         state.flooded_plots |= 1 << i;
@@ -3324,6 +3647,7 @@ impl LivingWorld {
         let actor = &self.actors[kind.index()];
         !actor.outside
             && actor.carried.is_none()
+            && self.landscape_carried_fibre(kind) == 0
             && actor.tool.is_none()
             && actor.hunger < 72
             && actor.thirst < 78
@@ -3356,6 +3680,7 @@ impl LivingWorld {
         if actor.outside
             || actor.inside
             || actor.carried.is_some()
+            || self.landscape_carried_fibre(kind) > 0
             || actor.moving_box
             || actor.hunger >= 65
             || actor.thirst >= 71
@@ -3613,9 +3938,13 @@ impl LivingWorld {
                 && actor.kind != ActorKind::Orange
             {
                 Some(Task::FillBowl)
+            } else if actor.farm_shed_batch {
+                Some(Task::StoreAtReclaimed)
             } else {
                 Some(Task::Store)
             }
+        } else if self.landscape_carried_fibre(actor.kind) != 0 {
+            Some(Task::StowLandscapeFibre)
         } else if self.is_village()
             && i < 2
             && !self.in_household_region(actor.cell)
@@ -3704,9 +4033,33 @@ impl LivingWorld {
         }) && self.stock.fits(Item::Food, 3) && !self.task_in_use(Task::Grain(grain::Work::CookRoot))
         {
             Some(Task::Grain(grain::Work::CookRoot))
+        } else if (self.keep_market_crops() && self.market_crop_shortfall()
+            || prepare_neighbour_meals && self.stock.count(Item::Crops) < 5)
+            && (7..17).contains(&hour) && actor.thirst < 75
+            && let Some(job) = self.farm_task(i)
+            && (food >= 3 && actor.hunger < 60
+                && (!prepare_neighbour_meals || matches!(job, Task::Harvest(_)))
+                || matches!(job, Task::Harvest(_)) && food == 0
+                    && self.stock.count(Item::Crops) < 2 && self.stock.count(Item::Fish) == 0)
+        {
+            // A scheduled sale or supper can use both workers to bring in
+            // real produce. Ordinary field reservations prevent double harvest.
+            Some(job)
+        } else if i == ActorKind::Ayu.index()
+            && self.keep_market_crops()
+            && food < 8 && self.stock.count(Item::Fish) == 0
+            && (7..15).contains(&hour) && self.fish_in_pond > 2
+            && self.tool_available(i, Tool::FishingRod) && !self.task_in_use(Task::Fish)
+            && !matches!(self.weather(), YardWeather::Rain | YardWeather::Snow)
+        {
+            // The reserved sale still needs real crops in the morning.
+            // Fetch a separate meal ingredient while Xiaohe works the field.
+            Some(Task::Fish)
         } else if (food <= 7 || prepare_neighbour_meals)
             && !self.task_in_use(Task::Cook)
             && (self.stock.count(Item::Crops) >= 2 || self.stock.count(Item::Fish) > 0)
+            && (!self.keep_market_crops() || food < 5 || self.stock.count(Item::Fish) > 0
+                || prepare_neighbour_meals)
         {
             Some(Task::Cook)
         } else if i == ActorKind::Ayu.index() && self.village.as_ref().is_some_and(|state| {
@@ -3753,6 +4106,19 @@ impl LivingWorld {
             if self.begin(i, self.return_before_replacing_tool(i, task)) {
                 return;
             }
+        }
+
+        if self.story.housing.next_order(self.now_ms).is_some_and(|order| self.landscape_supports_housing(order))
+            && let Some(task) = self.housing_task(i)
+            && self.begin(i, self.return_before_replacing_tool(i, task))
+        {
+            return;
+        }
+
+        if let Some(task) = self.scenic_task(i)
+            && self.begin(i, self.return_before_replacing_tool(i, task))
+        {
+            return;
         }
 
         let task = match self.actors[i].kind {
@@ -3810,6 +4176,8 @@ impl LivingWorld {
         let active_rod = self.village.as_ref().is_some_and(|state| state.opening.rod_on_rack);
         let held = self.actors[i].tool;
         if task == Task::RackRod && held.is_some() && held != Some(Tool::FishingRod)
+            || matches!(task, Task::Scenic(_) | Task::TwistLandscapeFibre) && held.is_some()
+                && task.tool() != held
             || active_rod && held == Some(Tool::FishingRod)
                 && task.tool().is_some_and(|tool| tool != Tool::FishingRod)
         {
@@ -4344,6 +4712,14 @@ impl LivingWorld {
         self.supply_requests.market_crops.is_some_and(|target| self.stock.count(Item::Crops) < target)
     }
 
+    fn keep_market_crops(&self) -> bool {
+        (self.supply_requests.autumn_market_crops || self.village.as_ref().is_some_and(|state| {
+            state.social.market_after_review && !state.social.market_cleanup
+        })) && self.supply_requests.market_crops.is_some_and(|target| {
+            self.stock.count(Item::Crops) <= target.saturating_add(2)
+        })
+    }
+
     fn neighbour_meals_needed(&self) -> bool {
         self.supply_requests.neighbour_meals && self.stock.count(Item::Food) < NEIGHBOUR_MEAL_TARGET
     }
@@ -4352,6 +4728,131 @@ impl LivingWorld {
         self.actors.iter().enumerate().all(|(j, actor)| {
             j == i || (actor.tool != Some(tool) && actor.task.and_then(Task::tool) != Some(tool))
         })
+    }
+
+    fn scenic_task(&self, i: usize) -> Option<Task> {
+        use scenic_resources::{FIBRE_CAP, FIBRE_PER_ROPE, Product};
+
+        let state = &self.village.as_ref()?.landscape;
+        let actor = self.actors.get(i)?;
+        if i >= 2 || !self.map_density_active()
+            || !self.village.as_ref()?.opening.completed("Q03")
+            || !(7 * 60..15 * 60).contains(&self.minute_of_day())
+            || actor.stamina < 43 || actor.thirst >= 64 || actor.hunger >= 61
+            || self.stock.count(Item::Food) < 5
+            || matches!(self.weather(), YardWeather::Rain | YardWeather::Snow)
+            || self.actors[..2].iter().any(|person| {
+                matches!(person.task, Some(Task::Scenic(_) | Task::TwistLandscapeFibre))
+            })
+        {
+            return None;
+        }
+
+        let day = self.now_ms / DAY_MS;
+        let required = self.next_construction_material_shortfall().map(|(item, _)| item)
+            .filter(|item| matches!(item, Item::Wood | Item::Stone | Item::Rope));
+        let wants_rope = required == Some(Item::Rope)
+            || required.is_none() && state.fibre_stock != 0 && self.stock.count(Item::Rope) < 7;
+        if state.fibre_stock >= FIBRE_PER_ROPE
+            && self.stock.fits(Item::Rope, 1)
+            && (wants_rope || state.fibre_stock >= FIBRE_CAP - 4)
+        {
+            return Some(Task::TwistLandscapeFibre);
+        }
+
+        let candidate = |id: u16| self.scenic_candidate(i, id, day);
+        let supply = |id: u16| {
+            let product = scenic_resources::recipe(usize::from(id))?.product;
+            (wants_rope && product == Product::Fibre
+                || required.is_some_and(|item| product == Product::Stock(item)))
+                .then(|| candidate(id)).flatten()
+        };
+
+        // Keep completed ground output moving. Other partially finished jobs
+        // keep their progress but may wait behind a due construction bill.
+        if let Some(work) = state.unfinished_ids().filter_map(candidate).filter(|work| {
+            work.kind == scenic_resources::WorkKind::Gather || required.is_none() || supply(work.id).is_some()
+        })
+            .min_by_key(|work| actor.cell.distance(Cell::from(work.stand)))
+        {
+            return Some(Task::Scenic(work));
+        }
+
+        let fields = &land_reuse::RESTORED_FIELDS;
+        let fields_due = self.town_allows(TownEra::Workshop)
+            || self.village.as_ref()?.opening.completed("Q08");
+        let home_due = self.town_allows(TownEra::SecondBlock)
+            && self.village.as_ref()?.renovation.completed("Q35")
+            && self.story.housing.reclaimed_project_candidate(self.now_ms).is_some();
+        let parcels = || fields.iter().filter(|_| fields_due).map(|field| field.rect)
+            .chain(home_due.then_some(land_reuse::RECLAIMED_HOME))
+            .flat_map(Self::landscape_tiles).filter_map(scenic_resources::object_at);
+        if let Some(work) = parcels().filter_map(|id| {
+            if required.is_some() { supply(id) } else { candidate(id) }
+        }).min_by_key(|work| actor.cell.distance(Cell::from(work.stand)))
+        {
+            return Some(Task::Scenic(work));
+        }
+
+        if required.is_none() && !wants_rope {
+            return None;
+        }
+        let center = actor.cell.tile();
+        let local = TileRect::new(center.x.saturating_sub(14), center.y.saturating_sub(14), 29, 29);
+        if let Some(work) = Self::landscape_tiles(local).filter_map(scenic_resources::object_at)
+            .filter_map(supply).min_by_key(|work| actor.cell.distance(Cell::from(work.stand)))
+        {
+            return Some(Task::Scenic(work));
+        }
+
+        // Cycle through further sectors without a full-map planning pass.
+        let sectors = usize::from(WILLOW_VILLAGE.width / 16) * usize::from(WILLOW_VILLAGE.height / 16);
+        for step in 0..3 {
+            let sector = (day as usize * 3 + step) % sectors;
+            let across = usize::from(WILLOW_VILLAGE.width / 16);
+            let rect = TileRect::new((sector % across * 16) as u16, (sector / across * 16) as u16, 16, 16);
+            if let Some(work) = Self::landscape_tiles(rect).filter_map(scenic_resources::object_at)
+                .filter_map(supply).min_by_key(|work| actor.cell.distance(Cell::from(work.stand)))
+            {
+                return Some(Task::Scenic(work));
+            }
+        }
+        parcels().filter_map(candidate).min_by_key(|work| actor.cell.distance(Cell::from(work.stand)))
+            .map(Task::Scenic)
+    }
+
+    fn scenic_candidate(&self, i: usize, id: u16, day: u64) -> Option<scenic_resources::Work> {
+        use scenic_resources::{Product, Work};
+        let index = usize::from(id);
+        let state = &self.village.as_ref()?.landscape;
+        let object = WILLOW_VILLAGE.scenic.get(index)?;
+        if !self.scenic_object_available(index) {
+            return None;
+        }
+        let rule = scenic_resources::recipe(index)?;
+        if match rule.product {
+            Product::Stock(item) => !self.stock.fits(item, u16::from(rule.amount)),
+            Product::Fibre => state.fibre_total() + rule.amount > scenic_resources::FIBRE_CAP,
+        } {
+            return None;
+        }
+        let kind = state.next(id, day)?;
+        let stand = [(0, 1), (1, 0), (0, -1), (-1, 0)].into_iter()
+            .filter_map(|(dx, dy)| object.tile.offset(dx, dy))
+            .filter(|&p| {
+                // Reserve the actual adjacent work foot while another actor
+                // uses a public station, route edge or service apron.
+                self.valid_world_cell(Cell::from(p))
+                    && land_reuse::work_foot_unreserved(p)
+                    && !self.external_occupied.contains(p)
+                    && !self.actors.iter().enumerate().any(|(j, other)| {
+                        i != j && !other.inside && (other.cell.tile() == p
+                            || other.route.get(other.route_next).is_some_and(|at| at.tile() == p))
+                    })
+            })
+            .min_by_key(|&p| self.actors[i].cell.distance(Cell::from(p)))?;
+        let work = Work { id, stand, kind };
+        work.tool().is_none_or(|tool| self.tool_available(i, tool)).then_some(work)
     }
 
     fn farm_task(&self, i: usize) -> Option<Task> {
@@ -4375,13 +4876,13 @@ impl LivingWorld {
                     return None;
                 }
                 if self.is_village()
-                    && !self
-                        .phase_mask()
-                        .contains(WILLOW_VILLAGE.crops[index].phase)
+                    && self.available_plot_rect(index).is_none()
                 {
                     return None;
                 }
                 let id = index as u8;
+                let first_reclamation = self.first_reclaimed_harvest_pending(index);
+                let planting_limit = planting_limit + if first_reclamation { 8u16 } else { 0 };
                 if self
                     .actors
                     .iter()
@@ -4432,9 +4933,16 @@ impl LivingWorld {
                 } else {
                     0
                 };
-                (priority, distance, id)
+                let first_reclaimed_crop = self.first_reclaimed_harvest_pending(usize::from(id));
+                (priority != 0, !first_reclaimed_crop, priority, distance, id)
             })
             .map(|(_, _, task)| task)
+    }
+
+    fn first_reclaimed_harvest_pending(&self, index: usize) -> bool {
+        index.checked_sub(village::ORIGINAL_VILLAGE_PLOTS).is_some_and(|offset| {
+            self.village.as_ref().is_some_and(|state| state.landscape.restored_harvests & (1 << offset) == 0)
+        })
     }
 
     fn garden_task(&self, i: usize) -> Option<Task> {
@@ -4663,6 +5171,9 @@ impl LivingWorld {
         {
             return None;
         }
+        let waiting_for_parcel = self.is_village()
+            && self.story.housing.reclaimed_project_candidate(self.now_ms).is_some()
+            && !self.scenic_site_clear(land_reuse::RECLAIMED_HOME);
         next.into_iter()
             .chain(
                 self.story
@@ -4670,7 +5181,8 @@ impl LivingWorld {
                     .proposals_for(self.now_ms, self.is_village()),
             )
             .find(|&order| {
-                Task::BuildHome(order)
+                (!waiting_for_parcel || order.phase != HousingPhase::Clear)
+                    && Task::BuildHome(order)
                     .tool()
                     .is_none_or(|tool| self.tool_available(i, tool))
                     && order
@@ -4688,6 +5200,12 @@ impl LivingWorld {
         let [x, y] = order.site();
         let site = Cell(x.into(), y.into());
         if self.is_village() {
+            if order.is_reclaimed()
+                && (!self.scenic_site_clear(land_reuse::RECLAIMED_HOME)
+                    || order.door().map(u16::from) != [land_reuse::RECLAIMED_HOME_DOOR.x, land_reuse::RECLAIMED_HOME_DOOR.y])
+            {
+                return false;
+            }
             if !self.valid_world_cell(site) {
                 return false;
             }
@@ -4702,16 +5220,8 @@ impl LivingWorld {
                         && self.ground(tx.into(), ty.into()) == Ground::Grass
                 })
             });
-            return available
-                && !self.actors.iter().any(|actor| {
-                    std::iter::once(actor.cell)
-                        .chain(actor.route.iter().skip(actor.route_next).copied())
-                        .any(|cell| order.inside(cell.0.into(), cell.1.into()))
-                })
-                && !self
-                    .external_occupied
-                    .iter()
-                    .any(|cell| order.inside(cell.x.into(), cell.y.into()));
+            let rect = TileRect::new(x.into(), y.into(), w.into(), h.into());
+            return available && !self.land_use_conflicts(rect);
         }
         if self.route(PANTRY, site).is_none() {
             return false;
@@ -4801,7 +5311,8 @@ impl LivingWorld {
             }) => Some((Item::Fish, 1)),
             Task::Cook if self.trade_reserve_pending() && self.stock.count(Item::Fish) > 0
                 && self.stock.count(Item::Crops) < 10 => Some((Item::Fish, 1)),
-            Task::Cook if self.market_crop_shortfall() && self.stock.count(Item::Fish) > 0
+            Task::Cook if (self.market_crop_shortfall() || self.keep_market_crops())
+                && self.stock.count(Item::Fish) > 0
                 && self.village.as_ref().is_some_and(|state| !state.grain.needs_leaf_first(self.now_ms)) => {
                 Some((Item::Fish, 1))
             }
@@ -4948,6 +5459,8 @@ impl LivingWorld {
             Task::FreightBridge => Cell(12, 28),
             Task::ProcessHarvest(_) | Task::CareOrchard(_) => self.pantry(),
             Task::Drain(_) => self.pantry(),
+            Task::Scenic(_) | Task::StowLandscapeFibre | Task::TwistLandscapeFibre
+            | Task::StoreAtReclaimed => unreachable!("working landscape lives in the village"),
             Task::UnpackHome | Task::RackRod | Task::ServeCat | Task::CatEat | Task::CookHomeHarvest | Task::EatSavedPortion
             | Task::EatWhileDrying | Task::CourtyardBreak | Task::Grain(_) | Task::Soil(_) | Task::WorkshopStory(_)
             | Task::Preserve(_) | Task::Renovate(_) | Task::RoadStory(_) | Task::MarketStory(_) | Task::Memory(_) => {
@@ -4958,12 +5471,16 @@ impl LivingWorld {
 
     fn village_site(&self, i: usize, task: Task) -> Cell {
         match task {
+            Task::Scenic(work) => Cell::from(work.stand),
+            Task::StowLandscapeFibre => self.pantry(),
+            Task::TwistLandscapeFibre => self.building_door(4),
+            Task::StoreAtReclaimed => self.farm_store_door().map_or(self.pantry(), Cell::from),
             Task::Clear(id)
             | Task::Till(id)
             | Task::Sow(id)
             | Task::Water(id)
             | Task::Harvest(id)
-            | Task::Drain(id) => Cell::from(WILLOW_VILLAGE.crops[usize::from(id)].work),
+            | Task::Drain(id) => Self::plot_work_cell(usize::from(id)),
             Task::FellTree(id) | Task::TakeTimber(id) => {
                 let tree =
                     Cell::at(self.trees[usize::from(id)].position).expect("village tree anchor");
@@ -4985,6 +5502,12 @@ impl LivingWorld {
                 }
             }
             Task::ProcessHarvest(1) => village::poi("home_well"),
+            Task::ProcessHarvest(3) if self.actors[i].farm_shed_batch => {
+                Cell::from(land_reuse::RECLAIMED_HOME_MATERIAL)
+            }
+            Task::ProcessHarvest(2 | 4) if self.actors[i].farm_shed_batch => {
+                self.farm_store_door().map_or(self.pantry(), Cell::from)
+            }
             Task::ProcessHarvest(3) if i == ActorKind::Ayu.index() => {
                 let rack = grain::drying_site();
                 Cell(rack.0 + 1, rack.1)
@@ -5174,6 +5697,22 @@ impl LivingWorld {
             return false;
         }
         let actor = &self.actors[i];
+        if matches!(task, Task::Scenic(_) | Task::TwistLandscapeFibre | Task::StowLandscapeFibre)
+            && (i >= 2 || actor.carried.is_some() || !self.map_density_active())
+        {
+            return false;
+        }
+        if task == Task::TwistLandscapeFibre && actor.tool.is_some() {
+            return false;
+        }
+        if let Task::Scenic(work) = task
+            && (!work.valid() || !self.scenic_object_available(usize::from(work.id))
+                || self.actors[..2].iter().enumerate().any(|(j, other)| {
+                    i != j && matches!(other.task, Some(Task::Scenic(other_work)) if other_work.id == work.id)
+                }))
+        {
+            return false;
+        }
         let tool = task.tool();
         if tool.is_some_and(|tool| !self.tool_available(i, tool)) {
             return false;
@@ -5186,7 +5725,11 @@ impl LivingWorld {
         let stop_at_pantry = (tool.is_some() && actor.tool != tool)
             || (actor.carried.is_none() && self.input(task).is_some())
             || task == Task::SharedEat;
-        let (target, stage) = if (task == Task::UnpackHome
+        let (target, stage) = if task == Task::TwistLandscapeFibre
+            && self.landscape_carried_fibre(actor.kind) == 0
+        {
+            (self.pantry(), Stage::WalkForTool)
+        } else if (task == Task::UnpackHome
             || matches!(task, Task::BuildHome(order) if order.phase == HousingPhase::MoveIn)
             || task == Task::WorkshopStory(workshop_story::Work::DeliverOrder)
             || task == Task::MarketStory(road_story::MarketWork::CarryMill)
@@ -5314,7 +5857,8 @@ impl LivingWorld {
                 self.now_ms,
                 pace,
                 movement::WalkConditions {
-                    loaded: actor.external_load || actor.moving_box || actor.carried.is_some(),
+                    loaded: actor.external_load || actor.moving_box || actor.carried.is_some()
+                        || self.landscape_carried_fibre(actor.kind) != 0,
                     tired: actor.stamina < 35,
                     rough_weather: matches!(self.weather(), YardWeather::Rain | YardWeather::Snow),
                 },
@@ -5322,6 +5866,7 @@ impl LivingWorld {
         } else {
             OLD_WALK_WORLD_MS[i]
         };
+        let fibre = self.landscape_carried_fibre(self.actors[i].kind);
         let actor = &mut self.actors[i];
         actor.waiting_edge = false;
         actor.waited_edges = 0;
@@ -5331,7 +5876,7 @@ impl LivingWorld {
             if cell.0 != actor.cell.0 {
                 actor.facing_left = cell.0 < actor.cell.0;
             }
-            actor.pose = if actor.carried.is_some() || actor.moving_box || actor.external_load {
+            actor.pose = if actor.carried.is_some() || actor.moving_box || actor.external_load || fibre > 0 {
                 Pose::Carry
             } else {
                 Pose::Walk
@@ -5509,6 +6054,23 @@ impl LivingWorld {
                 }
             }
             Stage::Tool => {
+                if task == Task::TwistLandscapeFibre {
+                    let needed = scenic_resources::FIBRE_PER_ROPE;
+                    let pantry = self.pantry();
+                    let landscape = &mut self.village.as_mut().expect("landscape fibre").landscape;
+                    if self.actors[i].cell != pantry || landscape.fibre_stock < needed
+                        || landscape.fibre_held[i] != 0
+                    {
+                        self.idle(i, MINUTE);
+                        return;
+                    }
+                    landscape.fibre_stock -= needed;
+                    landscape.fibre_held[i] = needed;
+                    if !self.travel_to(i, self.site(i, task)) {
+                        self.idle(i, MINUTE);
+                    }
+                    return;
+                }
                 if task == Task::WorkshopStory(workshop_story::Work::DeliverOrder)
                     || task == Task::MarketStory(road_story::MarketWork::CarryMill)
                     || matches!(task, Task::Renovate(work) if work.transports())
@@ -5774,7 +6336,40 @@ impl LivingWorld {
         self.actors[i].amount = 0;
         self.actors[i].seeds_in_basket = false;
         self.actors[i].harvest_processing = 0;
+        self.actors[i].farm_shed_batch = false;
         self.actors[i].traced_wood = None;
+    }
+
+    fn commit_scenic(&mut self, i: usize, work: scenic_resources::Work) {
+        use scenic_resources::{Product, WorkKind};
+        if i >= 2 || self.actors[i].cell.tile() != work.stand
+            || self.actors[i].carried.is_some()
+            || self.landscape_carried_fibre(self.actors[i].kind) != 0
+            || !work.valid()
+            || self.actors[i].tool != work.tool()
+        {
+            return;
+        }
+        let index = usize::from(work.id);
+        if !self.scenic_object_available(index) {
+            return;
+        }
+        let Some(view) = self.scenic_resource(index) else { return; };
+        let rule = scenic_resources::recipe(index).expect("visible natural scenery");
+        let state = &mut self.village.as_mut().expect("visible natural scenery").landscape;
+        if work.kind == WorkKind::Gather && match rule.product {
+            Product::Stock(item) => !self.stock.fits(item, u16::from(view.pending)),
+            Product::Fibre => state.fibre_total() + view.pending > scenic_resources::FIBRE_CAP,
+        } {
+            return;
+        }
+        if !state.commit(work, self.now_ms / DAY_MS) || work.kind != WorkKind::Gather {
+            return;
+        }
+        match rule.product {
+            Product::Stock(item) => self.carry(i, item, u16::from(view.pending)),
+            Product::Fibre => state.fibre_held[i] = view.pending,
+        }
     }
 
     fn has_carry(&self, i: usize, item: Item, amount: u16) -> bool {
@@ -5941,7 +6536,7 @@ impl LivingWorld {
                     }
                 }
             }
-            Task::Store => {
+            Task::Store | Task::StoreAtReclaimed => {
                 let actor = &self.actors[i];
                 let amount = actor.amount;
                 let seeds = actor.seeds_in_basket;
@@ -5965,6 +6560,28 @@ impl LivingWorld {
                         self.store_recovered_seed();
                     }
                     self.drop_carry(i);
+                }
+            }
+            Task::Scenic(work) => self.commit_scenic(i, work),
+            Task::StowLandscapeFibre => {
+                if self.actors[i].cell != self.pantry() {
+                    return;
+                }
+                let landscape = &mut self.village.as_mut().expect("landscape fibre").landscape;
+                if landscape.fibre_stock + landscape.fibre_held[i] <= scenic_resources::FIBRE_CAP {
+                    landscape.fibre_stock += std::mem::take(&mut landscape.fibre_held[i]);
+                }
+            }
+            Task::TwistLandscapeFibre => {
+                if self.actors[i].cell != self.building_door(4) {
+                    return;
+                }
+                let landscape = &mut self.village.as_mut().expect("landscape fibre").landscape;
+                if landscape.fibre_held[i] == scenic_resources::FIBRE_PER_ROPE
+                    && self.stock.fits(Item::Rope, 1)
+                {
+                    landscape.fibre_held[i] = 0;
+                    self.carry(i, Item::Rope, 1);
                 }
             }
             Task::Cook => {
@@ -6196,6 +6813,14 @@ impl LivingWorld {
                     self.drop_carry(i);
                 }
                 self.story.housing.commit(order, i, self.now_ms);
+                if self.story.housing.active_order().is_none() && let Some(state) = &mut self.village {
+                    state.inherited_landscape_house = None;
+                }
+                if order.phase == HousingPhase::Clear && self.map_density_active() {
+                    let [x, y] = order.lot_origin().map(u16::from);
+                    let [w, h] = order.plan.footprint().map(u16::from);
+                    self.village.as_mut().unwrap().landscape.grade(TileRect::new(x, y, w, h));
+                }
                 if order.phase == HousingPhase::MoveIn
                     && self
                         .story
@@ -6371,6 +6996,7 @@ impl LivingWorld {
         }
         let effort = match task {
             Task::FellTree(_) => 18,
+            Task::Scenic(work) if work.kind != scenic_resources::WorkKind::Gather => 10,
             Task::Build(_)
             | Task::Improve(_)
             | Task::BuildHome(_)
@@ -6397,6 +7023,7 @@ impl LivingWorld {
     }
 
     fn commit_plot(&mut self, i: usize, id: usize, task: Task) {
+        let rect = self.map_density_active().then(|| self.available_plot_rect(id)).flatten();
         if let Some(state) = &mut self.village {
             let bit = 1 << id;
             if task == Task::Drain(id as u8) {
@@ -6422,14 +7049,24 @@ impl LivingWorld {
         let stage = self.plots[id].stage;
         match (stage, task) {
             (PlotStage::Grass, Task::Clear(_)) => {
+                if id >= village::ORIGINAL_VILLAGE_PLOTS
+                    && rect.is_none_or(|rect| self.land_use_conflicts(rect))
+                {
+                    return;
+                }
                 self.plots[id].stage = PlotStage::Cleared;
-                if let Some(state) = &mut self.village { state.soil.leaves(); }
+                if let Some(state) = &mut self.village {
+                    state.soil.leaves();
+                    if let Some(rect) = rect {
+                        state.landscape.grade(rect);
+                    }
+                }
             }
             (PlotStage::Cleared, Task::Till(_)) => self.plots[id].stage = PlotStage::Tilled,
             (PlotStage::Tilled, Task::Sow(_)) if self.has_carry(i, Item::Seeds, 1) => {
                 self.drop_carry(i);
                 self.plots[id].stage = PlotStage::Seed;
-                if let Some(state) = &mut self.village {
+                if let Some(state) = &mut self.village && id < village::ORIGINAL_VILLAGE_PLOTS {
                     state.opening.sown |= 1 << id;
                 }
                 if self.season() == YardSeason::Spring {
@@ -6462,8 +7099,15 @@ impl LivingWorld {
             (PlotStage::Mature, Task::Harvest(_)) if self.actors[i].carried.is_none() => {
                 self.plots[id].stage = PlotStage::Tilled;
                 self.carry(i, Item::Crops, 3);
+                let origin = self.actors[i].cell;
+                self.actors[i].farm_shed_batch = self.farm_store_door().is_some_and(|door| {
+                    origin.distance(Cell::from(door)) < origin.distance(self.pantry())
+                });
                 if let Some(state) = &mut self.village {
                     self.actors[i].harvest_processing = 1;
+                    if let Some(offset) = id.checked_sub(village::ORIGINAL_VILLAGE_PLOTS) {
+                        state.landscape.restored_harvests |= 1 << offset;
+                    }
                     let opening = &mut state.opening;
                     if opening.sown & (1 << id) != 0 && opening.completed("Q02")
                         && !opening.completed("Q03") && opening.harvest_carrier.is_none()
@@ -6708,13 +7352,13 @@ impl LivingWorld {
 
     /// Validate before running a deserialized state. Plot and facility IDs are their array slots.
     pub fn validate(&self) -> bool {
-        self.validate_at_map_revision(WILLOW_VILLAGE.map_revision)
+        self.validate_at_map_revision(WILLOW_VILLAGE.map_revision, village::VILLAGE_PLOT_CAP)
     }
 
-    fn validate_at_map_revision(&self, revision: u16) -> bool {
+    fn validate_at_map_revision(&self, revision: u16, village_plot_count: usize) -> bool {
         let village = self.is_village();
         let expected_plots = if village {
-            WILLOW_VILLAGE.crops.len()
+            village_plot_count
         } else {
             PLOTS.len()
         };
@@ -6733,6 +7377,13 @@ impl LivingWorld {
                     || (state.region_flags & PhaseMask::DAY_ONE.bits()) == 0
                     || state.freight_shifts > 3
                     || state.flooded_plots >> 30 != 0
+                    || !state.landscape.valid(self.now_ms / DAY_MS)
+                    || state.inherited_landscape_house.is_some_and(|lot| {
+                        self.story.housing.active_order().is_none_or(|order| order.lot != lot || order.is_reclaimed())
+                    })
+                    || !state.landscape.is_empty() && !self.map_density_active()
+                    || self.story.housing.orders().any(HousingOrder::is_reclaimed)
+                        && !self.scenic_site_clear(land_reuse::RECLAIMED_HOME)
                     || !state.opening.validate(self.now_ms)
                     || !state.grain.validate(self.now_ms)
                     || !state.soil.validate(self.now_ms)
@@ -6839,6 +7490,15 @@ impl LivingWorld {
                     }
                 || actor.route_next > actor.route.len()
                 || actor.task.is_some_and(|task| !task.valid_for(village))
+                || (i == 2 && matches!(actor.task, Some(Task::Scenic(_) | Task::TwistLandscapeFibre | Task::StowLandscapeFibre | Task::StoreAtReclaimed)))
+                || (self.landscape_carried_fibre(actor.kind) > 0 && (actor.outside || actor.carried.is_some()))
+                || actor.farm_shed_batch && (actor.carried != Some(Item::Crops) || self.farm_store_door().is_none())
+                || matches!(actor.task, Some(Task::StoreAtReclaimed) if self.farm_store_door().is_none())
+                || matches!(actor.task, Some(Task::Scenic(work)) if {
+                    self.scenic_resource(usize::from(work.id)).is_none() || self.actors[..i].iter().any(|other| {
+                        matches!(other.task, Some(Task::Scenic(other)) if work.id == other.id)
+                    })
+                })
                 || (i == 2 && matches!(actor.task, Some(Task::UnpackHome | Task::RackRod | Task::ServeCat | Task::CookHomeHarvest | Task::CourtyardBreak)))
                 || (i < 2 && actor.task == Some(Task::CatEat))
                 || (i != ActorKind::Ayu.index() && actor.task == Some(Task::EatSavedPortion))
@@ -6966,7 +7626,15 @@ impl LivingWorld {
         }
         self.plots.iter().enumerate().all(|(i, plot)| {
             let cell = if village {
-                let rect = WILLOW_VILLAGE.crops[i].rect;
+                let rect = if let Some(crop) = WILLOW_VILLAGE.crops.get(i) {
+                    crop.rect
+                } else {
+                    let field = &land_reuse::RESTORED_FIELDS[i - village::ORIGINAL_VILLAGE_PLOTS];
+                    if plot.stage != PlotStage::Grass && !self.scenic_site_clear(field.rect) {
+                        return false;
+                    }
+                    field.rect
+                };
                 Cell(rect.x, rect.y)
             } else {
                 PLOTS[i]
@@ -7306,6 +7974,109 @@ mod tests {
         while world.is_catching_up() {
             world.advance_world_ms(0);
         }
+    }
+
+    fn landscape_object(id: &str) -> usize {
+        WILLOW_VILLAGE.scenic.iter().position(|item| item.id == id).unwrap()
+    }
+
+    fn at_scenic_work(world: &mut LivingWorld, i: usize, work: scenic_resources::Work) {
+        let actor = &mut world.actors[i];
+        actor.cell = Cell::from(work.stand);
+        actor.position = actor.cell.point();
+        actor.tool = work.tool();
+    }
+
+    #[test]
+    fn working_landscape_partial_stone_survives_reload_capacity_and_competing_pickup() {
+        use scenic_resources::WorkKind;
+        let mut world = LivingWorld::new_village_wall_ms(0);
+        let rock = landscape_object("density.field_inner_island.rock.22_55");
+        let tile = WILLOW_VILLAGE.scenic[rock].tile;
+        let day = world.world_ms() / DAY_MS;
+        let work = world.scenic_candidate(0, rock as u16, day).unwrap();
+        at_scenic_work(&mut world, 0, work);
+        assert!(!world.can_walk(tile.x.into(), tile.y.into()));
+        assert!(world.begin(0, Task::Scenic(work)));
+        assert!(!world.begin(1, Task::Scenic(work)));
+        world.idle(0, MINUTE);
+        world.commit_scenic(0, work);
+        assert_eq!(world.scenic_resource(rock).unwrap().work_done, 1);
+        world = serde_json::from_slice(&serde_json::to_vec(&world).unwrap()).unwrap();
+        assert!(world.validate());
+        world.commit_scenic(0, work);
+        assert_eq!(world.scenic_resource(rock).unwrap().pending, 3);
+        assert!(!world.can_walk(tile.x.into(), tile.y.into()));
+        assert!(!world.navigation_view().unwrap().can_walk(tile));
+        let gather = scenic_resources::Work { kind: WorkKind::Gather, ..work };
+        at_scenic_work(&mut world, 0, gather);
+        let stone = world.stock.count(Item::Stone);
+        world.stock.0[Item::Stone as usize] = STOCK_CAP;
+        world.commit_scenic(0, gather);
+        assert_eq!(world.scenic_resource(rock).unwrap().pending, 3);
+        assert_eq!(world.actors[0].carried, None);
+        world.stock.0[Item::Stone as usize] = stone;
+        let terrain = world.terrain_revision();
+        world.commit_scenic(0, gather);
+        assert_eq!(world.scenic_resource(rock).unwrap().stage, ScenicStage::Cleared);
+        assert_ne!(terrain, world.terrain_revision());
+        assert!(world.can_walk(tile.x.into(), tile.y.into()));
+        assert!(world.navigation_view().unwrap().can_walk(tile));
+        assert_eq!(world.stock.count(Item::Stone), stone);
+        assert!(world.has_carry(0, Item::Stone, 3));
+        at_scenic_work(&mut world, 1, gather);
+        world.commit_scenic(1, gather);
+        assert_eq!(world.actors[1].carried, None);
+        world.actors[0].cell = world.pantry();
+        world.commit(0, Task::Store);
+        assert_eq!(world.actors[0].carried, None);
+        assert_eq!(world.stock.count(Item::Stone), stone + 3);
+    }
+
+    #[test]
+    fn working_landscape_clearance_and_old_custody_exceptions_compose() {
+        let mut world = LivingWorld::new_village_wall_ms(0);
+        let rock = landscape_object("density.field_inner_island.rock.22_55");
+        let grass = landscape_object("density.field_inner_island.grass.23_55");
+        let cleared = WILLOW_VILLAGE.scenic[rock].tile;
+        assert!(!world.scenic_site_clear(land_reuse::RESTORED_FIELDS[0].rect));
+        assert!(world.test_scenic_visual_fixture(rock, ScenicStage::Cleared, false));
+        assert!(world.test_scenic_visual_fixture(grass, ScenicStage::Cleared, false));
+        assert!(world.scenic_site_clear(land_reuse::RESTORED_FIELDS[0].rect));
+        assert_eq!(world.restored_plot_site(30).unwrap().0, land_reuse::RESTORED_FIELDS[0].rect);
+
+        let nearby = WILLOW_VILLAGE.scenic.iter().find(|item| item.tile != cleared
+            && world.map_density_adds_obstacle(item.tile)).unwrap().tile;
+        world.village.as_mut().unwrap().density_holdouts = vec![nearby];
+        assert!(world.navigation_view().unwrap().can_walk(nearby));
+        world.actors[0].cell = Cell::from(cleared);
+        world.actors[0].position = world.actors[0].cell.point();
+        let phases = world.ready_map_density(&[], &[]).expect("old prop was removed separately");
+        world.commit_map_density(phases, Vec::new());
+        assert!(world.navigation_view().unwrap().can_walk(cleared));
+        assert!(!world.navigation_view().unwrap().can_walk(nearby));
+        assert!(world.validate());
+    }
+
+    #[test]
+    fn working_landscape_real_groundwork_consumes_only_soft_cover_in_place() {
+        let mut world = LivingWorld::new_village_wall_ms(0);
+        world.village.as_mut().unwrap().grant("farm_expansion");
+        let (index, scenic) = WILLOW_VILLAGE.crops.iter().enumerate().find_map(|(index, crop)| {
+            (world.plots[index].stage == PlotStage::Grass && world.phase_mask().contains(crop.phase))
+                .then(|| LivingWorld::landscape_tiles(crop.rect).filter_map(scenic_resources::object_at)
+                    .map(usize::from).find(|&id| WILLOW_VILLAGE.scenic[id].temporary_ground))
+                .flatten().map(|id| (index, id))
+        }).unwrap();
+        assert_eq!(world.scenic_resource(scenic).unwrap().stage, ScenicStage::Standing);
+        assert!(world.scenic_candidate(0, scenic as u16, world.now_ms / DAY_MS).is_none());
+        let material = world.stock.clone();
+        world.commit_plot(0, index, Task::Clear(index as u8));
+        assert_eq!(world.plot_stage(index), Some(PlotStage::Cleared));
+        assert_eq!(world.scenic_resource(scenic).unwrap().stage, ScenicStage::Cleared);
+        assert_eq!(world.landscape_fibre_stock(), 0);
+        assert_eq!(world.stock, material);
+        assert!(world.validate());
     }
 
     #[test]
@@ -7662,15 +8433,58 @@ mod tests {
         assert!(world.stock.add(Item::Fish, 1));
         let original = serde_json::to_vec(&world).unwrap();
         assert_eq!(world.input(Task::Cook), Some((Item::Crops, 2)));
-        world.set_market_crop_reserve(Some(u16::MAX));
+        world.set_market_crop_reserve(Some(u16::MAX), false);
         assert_eq!(world.supply_requests.market_crops, Some(12));
         assert!(world.market_crop_shortfall());
         assert_eq!(world.input(Task::Cook), Some((Item::Fish, 1)));
         assert_eq!(serde_json::to_vec(&world).unwrap(), original);
         assert!(world.spend_stock(Item::Fish, 1));
         assert_eq!(world.input(Task::Cook), Some((Item::Crops, 2)));
-        world.set_market_crop_reserve(None);
+        world.set_market_crop_reserve(None, false);
         assert!(!world.market_crop_shortfall());
+    }
+
+    #[test]
+    fn village_autumn_crop_request_assigns_two_real_field_jobs() {
+        let mut world = LivingWorld::new_village_wall_ms(0);
+        world.now_ms = 392 * DAY_MS + 9 * HOUR;
+        world.target_ms = world.now_ms;
+        let opening = &mut world.village.as_mut().unwrap().opening;
+        opening.boxes_stowed = 0b11;
+        opening.cat_ate = true;
+        opening.rod_on_rack = true;
+        opening.rod_returned = true;
+        opening.parallel_work = true;
+        world.stock.0[Item::Food as usize] = 6;
+        world.stock.0[Item::Crops as usize] = 5;
+        world.stock.0[Item::Water as usize] = 9;
+        world.bowl = BOWL_CAP;
+        world.actors[ActorKind::Orange.index()].hunger = 20;
+        for worker in 0..2 {
+            world.idle(worker, MINUTE);
+            let outfit = world.outfit_for(worker, false);
+            let actor = &mut world.actors[worker];
+            actor.outfit = outfit;
+            actor.hunger = 20;
+            actor.thirst = 20;
+            actor.stamina = 100;
+        }
+        world.plots[0].stage = PlotStage::Mature;
+        world.plots[1].stage = PlotStage::Mature;
+        let stock = world.stock.clone();
+        let mut regular = world.clone();
+        regular.set_market_crop_reserve(Some(10), false);
+        regular.plan(ActorKind::Ayu.index());
+        assert_eq!(regular.actors[ActorKind::Ayu.index()].task, Some(Task::Cook));
+
+        world.set_market_crop_reserve(Some(10), true);
+        for worker in 0..2 {
+            world.plan(worker);
+        }
+        let jobs = [world.actors[0].task, world.actors[1].task];
+        assert!(matches!(jobs, [Some(Task::Harvest(harvest)), Some(Task::Water(water))]
+            if harvest != water), "expected shared basket and watering can on different fields: {jobs:?}");
+        assert_eq!(world.stock, stock);
     }
 
     #[test]
@@ -8093,7 +8907,7 @@ mod tests {
         assert!(world.validate());
         assert_eq!(world.world_ms(), 4 * DAY_MS + 6 * HOUR);
         assert_eq!(world.map_extent(), (192, 128));
-        assert_eq!(world.plots().len(), 30);
+        assert_eq!(world.plots().len(), village::VILLAGE_PLOT_CAP);
         assert_eq!(world.stock.0[..4], [6, 12, 12, 12]);
         assert_eq!(world.crop_batches.units(), 12);
         assert_eq!(

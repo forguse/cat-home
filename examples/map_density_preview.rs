@@ -29,7 +29,22 @@ fn main() -> io::Result<()> {
         (serde_json::from_value::<LivingWorld>(data["world"].clone()).map_err(io::Error::other)?,
          serde_json::from_value::<VillageLife>(data["life"].clone()).map_err(io::Error::other)?)
     } else {(LivingWorld::new_village_wall_ms(0),VillageLife::default())};
+    if args.get(2).is_some() && (!world.validate() || !life.validate_for_world(&world)) {
+        return Err(io::Error::other("Snapshot failed the current world and resident checks"));
+    }
     let size=(724,540);
+    let focus = match (args.get(3), args.get(4)) {
+        (None, None) => None,
+        (Some(x), Some(y)) => {
+            let parse = |v: &std::ffi::OsString| -> io::Result<f32> {
+                let n = v.to_string_lossy().parse::<f32>().map_err(io::Error::other)?;
+                if !n.is_finite() { return Err(io::Error::other("finite tile coordinates required")); }
+                Ok(n)
+            };
+            Some([("focus", parse(x)?, parse(y)?)])
+        }
+        _ => return Err(io::Error::other("map_density_preview OUTPUT [SAVE [TILE_X TILE_Y]]")),
+    };
     let mut view=LivingView::new();
     view.enable_builtin_premium().map_err(io::Error::other)?;
     view.set_companionship_rewards(life.companionship_received());
@@ -38,7 +53,7 @@ fn main() -> io::Result<()> {
     use cat_home::living_world::ActorKind;
     view.set_village_household_payload([life.household_held(ActorKind::Xiaohe),life.household_held(ActorKind::Ayu)]);
     println!("map revision {} source {} phases {}",cat_home::map_data::WILLOW_VILLAGE.map_revision,cat_home::map_data::WILLOW_VILLAGE.source_sha256,world.phase_mask().bits());
-    for &(name,x,y) in SITES {
+    for &(name,x,y) in focus.as_ref().map_or(SITES, |s| s.as_slice()) {
         let mut camera=Camera{x:x*8.0-size.0 as f32/12.0,y:y*8.0-size.1 as f32/12.0,follow:None};
         camera.clamp_in_world(&world,cat_home::viewport::logical_size(size));
         view.render_village(&world,&camera,size,&[],None,&life.visuals(&world),&life.wildlife_visuals(&world),&life.stall_visuals(&world));
