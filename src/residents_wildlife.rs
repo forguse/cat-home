@@ -1,11 +1,16 @@
 //! Finite habitat appointments for the existing village animals.
-use super::{ANIMALS, DAY_MS, MINUTE, WildlifeVisual, animal_visible, point};
+use super::{ANIMALS, DAY_MS, HOUR, MINUTE, WildlifeVisual, animal_visible, point};
 use crate::{
     living_world::{ActorKind, Ground, LivingWorld, Point, ScenicStage, TILE_PX, YardWeather},
     map_data::{TilePos, WILLOW_VILLAGE},
 };
 use serde::{Deserialize, Serialize};
 use std::sync::OnceLock;
+
+#[path = "residents_habitat.rs"]
+mod habitat;
+pub(super) const SPARROW: usize = 8;
+pub(super) const BEE: usize = 17;
 
 pub(super) const FROG: usize = 5;
 pub(super) const MOUSE: usize = 7;
@@ -35,6 +40,18 @@ pub(super) enum Receipt {
         calling: TilePos,
         bank: TilePos,
     },
+    Bee {
+        source: u8,
+        target: u8,
+    },
+    Sparrow {
+        at: TilePos,
+    },
+    DuckPrint {
+        first: TilePos,
+        last: TilePos,
+    },
+    DuckRejoined,
 }
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize)]
@@ -170,6 +187,9 @@ impl Roof {
 }
 
 pub(crate) fn layered_depth(world: &LivingWorld, entry: &WildlifeVisual) -> Option<i32> {
+    if let Some(depth) = habitat::layered_depth(world, entry) {
+        return Some(depth);
+    }
     if entry.sprite.starts_with("wild_frog_") && entry.position.x >= point(CALL_ROCK).x - 2.0 {
         return Some(point(CALL_ROCK).y as i32 + 1);
     }
@@ -236,6 +256,7 @@ pub(super) struct State {
     pond_day: Option<u64>,
     rain_seen: Option<bool>,
     next_probe: u64,
+    habitat: habitat::Habitat,
 }
 
 fn tile(p: Point) -> TilePos {
@@ -352,15 +373,18 @@ impl State {
         if let Some(pond) = self.pond {
             deadline = deadline.min(pond.frog.end.max(pond.duck.end));
         }
-        deadline
+        deadline.min(self.habitat.deadline())
     }
 
     pub(super) fn needs_update(&self, world: &LivingWorld) -> bool {
         world.world_ms() >= self.deadline() || self.mouse_witness(world).is_some()
     }
 
-    pub(super) fn valid(&self, now: u64) -> bool {
+    pub(super) fn valid(&self, world: &LivingWorld) -> bool {
+        let now = world.world_ms();
         self.next_probe <= now.saturating_add(MINUTE)
+            && self.habitat.valid(world)
+            && !(self.pond.is_some() && self.habitat.duck_active())
             && [self.mouse_day, self.bird_day, self.pond_day]
                 .into_iter()
                 .flatten()
@@ -435,6 +459,9 @@ impl State {
     }
 
     pub(super) fn routine_phase(&self, id: usize, now: u64) -> u64 {
+        if let Some(phase) = self.habitat.phase(id, now) {
+            return phase;
+        }
         SHIFTED
             .iter()
             .position(|&animal| animal == id)
@@ -452,23 +479,34 @@ impl State {
         &mut self,
         world: &LivingWorld,
         occupied: &[TilePos],
-    ) -> [Option<Receipt>; 3] {
+    ) -> [Option<Receipt>; 6] {
         let now = world.world_ms();
         let probe = now >= self.next_probe;
         if probe {
             self.next_probe = now.saturating_add(MINUTE);
         }
-        let result = [
+        let [mouse, swallow, pond] = [
             self.advance_mouse(world, occupied),
             self.advance_bird(world),
             self.advance_pond(world, occupied),
         ];
+        let samples = [BEE, SPARROW, DUCK]
+            .map(|id| super::routine_animal(id, world, self.routine_phase(id, now)).position);
+        let [bee, sparrow, duck] =
+            self.habitat
+                .advance(world, occupied, probe, self.pond.is_some(), samples);
+        let duck = if duck == Some(Receipt::DuckRejoined) {
+            self.rejoin(DUCK, 0, now);
+            None
+        } else {
+            duck
+        };
         self.start_mouse(world, occupied);
         if probe {
             self.start_bird(world);
             self.start_pond(world, occupied);
         }
-        result
+        [mouse, swallow, pond, bee, sparrow, duck]
     }
 
     fn mouse_witness(&self, world: &LivingWorld) -> Option<(ActorKind, Point)> {
@@ -676,6 +714,7 @@ impl State {
     fn start_pond(&mut self, world: &LivingWorld, occupied: &[TilePos]) {
         let now = world.world_ms();
         if self.pond.is_some()
+            || self.habitat.duck_active()
             || self.pond_day == Some(now / DAY_MS)
             || !animal_visible(FROG, ANIMALS[FROG], world)
             || !animal_visible(DUCK, ANIMALS[DUCK], world)
@@ -766,6 +805,9 @@ impl State {
     }
 
     pub(super) fn visual(&self, id: usize, world: &LivingWorld) -> Option<WildlifeVisual> {
+        if let Some(visual) = self.habitat.visual(id, world) {
+            return Some(visual);
+        }
         let now = world.world_ms();
         let frame = (now / 24_000 % 2) as usize;
         let (edge, sprite) = match id {
@@ -824,6 +866,10 @@ impl State {
             facing_left: edge.to.x < edge.from.x,
         })
     }
+
+    pub(super) fn marks(&self, world: &LivingWorld) -> impl Iterator<Item = WildlifeVisual> + '_ {
+        self.habitat.marks(world)
+    }
 }
 
 #[cfg(test)]
@@ -877,14 +923,14 @@ mod tests {
             }),
             ..State::default()
         };
-        assert!(state.valid(now));
+        assert!(state.valid(&world));
         world.advance_world_ms(1);
         assert_eq!(state.advance_mouse(&world, &[MOUSE_TURN]), None);
         assert_eq!(state.mouse.unwrap().phase, MousePhase::Abort);
         world.advance_world_ms(state.mouse.unwrap().edge.end - world.world_ms());
         assert_eq!(state.advance_mouse(&world, &[MOUSE_TURN]), None);
         assert!(state.mouse.is_none());
-        assert!(state.valid(world.world_ms()));
+        assert!(state.valid(&world));
     }
 
     #[test]
@@ -1027,7 +1073,7 @@ mod tests {
                 (8, "duck-on-land", pond == Some(PondPhase::Rest)),
             ] {
                 if ready && !captures[index] {
-                    assert!(life.wildlife.valid(now));
+                    assert!(life.wildlife.valid(&world));
                     captures[index] = true;
                     capture(directory.as_deref(), name, &world, &life);
                 }

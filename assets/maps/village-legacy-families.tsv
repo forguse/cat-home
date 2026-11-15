@@ -1,25 +1,47 @@
-base	roles	variant_modes	places	weather	periods	seasons	binding
-H01-20	H01	1	4	0,1,2	0,1,2	0,1,2	Paid housing frame from its real front work stand; existing whole-frame animation
-H01-27	H01						Actual dirty borrowed hoe brushed before returning; hoe adapts original spade
-H01-29	H01						A borrowed rod reaches a real pond and casting starts
-H01-30	H01						Caught fish deposited or unsuccessful rod personally returned
-H01-37	H01	1	4	0,1,2,3	1,2	0,1,2	One owned meal delivered into actual cat bowl from its actual front stand
-H01-38	H01	1	3	0,1,2,3	0,1,2	0,1,2	Actual dirty bowl cleaned and refilled from the real left-hand work stand
-H06-09	H06						Two bounded menu entries reflect real counter stock and reservations
-H07-01	H07						Collect the same owned outgoing letter from its physical source
-H07-05	H07						One arrival receipt for the same delivered letter
-H07-06	H07						Expired appointment letter physically returned to its original owner
-H09-01	H09						Real orchard blossom painted onto a reusable owned board; adapts the old flower bed
-H09-06	H09						Actual pond and existing home reflection painted at their safe shore
-H09-10	H09	1	4	0,1	1	0,1,2	Painted board physically carried home and replaces one of three display boards
-H10-01	H10						Count actual packed seed stock at the open counter
-H10-02	H10	1	0	0,1	1	0,1,2	Actual crop-for-seed exchange; one bag means the real traded batch
-H10-10	H10						Remaining seed goods carried home and stale reservations released
-A08-10	A08						Frog leaves real shared bank before the same duck lands; companion A10 required
-A19-09	A19						Mouse hears a real nearby walker, pauses and follows a new safe grass route
-S02	H01						Return to the one remembered successful rest spot during discretionary time, then release it
-S08	H01,A01	1,2,3	3,4,5	2	0,1,2,3	0,1	Three contiguous real steps; actual shallow, wet or saturated ground gives tracks 30, 60 or 90 game minutes
-S09	H01						Real reclamation work leftovers removed from source and returned to stock
-S13	H01						Briefly inspect a genuinely newly installed fixture from a legal stand, remember its version
-S14	H01						Arrive at empty meal source, wait, then use a genuinely available alternative
-S18	H01	1	2	0,1,2,3	0,1,2	0,1,2	Repaired expanded-district public well tested by its next actual use, with bounded result memory
+base	roles	variant_modes	places	weather	periods	seasons	binding	display_label
+A01-02	A01						Cat smells the actually served paid meal at its bowl before eating that meal	先闻一闻碗里的饭再开动
+A01-08	A01						Actual recent meal permits outdoor midday nap; rain wakes the cat into a continuous walk to cover	饭后到室外打盹
+A01-10	A01						Cat reaches the actual home door before entering at night; no outdoor bed counted as indoors	天黑后回屋睡觉
+A01-13	A01						Actual soft-ground cat steps leave bounded fading paw marks; no territorial ownership simulation	巡路时留下真实小爪印
+A01-49	A01						First winter snow probe reaches adjacent snow from legal ground and leaves one actual paw mark	试探初雪并收回爪子
+A04-10	A04						Sparrow flies continuously to Ayu's real roof and perches to chirp once per dawn	黎明飞到屋檐报到鸣叫
+A08-10	A08						Frog leaves real shared bank before the same duck lands; companion A10 required	先让出岸边再请小鸭上岸
+A10-01	A10						Duck takes two legal wet-shore steps after rain; paired footprints expire in bounded storage	在雨后湿岸留下蹼印
+A14-01	A14						Bee physically visits two distinct flowering orchard trees; same target's next ripe batch gains one capped fruit once	在两株开花果树间传粉
+A19-09	A19						Mouse hears a real nearby walker, pauses and follows a new safe grass route	听到脚步后沿草路避让
+H01-13	H01						Only the two reclaimed fields require real hoeing after harvest before the next sowing	收获后用锄重新整行
+H01-17	H01						Sorting one real harvest batch separates its legitimate seed pouch and stores both with the crop basket	分拣收成并留种
+H01-20	H01	1	4	0,1,2	0,1,2	0,1,2	Paid housing frame from its real front work stand; existing whole-frame animation	安装住房框架
+H01-27	H01						Actual dirty borrowed hoe brushed before returning; hoe adapts original spade	刷净借来的泥锄并归还
+H01-29	H01						A borrowed rod reaches a real pond and casting starts	带钓竿到池边下竿
+H01-30	H01						Caught fish deposited or unsuccessful rod personally returned	把鱼入仓或空竿归还
+H01-33	H01						Two dry summer periods trigger one paid water bucket in three timed pours; spent water cannot be refunded	给干裂菜畦分次补水
+H01-34	H01						Household performs three on-site drainage phases before removing the actual plot flood flag	给真正受淹的田排水
+H01-37	H01	1	4	0,1,2,3	1,2	0,1,2	One owned meal delivered into actual cat bowl from its actual front stand	把一份饭送到橘子的碗里
+H01-38	H01	1	3	0,1,2,3	0,1,2	0,1,2	Actual dirty bowl cleaned and refilled from the real left-hand work stand	洗净猫碗并补水
+H01-48	H01						Household recipient walks to the booked handover stand and receives the same original letter from the courier; custody moves only on real arrival	从邮差手中接下原信
+H01-52	H01						Indoor change to the existing raincoat followed by actual outdoor field work during that wet spell	进屋换雨衣后到湿地工作
+H01-53	H01						Healthy actor changes to existing Home clothes indoors then consumes real water while resting on own porch in a cool dry evening	回屋换家居服后在门廊休息
+H01-60	H01						Real night journey to actor's own residence followed by actual indoor sleep; once per night	夜里走回自己的房间睡觉
+H03-02	H03						Real wood taken to the carpenter saw bench and cut into a bounded owned repair piece, then carried to the damaged grain rack; adapts old construction-sized boards	把实木加工成定尺修补件
+H06-05	H06						Cooking actual crops creates bounded scraps carried to the bin and poured through timed work; compost must mature before field use	把实际菜皮送去堆肥
+H06-07	H06						Chef carries one owned food portion to the same arrived guest appointment, hands over and observes eating; cancellation returns original portion	为约好的来客打包礼篮
+H06-09	H06						Two bounded menu entries reflect real counter stock and reservations	按实有餐食开放预约
+H07-01	H07						Collect the same owned outgoing letter from its physical source	到来源点收取原信
+H07-05	H07						One arrival receipt for the same delivered letter	送到原信并盖交付戳
+H07-06	H07						Expired appointment letter physically returned to its original owner	把逾期原信退回来源
+H08-04	H08						Irrigator takes their trench tool from home and works six game minutes at a genuinely flooded field; successful drainage only after work completes	给受涝地开排水槽
+H09-01	H09						Real orchard blossom painted onto a reusable owned board; adapts the old flower bed	在开花果树旁写生
+H09-06	H09						Actual pond and existing home reflection painted at their safe shore	在池边画住屋倒影
+H09-10	H09	1	4	0,1	1	0,1,2	Painted board physically carried home and replaces one of three display boards	把完成的画带回家换展
+H10-01	H10						Count actual packed seed stock at the open counter	开摊清点实有种子
+H10-02	H10	1	0	0,1	1	0,1,2	Actual crop-for-seed exchange; one bag means the real traded batch	用余菜交换种子
+H10-07	H10						Last actual seed batch reserved to the same booked buyer and trip; fulfillment or cancellation releases the bounded reservation	为真实买家暂留最后一袋种子
+H10-10	H10						Remaining seed goods carried home and stale reservations released	收摊把余种归仓
+S01	H01						Two protagonists meet on opposing real routes, step aside legally, preserve cargo and tasks, and both reach original goals before recording	窄路会车让行后继续原路
+S02	H01						Return to the one remembered successful rest spot during discretionary time, then release it	重访上次休息的地方
+S08	H01,A01	1,2,3	3,4,5	2	0,1,2,3	0,1	Three contiguous real steps; actual shallow, wet or saturated ground gives tracks 30, 60 or 90 game minutes	走过湿地留下一串脚印
+S09	H01						Real reclamation work leftovers removed from source and returned to stock	把开荒工位的余料收回
+S13	H01						Briefly inspect a genuinely newly installed fixture from a legal stand, remember its version	走近看看新装的设施
+S14	H01						Arrive at empty meal source, wait, then use a genuinely available alternative	餐源空了，改用原料做饭
+S18	H01	1	2	0,1,2,3	0,1,2	0,1,2	Repaired expanded-district public well tested by its next actual use, with bounded result memory	修井后实际提水试用

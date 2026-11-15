@@ -128,6 +128,8 @@ pub(super) struct State {
     pub landscape: scenic_resources::State,
     #[serde(default, skip_serializing_if = "super::legacy_yard_rules::HouseholdRules::is_empty")]
     pub household_rules: super::legacy_yard_rules::HouseholdRules,
+    #[serde(default, skip_serializing_if = "super::household_routines::State::is_empty")]
+    pub family_routines: super::household_routines::State,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub inherited_landscape_house: Option<u8>,
     #[serde(default, skip_serializing_if = "is_false")]
@@ -364,6 +366,8 @@ pub(super) struct OrchardTree {
     pub health: u8,
     pub fruit: u8,
     pub last_care_day: u64,
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub pending_pollination: bool,
 }
 
 fn initial_orchard() -> [OrchardTree; 4] {
@@ -377,6 +381,7 @@ fn initial_orchard() -> [OrchardTree; 4] {
         health: 80,
         fruit: 0,
         last_care_day: 0,
+        pending_pollination: false,
     })
 }
 
@@ -387,6 +392,7 @@ impl State {
             density_holdouts: Vec::new(),
             landscape: scenic_resources::State::default(),
             household_rules: super::legacy_yard_rules::HouseholdRules::default(),
+            family_routines: super::household_routines::State::default(),
             inherited_landscape_house: None,
             imported_pedestrian_bridge: false,
             freight_inspected: false,
@@ -502,13 +508,76 @@ impl State {
                 }
             };
             if phase == OrchardPhase::Ripe && tree.phase != phase {
-                tree.fruit = (tree.health / 15).clamp(2, 7);
+                let normal = (tree.health / 15).clamp(2, 7);
+                tree.fruit = (normal + u8::from(tree.pending_pollination)).min(7);
+            }
+            if !matches!(phase, OrchardPhase::Flower | OrchardPhase::GreenFruit) {
+                tree.pending_pollination = false;
             }
             if phase != OrchardPhase::Ripe {
                 tree.fruit = 0;
             }
             tree.phase = phase;
         }
+    }
+}
+
+impl LivingWorld {
+    pub fn orchard_pollination_pending(&self, tree_index: usize) -> bool {
+        tree_index.checked_sub(8)
+            .and_then(|index| self.village.as_ref()?.orchard.get(index))
+            .is_some_and(|tree| tree.pending_pollination)
+    }
+
+    pub fn orchard_fruit(&self, tree_index: usize) -> Option<u8> {
+        let index = tree_index.checked_sub(8)?;
+        Some(self.village.as_ref()?.orchard.get(index)?.fruit)
+    }
+
+    /// Commit after the same bee has actually stopped on both blooming trees.
+    pub fn village_pollinate_orchard(&mut self, source: usize, target: usize) -> bool {
+        if source == target || self.weather() != YardWeather::Clear
+            || !WILLOW_VILLAGE.phase("cooperative_farm")
+                .is_some_and(|phase| self.phase_mask().contains(phase))
+            || self.orchard_phase(source) != Some(OrchardPhase::Flower)
+            || self.orchard_phase(target) != Some(OrchardPhase::Flower)
+            || self.orchard_pollination_pending(target)
+        {
+            return false;
+        }
+        self.village.as_mut().expect("two village orchard trees").orchard[target - 8]
+            .pending_pollination = true;
+        true
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn fruit_bonus_survives_flower_and_green_fruit_and_is_spent_once_at_ripening() {
+        let mut normal = State::new();
+        normal.orchard[0].health = 100;
+        normal.advance_orchard(20);
+        assert_eq!(normal.orchard[0].phase, OrchardPhase::Flower);
+        let mut visited = normal.clone();
+        visited.orchard[0].pending_pollination = true;
+        let mut visited: State = serde_json::from_slice(&serde_json::to_vec(&visited).unwrap()).unwrap();
+        for day in 21..49 {
+            normal.advance_orchard(day);
+            visited.advance_orchard(day);
+            assert!(visited.orchard[0].pending_pollination);
+            assert_eq!(visited.orchard[0].fruit, 0);
+        }
+        normal.advance_orchard(49);
+        visited.advance_orchard(49);
+        assert_eq!(visited.orchard[0].fruit, normal.orchard[0].fruit + 1);
+        assert_eq!(visited.orchard[1].fruit, normal.orchard[1].fruit);
+        assert!(!visited.orchard[0].pending_pollination);
+        visited.orchard[0].fruit -= 1;
+        visited.advance_orchard(50);
+        assert_eq!(visited.orchard[0].fruit, normal.orchard[0].fruit);
     }
 }
 

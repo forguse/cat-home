@@ -356,6 +356,8 @@ struct ServiceMaterial {
     cargo: Cargo,
     household: bool,
     returning: bool,
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    shaped: bool,
 }
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize, Eq, PartialEq)]
@@ -391,6 +393,8 @@ struct Resident {
     supper_day: Option<u64>,
     #[serde(default)]
     prepared_meal_day: Option<u64>,
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    guest_food_reserved: bool,
     #[serde(default)]
     foraged_food_day: Option<u64>,
     #[serde(default)]
@@ -428,7 +432,7 @@ impl Resident {
                 .map_or(0, |batch| batch.cargo.quantity),
         );
         let held = held.saturating_add(if cargo.item == Item::Food {
-            self.neighbour_meal.map_or(0, |batch| batch.portions)
+            self.neighbour_meal.map_or(0, |batch| batch.portions) + u16::from(self.guest_food_reserved)
         } else {
             0
         });
@@ -1174,6 +1178,10 @@ struct Guest {
     bed: Option<u8>,
     wake: Option<u64>,
     received: bool,
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    gifted: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    eating_until: Option<u64>,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -1284,6 +1292,8 @@ mod services;
 mod legacy;
 #[path = "residents_art.rs"]
 mod art;
+#[path = "residents_care.rs"]
+mod care;
 pub use art::{VillageArtSubject, VillageArtVisual};
 #[path = "social_story.rs"]
 mod social_story;
@@ -1328,6 +1338,8 @@ pub struct VillageLife {
     legacy: legacy::State,
     #[serde(default, skip_serializing_if = "art::State::empty")]
     art: art::State,
+    #[serde(default, skip_serializing_if = "care::State::empty")]
+    care: care::State,
     #[serde(default)]
     evidence: LifeEvidence,
     #[serde(default, skip_serializing_if = "wildlife::State::empty")]
@@ -1366,6 +1378,7 @@ impl Default for VillageLife {
             break_day: None,
             supper_day: None,
             prepared_meal_day: None,
+            guest_food_reserved: false,
             foraged_food_day: None,
             tailored_day: None,
         });
@@ -1417,6 +1430,7 @@ impl Default for VillageLife {
             services: ServiceLedger::default(),
             legacy: legacy::State::default(),
             art: art::State::default(),
+            care: care::State::default(),
             evidence: LifeEvidence::default(),
             wildlife: wildlife::State::default(),
             ecology: [EcoVisit::default(); 19],
@@ -1447,7 +1461,7 @@ impl VillageLife {
     }
 
     pub fn reserved_actors(&self) -> &[ActorKind] {
-        if let Some(actor) = self.social.host() {
+        if let Some(actor) = self.social.host().or_else(|| self.legacy.post_host()) {
             std::slice::from_ref(actor)
         } else {
             self.reserved.as_slice()
@@ -1619,6 +1633,12 @@ impl VillageLife {
 
     fn resident_held(&self, id: usize) -> Option<VisitorHeld> {
         let resident = &self.people[id];
+        if let Some(held) = self.care.held(id) {
+            return Some(held);
+        }
+        if resident.service_material.is_some_and(|part| part.shaped) {
+            return Some(VisitorHeld::Parcel("cut_wood"));
+        }
         if let Some(good) = self
             .social
             .carried_item(id)
@@ -1675,7 +1695,8 @@ impl VillageLife {
                         .and_then(|j| contracts().nth(j as usize))
                         .map(|c| c.name)
                 })
-                .or_else(|| self.social.resident_activity(id));
+                .or_else(|| self.social.resident_activity(id))
+                .or_else(|| self.care.name(id));
             let held = self.resident_held(id);
             let moving_pose = if held.is_some_and(|item| !matches!(item, VisitorHeld::Tool(_))) {
                 VisitorPose::Carrying
@@ -1709,7 +1730,7 @@ impl VillageLife {
                 pose,
                 position: r.walk.position(now),
                 facing_left: r.walk.turn,
-                animation_frame: r.walk.anim_frame(now, id as u64),
+                animation_frame: self.care.work_frame(id, now).unwrap_or_else(|| r.walk.anim_frame(now, id as u64)),
                 label: profession.label(),
                 activity,
                 held,
@@ -1720,6 +1741,7 @@ impl VillageLife {
                 continue;
             }
             let profession = Profession::resident(g.identity as usize);
+            let eating = g.eating_until.is_some_and(|until| until > now);
             let (pose, activity) = match (g.walk.state, g.walk.edge) {
                 (State::Leaving, Some(_)) if g.cargo.is_some() => {
                     (VisitorPose::Carrying, "沿村口回程")
@@ -1730,6 +1752,7 @@ impl VillageLife {
                     (VisitorPose::Carrying, "外来送货")
                 }
                 (State::Visiting, Some(_)) => (VisitorPose::Walking, "入村访客"),
+                _ if eating => (VisitorPose::Resting, "用来客点心"),
                 _ => (VisitorPose::Resting, "外来来客"),
             };
             visuals.push(VisitorVisual {
@@ -1740,7 +1763,8 @@ impl VillageLife {
                 animation_frame: g.walk.anim_frame(now, u64::from(g.identity)),
                 label: "外来访客",
                 activity,
-                held: g.cargo.map(|load| VisitorHeld::Goods(load.item)),
+                held: if eating { Some(VisitorHeld::Goods(Item::Food)) }
+                    else { g.cargo.map(|load| VisitorHeld::Goods(load.item)) },
             });
         }
         visuals
@@ -1773,13 +1797,14 @@ impl VillageLife {
             && self.market_outings <= self.trips
             && self.companionship_valid_for_ms(u64::MAX)
             && self.social.valid(world)
-            && self.wildlife.valid(now)
+            && self.wildlife.valid(world)
             && self.setup & !0b1111 == 0
             && self.site_status.iter().all(|&status| status <= 12)
             && self.pollination <= 12
             && self.services.validate(now)
             && self.legacy.valid(self, now)
             && self.art.valid(now)
+            && self.care.valid(self, now)
             && self.services.carriers().all(|(owner, returning)| {
                 self.people.get(usize::from(owner)).is_some_and(|r| {
                     if returning {
@@ -1831,6 +1856,7 @@ impl VillageLife {
                             && r.walk.at == WILLOW_VILLAGE.boundary.spawn)
                     && r.job.is_none_or(|v| usize::from(v) < CONTRACT_COUNT)
                     && r.job_stop < 8
+                    && (!r.guest_food_reserved || id == 3 && self.care.carries_gift())
                     && r.escrow.is_none_or(|cargo| {
                         r.job.is_some()
                             && cargo.quantity == 1
@@ -1846,6 +1872,10 @@ impl VillageLife {
                         r.escrow.is_none()
                             && r.returning_cargo.is_none()
                             && (1..=2).contains(&batch.cargo.quantity)
+                            && (!batch.shaped || id == 2 && batch.cargo == cargo(Item::Wood, 1)
+                                && !batch.household
+                                && (batch.returning || r.job.and_then(|code| contracts().nth(code as usize))
+                                    .is_some_and(|job| job.id == "RI022")))
                             && (batch.household
                                 || r.count(batch.cargo.item) + batch.cargo.quantity
                                     <= HARD_STOCK_CAP)
@@ -1909,6 +1939,8 @@ impl VillageLife {
                     && g.bed.is_none_or(|bed| bed < 3)
                     && g.wake.is_none_or(time_ok)
                     && time_ok(g.leave_by)
+                    && g.eating_until.is_none_or(|until| g.gifted
+                        && until <= now.saturating_add(2 * MINUTE) && until <= g.leave_by)
                     && g.cargo
                         .is_none_or(|cargo| cargo.quantity != 0 && cargo.quantity <= 4)
             })
@@ -1965,6 +1997,9 @@ impl VillageLife {
             }
         }
         for g in self.guests.iter().flatten() {
+            if let Some(until) = g.eating_until {
+                next = next.min(until);
+            }
             if let Some(wake) = g.wake
                 && g.walk.state == State::Inside
             {
@@ -2000,6 +2035,7 @@ impl VillageLife {
             world.set_social_harvest_plot(self.social.reserved_harvest_plot());
             self.apply_supply_requests(world);
             self.schedule(world, mask, now);
+            self.legacy.sync_post_host(world, self.people[0].job, now);
         }
         if now >= self.field_due {
             self.field_due = now + 5 * MINUTE;
@@ -2019,6 +2055,23 @@ impl VillageLife {
                     wildlife::Receipt::Pond { calling, bank } => {
                         world.record_legacy_completion("A08-10", LegacyActor::Wildlife(wildlife::FROG as u8), calling, bank, LegacyPlace::Nearby, 1, Some(LegacyActor::Wildlife(wildlife::DUCK as u8)));
                     }
+                    wildlife::Receipt::Bee { source, target } => {
+                        if world.village_pollinate_orchard(usize::from(source), usize::from(target)) {
+                            let [from, to] = [source, target].map(|i| {
+                                let p = world.trees()[usize::from(i)].position;
+                                TilePos::new(p.x as u16 / TILE_PX as u16, p.y as u16 / TILE_PX as u16)
+                            });
+                            self.observe_native(75, now);
+                            world.record_legacy_completion("A14-01", LegacyActor::Wildlife(wildlife::BEE as u8), from, to, LegacyPlace::Expanded, 1, None);
+                        }
+                    }
+                    wildlife::Receipt::Sparrow { at } => {
+                        world.record_legacy_completion("A04-10", LegacyActor::Wildlife(wildlife::SPARROW as u8), at, at, LegacyPlace::Front, 1, None);
+                    }
+                    wildlife::Receipt::DuckPrint { first, last } => {
+                        world.record_legacy_completion("A10-01", LegacyActor::Wildlife(wildlife::DUCK as u8), first, last, LegacyPlace::Nearby, 1, None);
+                    }
+                    wildlife::Receipt::DuckRejoined => unreachable!("internal wildlife route marker"),
                 }
             }
         }
@@ -2044,6 +2097,7 @@ impl VillageLife {
             );
             let laden = previous_state == State::MovingIn
                 || (id == art::ARTIST && self.art.carries_panel())
+                || self.care.held(id).is_some_and(|held| matches!(held, VisitorHeld::Parcel(_)))
                 || self.people[id].counter.is_some()
                 || self.people[id].escrow.is_some()
                 || self.people[id].returning_cargo.is_some()
@@ -2080,6 +2134,9 @@ impl VillageLife {
             let Some(mut g) = self.guests[id].take() else {
                 continue;
             };
+            if g.eating_until.is_some_and(|until| now >= until) {
+                g.eating_until = None;
+            }
             if g.walk.state == State::Inside {
                 if g.wake.is_some_and(|wake| wake <= now)
                     && !self.occupied(world, g.walk.at, None, Some(id))
@@ -2213,6 +2270,7 @@ impl VillageLife {
             || !self.social.map_density_positions().all(open)
             || !self.services.map_density_positions().all(protected)
             || self.art.subject_destination().is_some_and(|tile| !open(tile))
+            || !self.care.positions().all(open)
         {
             return false;
         }
@@ -2237,6 +2295,7 @@ impl VillageLife {
             .filter(|walker| walker.moving()).map(|walker| walker.target)
             .chain(self.trip.iter().map(|trip| trip.target)).chain(self.social.map_density_positions())
             .chain(self.art.subject_destination())
+            .chain(self.care.positions())
     }
 
     pub fn map_density_preserves_wildlife() -> bool {
@@ -2325,6 +2384,7 @@ impl VillageLife {
                 }
                 Some(routine_animal(id, world, self.wildlife.routine_phase(id, now)))
             })
+            .chain(self.wildlife.marks(world))
             .collect()
     }
 
@@ -2348,6 +2408,7 @@ impl VillageLife {
                     .min(limit);
             }
         }
+        self.share_tailor_ingredients(mask);
         let weekly_setup = day % 7 == 5 && (350..810).contains(&minute);
         let setup_window = weekly_setup && !phase_active(mask, "weekly_market");
         if day % 7 == 5
@@ -2379,6 +2440,9 @@ impl VillageLife {
             }
             let home = house(id).door;
             let state = self.people[id].walk.state;
+            if self.care.active(id) && self.schedule_care(world, id, mask, now, false) {
+                continue;
+            }
             if id == art::ARTIST && self.art.active() {
                 self.art.advance(world, &mut self.people[id].walk, now);
                 continue;
@@ -2538,6 +2602,9 @@ impl VillageLife {
             if state == State::MovingIn || state == State::Leaving {
                 continue;
             }
+            if matches!(id, 3 | 16) && self.schedule_care(world, id, mask, now, true) {
+                continue;
+            }
             if id == 0 && state == State::Inside && minute < 450
                 && self.people[id].job.is_none() && self.people[id].break_day != Some(day)
                 && let Some(code) = self.morning_post(world, mask, now)
@@ -2677,12 +2744,21 @@ impl VillageLife {
             let preparing_water = self.social.prepare_visitor_water(id, day);
             let preparing_autumn = self.social.autumn_cook_preparing(world, id)
                 && self.people[id].count(Item::Food) < shop(MEAL_SHOP).goods.quantity;
+            let kitchen_provision = id == 3
+                && self.cook_food_goal(world, now).is_some()
+                && self.people[id].escrow.is_none()
+                && self.people[id].service_material.is_none()
+                && self.services.carried_asset(id as u8).is_none();
             let has_tailoring = id == 11
                 && ((645..900).contains(&minute) || self.social.tailoring_cover_needed(day))
                 && self.people[id].tailored_day != Some(day);
-            let preparing_supper = matches!(id, 10 | 11)
-                && self.people[id].count(Item::Food) < 3
-                && (minute < 650 || id == 10 && !phase_active(mask, "cooperative_farm"));
+            let preparing_supper = if id == 11 && self.late_tailor_meals(mask) {
+                self.tailor_supper_due(mask, now)
+            } else {
+                matches!(id, 10 | 11)
+                    && self.people[id].count(Item::Food) < 3
+                    && (minute < 650 || id == 10 && !phase_active(mask, "cooperative_farm"))
+            };
             let destination = if at_market.is_none() && counter_out {
                 if self.people[id].walk.at == home {
                     self.stow_resident_counter(id);
@@ -2699,6 +2775,7 @@ impl VillageLife {
                             && !preparing_water
                             && !preparing_autumn
                             && !preparing_weekly_meal
+                            && !kitchen_provision
                             && !has_tailoring
                             && !staging_seed
                             && !preparing_supper
@@ -2799,7 +2876,15 @@ impl VillageLife {
             && legacy::seed_trade(usize::from(batch.shop))
         {
             self.legacy.seed_returned(batch);
+            self.legacy.sync_seed_booking(self.trip, &self.people[1]);
         }
+    }
+
+    fn schedule_care(&mut self, world: &mut LivingWorld, id: usize, mask: PhaseMask, now: u64, allow_start: bool) -> bool {
+        let mut care = std::mem::take(&mut self.care);
+        let handled = care.schedule(self, world, id, mask, now, allow_start);
+        self.care = care;
+        handled
     }
 
     fn update_legacy_counters(&mut self, world: &mut LivingWorld, mask: PhaseMask, now: u64) {
@@ -2836,6 +2921,60 @@ impl VillageLife {
         self.art.visuals(world.world_ms())
     }
 
+    fn late_tailor_meals(&self, mask: PhaseMask) -> bool {
+        phase_active(mask, "cooperative_farm") && self.social.completed_id("Q64")
+    }
+
+    fn share_tailor_ingredients(&mut self, mask: PhaseMask) -> bool {
+        if !self.late_tailor_meals(mask) || house(10).door != house(11).door {
+            return false;
+        }
+        let home = house(10).door;
+        let available = |id: usize| {
+            let person = &self.people[id];
+            person.walk.state == State::Inside && person.walk.at == home
+                && person.job.is_none() && person.escrow.is_none()
+                && person.returning_cargo.is_none() && person.service_material.is_none()
+                && person.produce_in_transit.is_none() && person.counter.is_none()
+                && person.neighbour_meal.is_none() && self.services.carried_asset(id as u8).is_none()
+        };
+        let ingredients = cargo(Item::Crops, 2);
+        // Leave the grower enough for their own recipe and the already
+        // established option to take a cooked batch to the family pantry.
+        let keep = NEIGHBOUR_MEAL_PORTIONS + ingredients.quantity;
+        if !available(10) || !available(11)
+            || self.people[10].count(Item::Crops) < keep + ingredients.quantity
+            || self.people[11].count(Item::Food) >= 2 || self.people[11].count(Item::Crops) >= 2
+            || !self.people[11].can_accept(ingredients)
+        {
+            return false;
+        }
+        assert!(self.people[10].outgoing(ingredients));
+        assert!(self.people[11].incoming(ingredients));
+        true
+    }
+
+    fn tailor_supper_due(&self, mask: PhaseMask, now: u64) -> bool {
+        let tailor = &self.people[11];
+        self.late_tailor_meals(mask)
+            && now % DAY_MS / MINUTE < 16 * 60
+            && tailor.count(Item::Food) < 2
+            && tailor.prepared_meal_day != Some(now / DAY_MS)
+            && tailor.job.is_none()
+            && tailor.escrow.is_none()
+            && tailor.returning_cargo.is_none()
+            && tailor.service_material.is_none()
+            && self.services.carried_asset(11).is_none()
+    }
+
+    fn tailor_grain_stand(&self, world: &LivingWorld, mask: PhaseMask) -> Option<TilePos> {
+        let grain = resolve(mask, "south_grain")?;
+        apron_tiles(world, grain).find(|&stand| {
+            !self.occupied(world, stand, Some(11), None)
+                && !self.social.is_destination_reserved(stand)
+        })
+    }
+
     fn work_site(&self, id: usize, mask: PhaseMask, world: &LivingWorld, now: u64) -> TilePos {
         let day = now / DAY_MS;
         let minute = now % DAY_MS / MINUTE;
@@ -2867,12 +3006,8 @@ impl VillageLife {
                 }
             }
             3 => {
-                let meal_counter = shop(MEAL_SHOP);
-                let needed = meal_counter.goods.quantity + 1;
-                if (self.weekly_meal_needs_preparation(world, now)
-                    || self.social.autumn_cook_preparing(world, id)
-                        && self.people[id].count(Item::Food) <= meal_counter.goods.quantity)
-                    && self.people[id].count(Item::Crops) < needed
+                if self.cook_food_goal(world, now)
+                    .is_some_and(|needed| self.people[id].count(Item::Crops) < needed)
                 {
                     "orchard_tools"
                 } else {
@@ -2943,7 +3078,15 @@ impl VillageLife {
                 }
             }
             11 => {
-                if self.social.tailoring_cover_needed(day) && (645..950).contains(&minute) {
+                if self.tailor_supper_due(mask, now) {
+                    if self.people[id].count(Item::Crops) >= 2 {
+                        return house(id).door;
+                    }
+                    return self.tailor_grain_stand(world, mask).unwrap_or_else(|| house(id).door);
+                }
+                if self.late_tailor_meals(mask)
+                    || self.social.tailoring_cover_needed(day) && (645..950).contains(&minute)
+                {
                     "craft_textile.door"
                 } else if minute < 620 && self.people[id].count(Item::Food) < 3 {
                     if self.people[id].count(Item::Crops) >= 2 {
@@ -3089,12 +3232,30 @@ impl VillageLife {
             bed,
             wake: None,
             received: false,
+            gifted: false,
+            eating_until: None,
         });
     }
 
     fn weekly_meal_demand(&self, world: &LivingWorld, now: u64) -> bool {
         self.social.regular_market_week(world, now)
             && Self::meal_reserves_allow_exchange(world, false)
+    }
+
+    fn cook_food_goal(&self, world: &LivingWorld, now: u64) -> Option<u16> {
+        let counter = shop(MEAL_SHOP);
+        let cook = &self.people[counter.merchant];
+        let food = cook.count(Item::Food);
+        if self.weekly_meal_needs_preparation(world, now)
+            || self.social.autumn_cook_preparing(world, counter.merchant) && food <= counter.goods.quantity
+        {
+            return Some(counter.goods.quantity + 1);
+        }
+        let day = now / DAY_MS;
+        (world.town_allows(TownEra::Market) && day % 7 != 5
+            && (340..855).contains(&(now % DAY_MS / MINUTE))
+            && cook.produced_day != Some(day) && food < 4)
+            .then(|| (4 - food).max(2))
     }
 
     fn weekly_meal_needs_preparation(&self, world: &LivingWorld, now: u64) -> bool {
@@ -3115,6 +3276,7 @@ impl VillageLife {
     fn offer_trip(&mut self, world: &mut LivingWorld, mask: PhaseMask, now: u64) {
         if self.trip.is_some()
             || self.social.host().is_some()
+            || self.legacy.post_host().is_some()
             || self.social.market_planning_guest().is_some()
             || !(450..960).contains(&(now % DAY_MS / MINUTE))
             || matches!(world.weather(), YardWeather::Rain | YardWeather::Snow)
@@ -3224,7 +3386,7 @@ impl VillageLife {
             self.legacy.menu_booked(now);
         }
         let regular_meal = index == MEAL_SHOP && weekly_meal;
-        self.trip = Some(Trip {
+        let trip = Trip {
             actor,
             shop: index as u8,
             started: now,
@@ -3239,12 +3401,15 @@ impl VillageLife {
             leg: 0,
             hold: true,
             regular_meal,
-        });
+        };
+        self.legacy.reserve_last_seed(world, trip, &self.people[1]);
+        self.trip = Some(trip);
     }
 
     fn advance_trip(&mut self, world: &mut LivingWorld) {
         self.progress_trip(world);
         self.legacy.sync_menu_trip(self.trip);
+        self.legacy.sync_seed_booking(self.trip, &self.people[1]);
     }
 
     fn progress_trip(&mut self, world: &mut LivingWorld) {
@@ -3397,6 +3562,7 @@ impl VillageLife {
                 if merchant.walk.state == State::AtWork
                     && merchant.walk.at == booth_slot(shop_id)
                     && merchant.ready_to_exchange(shop_id, t.regular_meal)
+                    && self.legacy.seed_booking_permits(t)
                     && t.bag == Some(t.outgoing)
                     && sufficient_reserve
                 {
@@ -3801,7 +3967,21 @@ impl VillageLife {
         {
             self.people[id].prepared_meal_day = Some(day);
         }
+        if id == 11 && self.tailor_supper_due(mask, now) {
+            if self.people[id].count(Item::Crops) < 2
+                && self.people[id].foraged_food_day != Some(day)
+                && self.tailor_grain_stand(world, mask) == Some(self.people[id].walk.at)
+            {
+                let source = &mut self.remaining_source[item_index(Item::Crops)];
+                if *source >= 2 && self.people[id].gather_produce(cargo(Item::Crops, 2)) {
+                    *source -= 2;
+                    self.people[id].foraged_food_day = Some(day);
+                }
+            }
+            return;
+        }
         if id == 11
+            && !self.late_tailor_meals(mask)
             && self.people[id].foraged_food_day != Some(day)
             && self.people[id].count(Item::Food) < 3
             && self
@@ -3876,6 +4056,7 @@ impl VillageLife {
                             cargo: batch,
                             household,
                             returning: false,
+                            shaped: false,
                         });
                     }
                 }
@@ -3906,6 +4087,23 @@ impl VillageLife {
             if !at_stop {
                 return;
             }
+            if c.id == "RI022" && stop == 1 {
+                let Some(part) = &mut self.people[id].service_material else { return };
+                if self.services.wearing_status("dry_rack") == Some(0) {
+                    self.finish_daily_order(id, day);
+                    return;
+                }
+                part.shaped = true;
+                self.people[id].job_stop = 0;
+                let at = self.people[id].walk.at;
+                let rack = resolve(mask, "home_pantry.door").expect("pantry approach");
+                use crate::legacy_content::{LegacyActor, LegacyPlace};
+                world.record_legacy_completion(
+                    "H03-02", LegacyActor::Resident(id as u8), at, rack,
+                    LegacyPlace::Nearby, 1, None,
+                );
+                return;
+            }
             if c.id == TWO_FIELD_WATERING {
                 if let Some(plot) = c
                     .sites
@@ -3924,6 +4122,7 @@ impl VillageLife {
                 return;
             }
             if c.effect != Effect::Plot
+                && !(c.id == "RI022" && self.people[id].service_material.is_some_and(|part| part.shaped))
                 && c.sites.split(';').nth(usize::from(stop) + 1).is_some()
                 && self.contract_site(world, c, mask, stop + 1).is_some()
             {
@@ -3932,7 +4131,9 @@ impl VillageLife {
             }
             if self.apply_contract(world, id, c, now) {
                 self.record(code, now);
-            } else if c.id == "RI005" && self.legacy.mail_waiting(now) {
+            } else if c.id == "RI005" && self.legacy.mail_waiting(now)
+                || c.id == "RI001" && self.legacy.post_host().is_some()
+            {
                 return;
             } else if let Some(order) = &mut self.orders[id]
                 && order.attempts < 2
@@ -4210,18 +4411,10 @@ impl VillageLife {
                 e.date = Some(day);
                 e.visits = 0;
             }
-            let progress = e.visits;
-            if progress >= 12 || mix(now / (5 * MINUTE) ^ id as u64) % 5 != 0 {
+            if e.visits >= 12 || mix(now / (5 * MINUTE) ^ id as u64) % 5 != 0 {
                 continue;
             }
             e.visits += 1;
-            // Pollination is a finite orchard work input collected on site.
-            if matches!(id, 17 | 18) && progress == 1 {
-                self.pollination = self.pollination.saturating_add(1).min(12);
-                if id == 17 && phase_active(mask, "community") {
-                    self.observe_native(75, now);
-                }
-            }
         }
     }
 
@@ -4245,13 +4438,9 @@ impl VillageLife {
         let at = self.people[id].walk.at;
         let weather = world.weather();
         let clear = !matches!(weather, YardWeather::Rain | YardWeather::Snow);
-        let meal_counter = shop(MEAL_SHOP);
-        if id == meal_counter.merchant
-            && (self.weekly_meal_needs_preparation(world, world.world_ms())
-                || self.social.autumn_cook_preparing(world, id)
-                    && self.people[id].count(Item::Food) <= meal_counter.goods.quantity)
+        if id == shop(MEAL_SHOP).merchant
+            && let Some(portions) = self.cook_food_goal(world, world.world_ms())
         {
-            let portions = meal_counter.goods.quantity + 1;
             if self
                 .interaction_position(mask, "orchard_tools")
                 .is_some_and(|pos| distance(at, pos) <= 3)
@@ -4295,11 +4484,7 @@ impl VillageLife {
                 Item::Fish,
                 if self.services.damaged(4) { 1 } else { 2 },
             ),
-            6 if clear => (
-                "orchard_tools",
-                Item::Crops,
-                4 + u16::from(self.pollination > 0),
-            ),
+            6 if clear => ("orchard_tools", Item::Crops, 4),
             7 if clear => ("commons_garden", Item::Crops, 2),
             9 if clear => ("quarry_work", Item::Stone, 3),
             10 => (
@@ -4338,9 +4523,6 @@ impl VillageLife {
             }
             if id == 4 {
                 self.services.wear(4);
-            }
-            if id == 6 && specification.2 > 4 {
-                self.pollination -= 1;
             }
             return true;
         }
@@ -4384,7 +4566,11 @@ impl VillageLife {
         if !r.can_accept(output) || !r.outgoing(input) {
             return false;
         }
-        r.incoming(output)
+        let made = r.incoming(output);
+        if made && id == 3 && input.item == Item::Crops && output.item == Item::Food {
+            self.care.note_scraps(r.walk.at);
+        }
+        made
     }
 
     fn apply_contract(
@@ -4587,12 +4773,10 @@ impl VillageLife {
             return false;
         };
         if let Some((cargo, household)) = def.op.materials()
-            && self.people[id].service_material
-                != Some(ServiceMaterial {
-                    cargo,
-                    household,
-                    returning: false,
-                })
+            && !self.people[id].service_material.is_some_and(|part| {
+                part.cargo == cargo && part.household == household && !part.returning
+                    && (c.id != "RI022" || part.shaped)
+            })
         {
             return false;
         }
@@ -4620,7 +4804,7 @@ impl VillageLife {
                 && who.walking_segment().is_none()
                 && world.activity_deadline(actor).is_none()
                 && distance(position, world.actor_tile(actor)) <= 3
-        });
+        }).or_else(|| (c.id == "RI001").then(|| self.legacy.arrived_post_host(world, position)).flatten());
         let transfer_near = |owner| match owner {
             services::FROM_CUPBOARD => house.is_some(),
             services::PREMISES => true,
@@ -4674,6 +4858,14 @@ impl VillageLife {
                 }
                 if c.id == "ME071" && !self.services.has_asset("lost_property", 9) {
                     return false;
+                }
+                if c.id == "RI001" && house.is_none() && self.services.carried_by(asset, id as u8)
+                    && self.trip.is_none() && self.social.host().is_none()
+                    && let Some(site) = slot(world.phase_mask(), "home_trade", "customer")
+                    && distance(position, site) <= 3
+                    && !self.occupied(world, site, Some(id), None)
+                {
+                    self.legacy.offer_post_host(world, site, now);
                 }
                 let transferred = self.services.carried_by(asset, id as u8)
                     && transfer_near(to)
@@ -4779,7 +4971,11 @@ impl VillageLife {
                 }
             }
             "rain" if wet => 2,
-            "pollen" if self.pollination > 0 => u16::from(self.pollination),
+            "pollen" => {
+                let flowers = (8..12).filter(|&tree| world.orchard_pollination_pending(tree)).count() as u16;
+                if flowers == 0 { return None; }
+                flowers
+            }
             "frost" if world.season() == crate::living_world::YardSeason::Winter => 1,
             "homes" => u16::from(phase_active(mask, "late_shared_home")) + 2,
             "community" if phase_active(mask, "community") => 1,
@@ -5310,6 +5506,7 @@ mod tests {
                 cargo: cargo(Item::Wood, 1),
                 household: false,
                 returning: false,
+                shaped: false,
             });
             assert_eq!(life.resident_held(id), Some(VisitorHeld::Goods(Item::Wood)));
             assert!(life.service(&mut world, id, c, 1, now));
@@ -5318,6 +5515,43 @@ mod tests {
         assert_eq!(life.people[id].count(Item::Wood), original - 2);
         assert!(!life.service(&mut world, id, c, 1, now));
         assert_eq!(life.people[id].count(Item::Wood), original - 2);
+    }
+
+    #[test]
+    fn continuation_wood_measured_then_cut_then_installed_at_the_same_rack() {
+        let mut world = LivingWorld::new_village_wall_ms(0);
+        let mut life = VillageLife::default();
+        let now = world.world_ms();
+        let mask = world.phase_mask();
+        let (code, plan) = contracts().enumerate().find(|(_, c)| c.id == "RI022").unwrap();
+        let carpenter = plan.actor.unwrap();
+        let source = life.material_source(mask, carpenter, false).unwrap();
+        let rack = life.contract_site(&world, plan, mask, 0).unwrap();
+        let bench = life.contract_site(&world, plan, mask, 1).unwrap();
+        assert_ne!(rack, bench);
+        let old_wear = life.wear_on("dry_rack").unwrap();
+        let wood = life.people[carpenter].count(Item::Wood);
+        life.people[carpenter].job = Some(code as u16);
+        life.orders[carpenter] = Some(WorkOrder { opened: now - WORK, attempts: 0 });
+        life.people[carpenter].walk = Walker::new(source, State::AtWork);
+        life.do_work(&mut world, carpenter, mask, now);
+        assert_eq!(life.people[carpenter].count(Item::Wood), wood - 1);
+        assert_eq!(life.resident_held(carpenter), Some(VisitorHeld::Goods(Item::Wood)));
+        life.people[carpenter].walk = Walker::new(rack, State::AtWork);
+        life.do_work(&mut world, carpenter, mask, now);
+        assert_eq!(life.people[carpenter].job_stop, 1);
+        assert_eq!(life.wear_on("dry_rack"), Some(old_wear));
+        life.people[carpenter].walk = Walker::new(bench, State::AtWork);
+        life.do_work(&mut world, carpenter, mask, now);
+        assert_eq!(life.resident_held(carpenter), Some(VisitorHeld::Parcel("cut_wood")));
+        assert_eq!(life.wear_on("dry_rack"), Some(old_wear));
+        assert!(world.legacy_behaviors().recent().iter().any(|event| event.id().starts_with("H03-02")));
+        let mut life: VillageLife = serde_json::from_slice(&serde_json::to_vec(&life).unwrap()).unwrap();
+        life.people[carpenter].walk = Walker::new(rack, State::AtWork);
+        life.do_work(&mut world, carpenter, mask, now);
+        assert_eq!(life.wear_on("dry_rack"), Some(old_wear - 1));
+        assert_eq!(life.resident_held(carpenter), None);
+        assert_eq!(life.people[carpenter].count(Item::Wood), wood - 1);
     }
 
     #[test]
@@ -5447,6 +5681,7 @@ mod tests {
             cargo: cargo(Item::Water, 1),
             household: false,
             returning: false,
+            shaped: false,
         });
         world.test_camera_actor(ActorKind::Orange, point(well), Pose::Idle, false);
         assert_eq!(life.contract_site(&world, contract, mask, 1), Some(bowl));
@@ -5898,6 +6133,8 @@ mod tests {
             wake: None,
             cargo: None,
             received: true,
+            gifted: false,
+            eating_until: None,
         });
         run_until(&mut world, &mut life, now + 3 * HOUR, |_, life| {
             assert!(life.occupied_tiles().len() <= VILLAGE_OCCUPANCY);
@@ -6032,6 +6269,124 @@ mod tests {
             life.people[farmer].count(Item::Crops),
             original_farmer + batch
         );
+    }
+
+    #[test]
+    fn late_tailor_supper_keeps_one_field_batch_across_route_and_reload() {
+        let mut world = LivingWorld::new_village_wall_ms(0);
+        let mask = world.phase_mask().with(WILLOW_VILLAGE.phase("cooperative_farm").unwrap());
+        let mut life = VillageLife::default();
+        let mut social = serde_json::to_value(&life.social).unwrap();
+        // The existing Q64 receipt opens this route in the production schedule.
+        social["completed"] = (1_u32 << 17).into();
+        life.social = serde_json::from_value(social).unwrap();
+        assert!(life.social.neighbour_food_needed());
+        let tailor = 11;
+        let home = house(tailor).door;
+        let day = world.world_ms() / DAY_MS;
+        let late_morning = day * DAY_MS + 11 * HOUR;
+        let source = item_index(Item::Crops);
+        life.remaining_source[source] = 5;
+        life.people[tailor].walk = Walker::new(home, State::AtWork);
+        let field = resolve(mask, "south_grain").unwrap();
+        life.people[10].walk = Walker::new(field, State::AtWork);
+        let takeoff = life.work_site(tailor, mask, &world, late_morning - 2 * HOUR);
+        assert_eq!(life.work_site(tailor, mask, &world, late_morning), takeoff);
+        assert_ne!(takeoff, field);
+        assert!(distance(takeoff, field) <= 2);
+        let orchard = resolve(mask, "orchard_tools").unwrap();
+        life.people[tailor].walk = Walker::new(orchard, State::AtWork);
+        life.do_work(&mut world, tailor, mask, late_morning);
+        assert_eq!(life.remaining_source[source], 5);
+        assert_eq!(life.people[tailor].produce_in_transit, None);
+
+        life.people[tailor].walk = Walker::new(takeoff, State::AtWork);
+        life.do_work(&mut world, tailor, mask, late_morning);
+        life.do_work(&mut world, tailor, mask, late_morning + WORK);
+        assert_eq!(life.remaining_source[source], 3);
+        assert_eq!(life.people[tailor].count(Item::Crops), 0);
+        assert_eq!(life.people[tailor].count(Item::Food), 0);
+        assert_eq!(life.resident_held(tailor), Some(VisitorHeld::Goods(Item::Crops)));
+        life.people[tailor].walk.redirect(home, State::Outbound, late_morning);
+        let mut life: VillageLife = serde_json::from_slice(&serde_json::to_vec(&life).unwrap()).unwrap();
+        assert_eq!(life.people[tailor].walk.target, home);
+        assert_eq!(life.people[tailor].produce_in_transit, Some(cargo(Item::Crops, 2)));
+
+        // A delayed carrier still owns the original parcel until reaching the same home.
+        let following_morning = late_morning + DAY_MS;
+        assert_eq!(life.people[tailor].count(Item::Food), 0);
+        life.people[tailor].walk = Walker::new(home, State::AtWork);
+        life.people[tailor].stow_produce();
+        assert_eq!(life.people[tailor].count(Item::Crops), 2);
+        life.do_work(&mut world, tailor, mask, following_morning);
+        assert_eq!(life.people[tailor].count(Item::Crops), 0);
+        assert_eq!(life.people[tailor].count(Item::Food), 2);
+        assert_eq!(life.remaining_source[source], 3);
+        life.people[tailor].walk.state = State::Inside;
+        life.people[tailor].eat_home_supper(home, day + 1, 0);
+        life.people[tailor].eat_home_supper(home, day + 1, 0);
+        assert_eq!(life.people[tailor].supper_day, Some(day + 1));
+        assert_eq!(life.people[tailor].count(Item::Food), 1);
+
+        // Finishing the shared pantry review does not end the tailor's
+        // independent food gathering. The next trip uses the same field pool.
+        let mut social = serde_json::to_value(&life.social).unwrap();
+        social["completed"] = ((1_u32 << 17) | (1_u32 << 18)).into();
+        life.social = serde_json::from_value(social).unwrap();
+        assert!(!life.social.neighbour_food_needed());
+        let next_day = following_morning + DAY_MS;
+        let stand = life.work_site(tailor, mask, &world, next_day);
+        assert_eq!(stand, takeoff);
+        life.people[tailor].walk = Walker::new(stand, State::AtWork);
+        life.do_work(&mut world, tailor, mask, next_day);
+        assert_eq!(life.remaining_source[source], 1);
+        assert_eq!(life.people[tailor].produce_in_transit, Some(cargo(Item::Crops, 2)));
+        assert_eq!(life.people[tailor].count(Item::Food), 1);
+    }
+
+    #[test]
+    fn settled_neighbours_share_owned_ingredients_only_at_their_home() {
+        let mut world = LivingWorld::new_village_wall_ms(0);
+        let mask = world.phase_mask().with(WILLOW_VILLAGE.phase("cooperative_farm").unwrap());
+        let mut life = VillageLife::default();
+        let mut social = serde_json::to_value(&life.social).unwrap();
+        social["completed"] = ((1_u32 << 17) | (1_u32 << 18)).into();
+        life.social = serde_json::from_value(social).unwrap();
+        assert!(!life.social.neighbour_food_needed());
+
+        let (grower, tailor) = (10, 11);
+        let (crops, food) = (item_index(Item::Crops), item_index(Item::Food));
+        let home = house(grower).door;
+        life.people[grower].walk = Walker::new(home, State::Inside);
+        life.people[tailor].walk = Walker::new(home, State::Inside);
+        life.people[grower].inventory[crops] = 6;
+        life.people[tailor].inventory[crops] = 0;
+        life.people[tailor].inventory[food] = 0;
+        assert!(!life.share_tailor_ingredients(mask));
+
+        life.people[grower].inventory[crops] = 7;
+        life.people[tailor].walk.state = State::AtWork;
+        assert!(!life.share_tailor_ingredients(mask));
+        life.people[tailor].walk.state = State::Inside;
+        life.people[tailor].returning_cargo = Some(cargo(Item::Rope, 1));
+        assert!(!life.share_tailor_ingredients(mask));
+        life.people[tailor].returning_cargo = None;
+        let source = life.remaining_source[crops];
+        assert!(life.share_tailor_ingredients(mask));
+        assert!(!life.share_tailor_ingredients(mask));
+        assert_eq!(life.people[grower].count(Item::Crops), 5);
+        assert_eq!(life.people[tailor].count(Item::Crops), 2);
+        assert_eq!(life.people[tailor].count(Item::Food), 0);
+        assert_eq!(life.remaining_source[crops], source);
+
+        let now = world.world_ms();
+        life.people[tailor].walk = Walker::new(home, State::AtWork);
+        life.do_work(&mut world, tailor, mask, now);
+        assert_eq!(life.people[tailor].count(Item::Crops), 0);
+        assert_eq!(life.people[tailor].count(Item::Food), 2);
+        life.people[tailor].walk.state = State::Inside;
+        life.people[tailor].eat_home_supper(home, now / DAY_MS, 0);
+        assert_eq!(life.people[tailor].count(Item::Food), 1);
     }
 
     #[test]
@@ -6190,6 +6545,8 @@ mod tests {
         let mut q65_last_day = None;
         let mut q65_food_floor = u16::MAX;
         let mut q65_food_ceiling = 0;
+        let mut q65_last_run = 0;
+        let mut q65_longest = 0;
         #[derive(Debug, Default)]
         struct AutumnProbe {
             first: u64,
@@ -6204,8 +6561,44 @@ mod tests {
         }
         let mut autumns = std::collections::BTreeMap::<u64, AutumnProbe>::new();
         let mut completion = [None; 4];
+        let mut preserve_windows = [0_u64; 8];
+        let mut preserve_opportunities = [0_u64; 5];
+        let mut preserve_activities = std::collections::BTreeMap::new();
         run_until(&mut world, &mut life, end, |world, life| {
             let day = world.world_ms() / DAY_MS;
+            let preserves_ready = world.village_chapter_completed("Q14")
+                && world.village_chapter_completed("Q24")
+                && !(world.village_chapter_completed("Q26") && world.village_chapter_completed("Q27"));
+            if preserves_ready && (480..1020).contains(&world.minute_of_day()) {
+                let food = world.stock().count(Item::Food) >= 6;
+                let crops = world.stock().count(Item::Crops) >= 6;
+                let wood = world.stock().count(Item::Wood) >= 1;
+                let dry = !matches!(world.weather(), YardWeather::Rain | YardWeather::Snow);
+                let rested = world.actors()[..2].iter().any(|actor| actor.stamina() >= 45);
+                for (counter, reached) in preserve_windows.iter_mut().zip([
+                    true, food, crops, food && crops, food && wood, food && wood && dry,
+                    food && wood && dry && rested, food && crops && rested,
+                ]) {
+                    *counter += u64::from(reached);
+                }
+                if food && crops {
+                    use crate::living_world::Activity;
+                    let actor = &world.actors()[0];
+                    let rack = world.story().improvements().working(Fixture::PantryDryRack);
+                    let early = world.minute_of_day() < 900;
+                    let healthy = actor.stamina() >= 40 && actor.hunger() < 70 && actor.thirst() < 67;
+                    let unladen = actor.carried_amount() == 0 && world.activity_deadline(ActorKind::Xiaohe).is_none();
+                    let ready = rack && early && healthy && unladen;
+                    for (counter, reached) in preserve_opportunities.iter_mut().zip([
+                        rack, rack && early, rack && early && healthy, ready, ready && actor.activity == Activity::Idle,
+                    ]) {
+                        *counter += u64::from(reached);
+                    }
+                    if ready {
+                        *preserve_activities.entry(format!("{:?}", actor.activity)).or_insert(0_u64) += 1;
+                    }
+                }
+            }
             for (slot, id) in completion.iter_mut().zip(["Q53", "Q65", "Q67", "Q69"]) {
                 if slot.is_none() && life.village_chapter_completed(id) {
                     *slot = Some(day);
@@ -6314,6 +6707,25 @@ mod tests {
                     resident.supper_day == Some(day) && resident.walk.state == State::Inside
                 });
                 q65_nights[usize::from(dinner) * 2 + usize::from(food >= 6)] += 1;
+                let review = serde_json::to_value(&life.social).unwrap();
+                let review_day = review["neighbours"]["checked_day"].as_u64();
+                let run = review["neighbours"]["good_days"].as_u64().unwrap();
+                if run == 0 {
+                    eprintln!("Q65 failed evening {day} (checked={review_day:?}, previous_run={q65_last_run}) household food={food} crops={} fish={} source={} farmer-work={} tailor-work={}",
+                        world.stock().count(Item::Crops), world.stock().count(Item::Fish),
+                        life.remaining_source[item_index(Item::Crops)],
+                        review["neighbours"]["farmer_work_day"], review["neighbours"]["tailor_work_day"]);
+                    for id in [10, 11] {
+                        let person = &life.people[id];
+                        let job = person.job.and_then(|code| contracts().nth(usize::from(code))).map(|c| c.id);
+                        eprintln!("    resident {id} supper={:?} prepared={:?} foraged={:?} food={} crops={} cargo={:?} job={job:?} at={:?} to={:?} state={:?}",
+                            person.supper_day, person.prepared_meal_day, person.foraged_food_day,
+                            person.count(Item::Food), person.count(Item::Crops), person.produce_in_transit,
+                            person.walk.at, person.walk.target, person.walk.state);
+                    }
+                }
+                q65_last_run = run;
+                q65_longest = q65_longest.max(run);
             }
             if day >= 112
                 && !life.village_chapter_completed("Q47")
@@ -6409,6 +6821,22 @@ mod tests {
                     life.trips(),
                     life.trades()
                 );
+                if preserves_ready || day <= 112 {
+                    let data = serde_json::to_value(world).expect("live preserves diagnostic");
+                    let actors = data["actors"].as_array().unwrap()[..2].iter().map(|actor| {
+                        ["kind", "task", "stage", "cell", "carried", "tool", "hunger", "thirst", "stamina"]
+                            .into_iter().map(|field| actor[field].clone()).collect::<Vec<_>>()
+                    }).collect::<Vec<_>>();
+                    eprintln!(
+                        "preserves day={day} daytime [samples, food6, crops6, both, food+wood, dry thereof, rested thereof, rested food+crops]={preserve_windows:?} batch={} rack={} pantry={} stock={} actors={actors:?}",
+                        data["village"]["preserves"], data["story"]["improvements"],
+                        data["buildings"][3], data["stock"],
+                    );
+                    eprintln!("preserves joined day={day} both stocks and [working rack, before15h, healthy Xiaohe, unladen unreserved, idle]={preserve_opportunities:?} activities={preserve_activities:?}");
+                }
+                preserve_windows = [0; 8];
+                preserve_opportunities = [0; 5];
+                preserve_activities.clear();
                 if day >= 700 && !life.village_chapter_completed("Q65") {
                     for id in [10, 11] {
                         let r = &life.people[id];
@@ -6436,7 +6864,7 @@ mod tests {
         eprintln!("Q48 and Q52 opportunities: {seed_trials:?}");
         eprintln!("Q53/Q65/Q67/Q69 completion days {completion:?}; Q67 autumn opportunities {autumns:?}");
         eprintln!(
-            "Q65 nights [neither, stock only, dinners only, both]={q65_nights:?}; bedtime food range={q65_food_floor}–{q65_food_ceiling}"
+            "Q65 nights [neither, stock only, dinners only, both]={q65_nights:?}; bedtime food range={q65_food_floor}–{q65_food_ceiling}; longest prior consecutive run={q65_longest}"
         );
         if !world.village_chapter_completed("Q35") {
             let data = serde_json::to_value(&world).unwrap();

@@ -41,6 +41,7 @@ pub(super) fn held_asset(held: VisitorHeld) -> Option<(&'static str, Scale)> {
     let result = match held {
         VisitorHeld::Goods(item) => (item_asset(item), Scale::new(3, 5)),
         VisitorHeld::MoveBox => ("housing_moving_box", Scale::new(3, 4)),
+        VisitorHeld::Parcel("kitchen_scraps" | "guest_food_basket") => ("prop_basket", Scale::new(1, 2)),
         VisitorHeld::Parcel(_) => ("housing_moving_box", Scale::new(2, 5)),
         VisitorHeld::Tool(tool) => (
             match tool {
@@ -588,6 +589,8 @@ enum Visible<'a> {
     BridgeRail(TilePos, u8),
     Menu(Point, u16, u8),
     Artwork(Point, VillageArtVisual),
+    CatPlate(Point),
+    Compost(Point, u8, u8),
 }
 
 impl LivingView {
@@ -602,6 +605,94 @@ impl LivingView {
         let steps = dx.abs().max(dy.abs()).max(1);
         for step in 0..=steps {
             self.resource_texel((x + dx * step / steps, y + dy * step / steps), color);
+        }
+    }
+
+    fn village_family_detail(&mut self, world: &LivingWorld, actor: &Actor, origin: (i32, i32)) {
+        let (x, y) = local(actor.position, origin);
+        let (x, y) = (x * 2, y * 2);
+        if world.harvest_seed_pouch(actor.kind) && !matches!(actor.pose, Pose::Sleep | Pose::Drink | Pose::Eat) {
+            let side = if actor.facing_left { -1 } else { 1 };
+            self.core_at_texel("prop_seeds", (x + 7 * side, y - 15), false, Scale::new(2, 5), Palette::Unchanged);
+        }
+        if actor.kind != ActorKind::Orange { return; }
+        if village_cat_smelling(world, actor) {
+            for (i, puff) in [(-12, -13), (-8, -14)].into_iter().enumerate() {
+                let offset = ((world.world_ms() / 14_000 + i as u64) % 3) as i32;
+                let at = (x + puff.0 + offset, y + puff.1 - offset);
+                self.resource_line(at, (2, -1), [239, 205, 137]);
+                self.resource_texel((at.0 + 2, at.1 - 2), [253, 221, 156]);
+            }
+        }
+        if let Some((snow, elapsed, total)) = world.cat_snow_work() {
+            let (tx, ty) = local(point(snow), origin);
+            let direction = ((tx * 2 - x).signum(), (ty * 2 - y).signum());
+            let total = total.max(1);
+            let contact = elapsed.saturating_mul(10) / total;
+            let reach = contact.min(10_u64.saturating_sub(contact)).min(5) as i32;
+            let foot = (x + direction.0 * 4, y + direction.1 * 4 - 2);
+            let paw = (foot.0 + direction.0 * reach, foot.1 + direction.1 * reach);
+            self.resource_line(foot, (direction.0 * reach, direction.1 * reach), [198, 111, 51]);
+            self.resource_line((paw.0 - 1, paw.1), (2, 0), [244, 180, 102]);
+            if reach >= 4 {
+                self.resource_texel((paw.0 + direction.0 * 2, paw.1 + direction.1), [236, 235, 204]);
+                self.resource_texel((paw.0 - 2, paw.1 - 2), [216, 225, 216]);
+            }
+        }
+    }
+
+    fn village_field_water(&mut self, origin: (i32, i32), work: FieldWaterWork, now: u64) {
+        let (x, y) = local(point(work.tile), origin);
+        if !clip(self, (x, y), (24, 24), 16) { return; }
+        let (x, y) = (x * 2, y * 2);
+        let phase = i32::from(work.phase.min(2));
+        for strip in 0..3 {
+            let sy = y + strip * 5 - 6;
+            match work.kind {
+                FieldWaterKind::Soak if strip < phase => {
+                    self.resource_line((x - 7, sy), (14, 1), [75, 89, 77]);
+                    self.resource_line((x - 5, sy + 1), (9, 0), [101, 125, 103]);
+                }
+                FieldWaterKind::Drain if strip >= phase => {
+                    let shift = ((now / 18_000 + strip as u64) % 4) as i32;
+                    self.resource_line((x - 6, sy), (13, 0), [85, 135, 124]);
+                    self.resource_line((x - 6 + shift, sy + 1), (8, 0), [148, 177, 141]);
+                }
+                _ => {}
+            }
+        }
+        let sy = y + phase * 5 - 6;
+        let drop = ((now / 12_000) % 4) as i32;
+        match work.kind {
+            FieldWaterKind::Soak => {
+                self.resource_texel((x - 4 + drop * 2, sy - 1 + drop / 2), [179, 209, 180]);
+                self.resource_texel((x - 7 + drop * 2, sy - 2 + drop / 2), [155, 190, 159]);
+            }
+            FieldWaterKind::Drain => {
+                self.resource_line((x + 1, sy + 1), (6, 2), [86, 133, 106]);
+                self.resource_texel((x + 3 + drop, sy + 1 + drop / 2), [149, 175, 140]);
+            }
+        }
+    }
+
+    fn village_compost_bin(&mut self, (x, y): (i32, i32), units: u8, stage: u8) {
+        let (x, y) = (x * 2, y * 2);
+        for inset in 0..6 {
+            let ink = if inset % 3 == 0 { [102, 70, 42] } else { [156, 109, 63] };
+            self.resource_line((x - 7, y - inset), (14, 0), ink);
+        }
+        let ink = match stage {
+            0 => [143, 114, 61],
+            1 => [107, 83, 57],
+            2 => [90, 74, 54],
+            _ => [74, 61, 47],
+        };
+        self.resource_line((x - 5, y - 6), (10, 0), ink);
+        self.resource_line((x - 4, y - 7), (8, 0), ink);
+        if stage == 0 {
+            for (dx, dy) in [(-4,-7),(-1,-8),(2,-7),(4,-8)].into_iter().take(usize::from(units.clamp(1,4))) {
+                self.resource_texel((x + dx, y + dy), [183, 144, 76]);
+            }
         }
     }
 
@@ -1087,6 +1178,11 @@ impl LivingView {
                 self.village_crop_footprint(plot, world.plot_stage(index), rect, origin);
             }
         }
+        for kind in [ActorKind::Xiaohe, ActorKind::Ayu] {
+            if let Some(work) = world.field_water_work(kind) {
+                self.village_field_water(origin, work, world.world_ms());
+            }
+        }
         for (index, actor) in world.actors().iter().enumerate() {
             let overridden = commands
                 .iter()
@@ -1131,6 +1227,19 @@ impl LivingView {
                     key
                 };
                 push(p.y as i32, Visible::Prop(key, p));
+            }
+        }
+        if world.cat_food_served() && let Some(bowls) = world.resolve_poi("cat_water") {
+            let plate = Point { x: bowls.x - 8.0, y: bowls.y + 1.0 };
+            if clip(self, local(plate, origin), (10, 10), 2) {
+                push(plate.y as i32 - 2, Visible::CatPlate(plate));
+            }
+        }
+        if let Some((tile, units, stage)) = world.village_compost_visual() {
+            let p = point(tile);
+            let bin = Point { x: p.x + 6.0, y: p.y - 2.0 };
+            if clip(self, local(bin, origin), (12, 10), 3) {
+                push(bin.y as i32, Visible::Compost(bin, units, stage));
             }
         }
         if let Some(stand) = stalls
@@ -1360,6 +1469,25 @@ impl LivingView {
                 }
                 Visible::Wild(v) => {
                     let (x, y) = local(v.position, origin);
+                    if v.sprite == "wild_duck_track" {
+                        let (tx, ty) = ((v.position.x / TILE_PX as f32) as i32, (v.position.y / TILE_PX as f32) as i32);
+                        if matches!(world.ground(tx, ty), Ground::Grass | Ground::Soil) && world.can_walk(tx, ty) {
+                            let ink = [105, 94, 55];
+                            for (dx, dy) in [(-3, 1), (1, -2)] {
+                                let (fx, fy) = (x * 2 + dx, y * 2 + dy);
+                                self.resource_line((fx, fy), (0, 2), ink);
+                                self.resource_line((fx - 1, fy), (2, -1), ink);
+                            }
+                        }
+                        continue;
+                    }
+                    if v.sprite == "wild_sparrow_chirp" {
+                        let (x, y) = (x * 2 + 4, y * 2 - 10);
+                        self.resource_line((x, y + 4), (0, -4), [229, 209, 151]);
+                        self.resource_texel((x + 1, y + 1), [234, 201, 146]);
+                        self.resource_texel((x - 1, y + 4), [250, 226, 169]);
+                        continue;
+                    }
                     if crate::residents::wildlife_is_mouse_den(v) {
                         self.resource_line((x * 2 - 3, y * 2), (6, 0), [86, 79, 48]);
                         self.resource_line((x * 2 - 2, y * 2 - 1), (4, 0), [60, 58, 40]);
@@ -1386,6 +1514,11 @@ impl LivingView {
                 }
                 Visible::Menu(p, servings, free) => self.village_menu_sign(local(p, origin), servings, free),
                 Visible::Artwork(p, board) => self.village_art_board(local(p, origin), board),
+                Visible::CatPlate(p) => {
+                    let (x, y) = local(p, origin);
+                    self.core_at_texel("prop_meal", (x * 2, y * 2), false, Scale::new(2, 5), Palette::Unchanged);
+                }
+                Visible::Compost(p, units, stage) => self.village_compost_bin(local(p, origin), units, stage),
                 Visible::Prop(key, p) => self.village_prop(key, p, world, origin),
                 Visible::DoorTrim(key, p) => {
                     let (x, y) = local(p, origin);
@@ -1440,6 +1573,7 @@ impl LivingView {
                         && visible_character_motion(self, actor.position, origin);
                     self.actor_at(actor, cx, cy, world.world_ms(), Some(world));
                     self.village_hoe_mud(world, actor, origin);
+                    self.village_family_detail(world, actor, origin);
                 }
                 Visible::Legacy(Drawable::Building(b)) => {
                     self.building(b, cx, cy, world.minute_of_day())
@@ -1810,17 +1944,25 @@ impl LivingView {
             let hand = self
                 .premium_hand(&frame, (x, y), v.facing_left)
                 .unwrap_or((x * 2, y * 2 - 15));
+            let at = if north { ((x - 5) * 2, (y - 7) * 2) } else { hand };
             self.core_at_texel(
                 prop,
-                if north {
-                    ((x - 5) * 2, (y - 7) * 2)
-                } else {
-                    hand
-                },
+                at,
                 false,
                 scale,
                 Palette::Unchanged,
             );
+            match v.held {
+                Some(VisitorHeld::Parcel("kitchen_scraps")) => {
+                    self.resource_line((at.0 - 2, at.1 - 3), (3, -2), [160, 116, 65]);
+                    self.resource_texel((at.0 + 1, at.1 - 4), [194, 150, 73]);
+                }
+                Some(VisitorHeld::Parcel("guest_food_basket")) => {
+                    self.resource_line((at.0 - 3, at.1 - 4), (6, 0), [231, 205, 154]);
+                    self.resource_line((at.0, at.1 - 5), (1, 3), [125, 116, 67]);
+                }
+                _ => {}
+            }
         }
     }
 
@@ -2174,6 +2316,30 @@ mod fixtures;
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn field_water_marks_advance_only_inside_the_active_tile() {
+        let mut view = LivingView::new();
+        view.width = 64;
+        view.height = 64;
+        let blank = [112, 100, 81, 255].repeat(64 * 64);
+        let tile = TilePos::new(2, 2);
+        let origin = (4, 4);
+        for kind in [FieldWaterKind::Soak, FieldWaterKind::Drain] {
+            let mut previous = blank.clone();
+            for phase in 0..=2 {
+                view.pixels.clone_from(&blank);
+                view.village_field_water(origin, FieldWaterWork { plot: 0, tile, kind, phase }, 36_000);
+                assert_ne!(view.pixels, previous);
+                for (i, (a, b)) in view.pixels.chunks_exact(4).zip(blank.chunks_exact(4)).enumerate() {
+                    if a != b {
+                        assert!((24..40).contains(&(i % 64)) && (24..40).contains(&(i / 64)));
+                    }
+                }
+                previous.clone_from(&view.pixels);
+            }
+        }
+    }
 
     #[test]
     fn kitchen_menu_pixels_distinguish_stock_from_booking_availability() {

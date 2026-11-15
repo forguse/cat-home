@@ -16,6 +16,26 @@ pub(super) struct State {
     mail: Option<MailHold>,
     #[serde(skip_serializing_if = "Option::is_none")]
     menu: Option<Menu>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    seed_booking: Option<SeedBooking>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    post_host: Option<PostHost>,
+}
+
+#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct PostHost {
+    actor: ActorKind,
+    site: TilePos,
+    until: u64,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct SeedBooking {
+    shop: u8,
+    started: u64,
+    buyer: ActorKind,
 }
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize)]
@@ -82,11 +102,40 @@ pub(super) fn seed_trade(shop: usize) -> bool {
 
 impl State {
     pub(super) fn is_empty(&self) -> bool {
-        self.seed_shift.is_none() && self.mail.is_none() && self.menu.is_none()
+        self.seed_shift.is_none()
+            && self.mail.is_none()
+            && self.menu.is_none()
+            && self.seed_booking.is_none()
+            && self.post_host.is_none()
     }
 
     pub(super) fn valid(&self, life: &VillageLife, now: u64) -> bool {
-        self.seed_shift.is_none_or(|shift| {
+        self.post_host.is_none_or(|host| {
+            host.actor != ActorKind::Orange
+                && slot(PhaseMask::ALL, "home_trade", "customer") == Some(host.site)
+                && host.until <= now.saturating_add(36 * MINUTE)
+                && life.trip.is_none()
+                && life.social.host().is_none()
+                && life.people[0]
+                    .job
+                    .and_then(|job| contracts().nth(job as usize))
+                    .is_some_and(|contract| contract.id == "RI001")
+                && life.services.carried_asset(0) == Some("letter")
+        }) && self.seed_booking.is_none_or(|booking| {
+            seed_trade(usize::from(booking.shop))
+                && life.trip.is_some_and(|t| {
+                    t.shop == booking.shop
+                        && t.started == booking.started
+                        && t.actor == booking.buyer
+                        && !t.accepted
+                        && matches!(
+                            t.stage,
+                            TripStage::Pack | TripStage::Outbound | TripStage::Exchange
+                        )
+                        && life.people[SEED_MERCHANT].counter_goods(usize::from(booking.shop))
+                            == t.incoming.quantity
+                })
+        }) && self.seed_shift.is_none_or(|shift| {
             let valid_shop = seed_trade(usize::from(shift.shop));
             valid_shop
                 && shift.shift <= now / DAY_MS
@@ -209,6 +258,55 @@ impl State {
         self.seed_shift.map(|shift| usize::from(shift.shop))
     }
 
+    pub(super) fn reserve_last_seed(
+        &mut self,
+        world: &mut LivingWorld,
+        trip: Trip,
+        seller: &Resident,
+    ) {
+        let shop = usize::from(trip.shop);
+        if self.seed_booking.is_some()
+            || !seed_trade(shop)
+            || seller.walk.at != booth_slot(shop)
+            || seller.walk.edge.is_some()
+            || seller.walk.state != super::State::AtWork
+            || seller.counter_goods(shop) != trip.incoming.quantity
+        {
+            return;
+        }
+        self.seed_booking = Some(SeedBooking {
+            shop: trip.shop,
+            started: trip.started,
+            buyer: trip.actor,
+        });
+        let at = seller.walk.at;
+        witness(world, "H10-07", SEED_MERCHANT as u8, at, at, None);
+    }
+
+    pub(super) fn seed_booking_permits(&self, trip: Trip) -> bool {
+        self.seed_booking.is_none_or(|booking| {
+            booking.shop == trip.shop
+                && booking.started == trip.started
+                && booking.buyer == trip.actor
+        })
+    }
+
+    pub(super) fn sync_seed_booking(&mut self, trip: Option<Trip>, seller: &Resident) {
+        if self.seed_booking.is_some()
+            && !trip.is_some_and(|t| {
+                self.seed_booking_permits(t)
+                    && !t.accepted
+                    && matches!(
+                        t.stage,
+                        TripStage::Pack | TripStage::Outbound | TripStage::Exchange
+                    )
+                    && seller.counter_goods(usize::from(t.shop)) == t.incoming.quantity
+            })
+        {
+            self.seed_booking = None;
+        }
+    }
+
     pub(super) fn mail_picked_up(&mut self, asset: u8, source: TilePos, now: u64) {
         self.mail = Some(MailHold {
             asset,
@@ -220,6 +318,61 @@ impl State {
 
     pub(super) fn mail_collected(&self, world: &mut LivingWorld, at: TilePos) {
         witness(world, "H07-01", COURIER, at, at, None);
+    }
+
+    pub(super) fn post_host(&self) -> Option<&ActorKind> {
+        self.post_host.as_ref().map(|booking| &booking.actor)
+    }
+
+    pub(super) fn arrived_post_host(
+        &self,
+        world: &LivingWorld,
+        post: TilePos,
+    ) -> Option<ActorKind> {
+        let booking = self.post_host?;
+        (world.world_ms() < booking.until
+            && world.activity_arrived(booking.actor)
+            && world.actor_tile(booking.actor) == booking.site
+            && distance(post, booking.site) <= 3)
+            .then_some(booking.actor)
+    }
+
+    pub(super) fn offer_post_host(&mut self, world: &mut LivingWorld, site: TilePos, now: u64) {
+        if self.post_host.is_some() {
+            return;
+        }
+        for actor in HOMEBOUND[..2].iter().copied() {
+            if distance(world.actor_tile(actor), site) > 32 || !world.reserve_activity(&[actor]) {
+                continue;
+            }
+            if world.move_for_activity(actor, point(site)) {
+                self.post_host = Some(PostHost {
+                    actor,
+                    site,
+                    until: now + 36 * MINUTE,
+                });
+                return;
+            }
+            world.end_activity(&[actor], 0);
+        }
+    }
+
+    pub(super) fn finish_post_host(&mut self, world: &mut LivingWorld) {
+        if let Some(booking) = self.post_host.take() {
+            world.end_activity(&[booking.actor], 0);
+        }
+    }
+
+    pub(super) fn sync_post_host(&mut self, world: &mut LivingWorld, job: Option<u16>, now: u64) {
+        if self.post_host.is_some_and(|booking| {
+            now >= booking.until
+                || world.activity_deadline(booking.actor).is_none()
+                || job
+                    .and_then(|id| contracts().nth(id as usize))
+                    .is_none_or(|job| job.id != "RI001")
+        }) {
+            self.finish_post_host(world);
+        }
     }
 
     pub(super) fn expire_mail(&mut self, now: u64) -> bool {
@@ -261,10 +414,24 @@ impl State {
     ) {
         match id {
             "RI001" | "ME062" => {
-                if let Some((partner, target)) = delivered_to
-                    && services.stamp_letter(asset, recipient, at, world.world_ms())
-                {
-                    witness(world, "H07-05", COURIER, at, target, Some(partner));
+                if let Some((partner, target)) = delivered_to {
+                    if let ("RI001", LegacyActor::Household(_)) = (id, partner) {
+                        world.record_legacy_completion(
+                            "H01-48",
+                            partner,
+                            target,
+                            at,
+                            LegacyPlace::Nearby,
+                            1,
+                            Some(LegacyActor::Resident(COURIER)),
+                        );
+                    }
+                    if services.stamp_letter(asset, recipient, at, world.world_ms()) {
+                        witness(world, "H07-05", COURIER, at, target, Some(partner));
+                    }
+                }
+                if id == "RI001" {
+                    self.finish_post_host(world);
                 }
             }
             "RI005" => self.mail = None,
@@ -457,6 +624,7 @@ mod tests {
             actual_recipient,
         );
         assert!(saw(&world, "H07-05"));
+        assert!(saw(&world, "H01-48"));
         assert!(!life.services.stamp_letter(letter, recipient, porch, now));
         let ServiceOp::Move(reply, owner, _) = services::definitions()
             .find(|def| def.id == "RI002")
@@ -537,5 +705,46 @@ mod tests {
         assert!(!life.legacy.menu_can_book(day));
         assert!(life.legacy.menu_can_book(day + 1));
         assert_eq!(serde_json::to_vec(world.stock()).unwrap(), stock);
+    }
+
+    #[test]
+    fn legacy_residents_last_seed_bag_remains_held_for_the_same_buyer_and_releases_on_cancel() {
+        let mut world = LivingWorld::new_village_wall_ms(0);
+        let mut life = VillageLife::default();
+        let now = world.world_ms();
+        let tray = shop(1);
+        assert!(life.people[1].pack_counter(1, 0));
+        life.people[1].walk = Walker::new(booth_slot(1), super::super::State::AtWork);
+        let trip = Trip {
+            actor: ActorKind::Xiaohe,
+            shop: 1,
+            started: now,
+            due: now,
+            expires: now + HOUR,
+            stage: TripStage::Pack,
+            target: house(1).door,
+            bag: None,
+            outgoing: tray.cost,
+            incoming: tray.goods,
+            accepted: false,
+            leg: 0,
+            hold: true,
+            regular_meal: false,
+        };
+        life.legacy
+            .reserve_last_seed(&mut world, trip, &life.people[1]);
+        life.trip = Some(trip);
+        assert!(saw(&world, "H10-07"));
+        assert_eq!(life.people[1].counter_goods(1), tray.goods.quantity);
+        let mut reopened: VillageLife =
+            serde_json::from_slice(&serde_json::to_vec(&life).unwrap()).unwrap();
+        assert!(reopened.legacy.valid(&reopened, now));
+        assert!(!reopened.legacy.seed_booking_permits(Trip {
+            actor: ActorKind::Ayu,
+            ..trip
+        }));
+        reopened.legacy.sync_seed_booking(None, &reopened.people[1]);
+        assert!(reopened.legacy.seed_booking.is_none());
+        assert_eq!(reopened.people[1].counter_goods(1), tray.goods.quantity);
     }
 }

@@ -1684,12 +1684,15 @@ impl LivingView {
                 _ => ("idle", CAT_IDLE),
             };
             let bowl = self.density == 2 && actor.pose == Pose::Drink;
+            let sniffing = village.is_some_and(|world| village_cat_smelling(world, actor));
+            let meal = sniffing || actor.pose == Pose::Eat && village.is_some_and(LivingWorld::cat_food_served);
             let drawing_x = if bowl && village.is_none() { x + 5 } else { x };
+            let drawing_y = y + i32::from(sniffing && time / 13_000 % 2 == 1);
             if self.density == 2
                 && self.premium_frame(
                     &format!("cat_{action}_{frame}"),
-                    (drawing_x, y),
-                    bowl || actor.facing_left,
+                    (drawing_x, drawing_y),
+                    bowl || meal || actor.facing_left,
                     Palette::Unchanged,
                 )
             {
@@ -2511,6 +2514,12 @@ fn building_baseline(building: &Building) -> i32 {
     } else {
         floor
     }
+}
+
+fn village_cat_smelling(world: &LivingWorld, cat: &Actor) -> bool {
+    cat.kind == ActorKind::Orange && !cat.inside() && cat.pose == Pose::Idle
+        && cat.activity == Activity::SmellMeal && world.cat_food_served()
+        && world.resolve_poi("cat_water").is_some_and(|plate| plate == cat.position)
 }
 
 fn baked_frame(

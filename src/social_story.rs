@@ -594,7 +594,9 @@ impl State {
         }
         let minute = world.minute_of_day();
         let closes = if self.quiet_hours { 870 } else { 900 };
-        if self.next_offer > now || !(465..closes).contains(&minute) || life.trip.is_some() {
+        if self.next_offer > now || !(465..closes).contains(&minute) || life.trip.is_some()
+            || life.legacy.post_host().is_some()
+        {
             return;
         }
         self.next_offer = now + 8 * MINUTE;
@@ -883,10 +885,12 @@ impl State {
                 || life.people[id].neighbour_meal.is_some()
                 || life.people[id].escrow.is_some()
                 || life.services.carried_asset(id as u8).is_some()
+                || life.care.active(id)
                 || person.state == super::State::Away
                 || person.hidden() && life.occupied(world, origin, Some(id), None)
                 || outer_corridor(origin) && life.corridor_reserved(Some(id), None)
                 || life.trip.is_some()
+                || life.legacy.post_host().is_some()
                 || life.present() >= MAX_HUMAN_VISITORS
                 || a.chapter == 61
                     && life

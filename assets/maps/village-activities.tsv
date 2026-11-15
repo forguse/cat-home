@@ -273,7 +273,7 @@ ME071	邻里递交失物	0	residence_road_worker.door;market_notice	day_1	servic
 ME072	归还雨借斗篷	11	craft_textile.door;east_duplex_1.door	village_development+resident_arrival	deliver	10:19>rope	原斗篷、借单	先前借用的斗篷已干或同意带湿归还
 ME073	公共阅读日	8	commons_hall.door;commons_garden	community	service	15:	house	周日公共屋预约，双方同场会合后关系提升。
 ME074	球场预约与清退	-	commons_court_gate;plugin_basketball	community	native	15:	真实篮球、插件场地预约	已安装启用插件、场地干燥、两人预约
-ME075	花源访蜂并记有效传粉	7	commons_garden	community	native	15:	标牌、原花	夏季已有花源且本地蜂群活动范围覆盖
+ME075	果园双花访蜂并记有效传粉	-	orchard_tools;orchard_loop	cooperative_farm	native	11:	两株正开花的苹果树	晴天同一只蜂依次在两株花上停留，第二株下一次结实多一枚真实果实
 ME076	近池雨后蛙跃	-	home_fishing;home_pond	day_1	native	1:	真实水缘与安全落点	暖季雨停、池边湿润且有可达水缘
 ME077	黄昏刺猬避光	-	orchard_rest;orchard_loop	day_1	native	11:	原灯、草边躲藏点	暖季黄昏刺猬觅食，有近距离移动光源
 ME078	燕子避阵雨	9	bridge_main;bridge_wait_e	day_1	native	5:	实际屋檐停栖点	暖季燕子巡桥上空，雨风超阈值

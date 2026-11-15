@@ -23,23 +23,26 @@ use windows_sys::Win32::Storage::FileSystem::{
 
 const MAX_SNAPSHOT: usize = 256 * 1024;
 const LANDSCAPE_REVISION: u8 = 1;
-const BEHAVIOR_REVISION: u8 = 1;
+const BEHAVIOR_REVISION: u8 = 2;
 const V4_FILE: &str = "world-v4.json";
 const COMPAT_FILE: &str = "world-compat-v3.json";
 const LIVE_PUMP_BUDGET: Duration = Duration::from_millis(6);
 const OFFLINE_BACKLOG_MS: u64 = 10 * 60_000;
 const MAX_PUMP_SLICES: usize = 128;
 
+// Heap-backed defaults keep deserialization off small Windows stacks. Saving
+// infers borrowed type parameters, preserving the JSON schema without cloning
+// the full world, resident state or plugin scene for every checkpoint.
 #[derive(Serialize, Deserialize)]
-struct SavedLegacy {
+struct SavedLegacy<W = Box<LivingWorld>, S = SceneState, V = VisitorState> {
     schema: u16,
-    world: LivingWorld,
-    scenes: SceneState,
+    world: W,
+    scenes: S,
     camera: Camera,
     #[serde(default = "default_size")]
     size: (i32, i32),
     #[serde(default)]
-    visitors: VisitorState,
+    visitors: V,
 }
 #[derive(Clone, Debug, Serialize, Deserialize)]
 struct MigrationReceipt {
@@ -50,7 +53,7 @@ struct MigrationReceipt {
     mapping_revision: u16,
 }
 #[derive(Serialize, Deserialize)]
-struct SavedVillage {
+struct SavedVillage<W = Box<LivingWorld>, L = Box<VillageLife>, S = SceneState> {
     schema: u16,
     layout_id: String,
     map_revision: u16,
@@ -59,11 +62,11 @@ struct SavedVillage {
     #[serde(default)]
     behavior_revision: u8,
     source_migration: Option<MigrationReceipt>,
-    world: LivingWorld,
-    scenes: SceneState,
+    world: W,
+    scenes: S,
     camera: Camera,
     size: (i32, i32),
-    life: VillageLife,
+    life: L,
     auto_camera: bool,
     #[serde(default)]
     companionship_ms: u64,
@@ -201,7 +204,7 @@ impl HomeHost {
                 landscape_migration_source = Some((saved.landscape_revision, bytes.clone()));
             }
             if saved.behavior_revision < BEHAVIOR_REVISION {
-                behavior_migration_source = Some(bytes.clone());
+                behavior_migration_source = Some((saved.behavior_revision, bytes.clone()));
             }
             if saved.map_revision != WILLOW_VILLAGE.map_revision {
                 if !saved.world.migrate_village_map_revision(saved.map_revision) {
@@ -212,12 +215,12 @@ impl HomeHost {
             receipt = saved.source_migration;
             companionship_ms = saved.companionship_ms;
             (
-                saved.world,
+                *saved.world,
                 scenes,
                 saved.camera,
                 saved.size,
                 VisitorState::default(),
-                saved.life,
+                *saved.life,
                 saved.auto_camera,
             )
         } else if !preview && let Some((path, schema)) = find_legacy(&root, compatibility)? {
@@ -249,7 +252,7 @@ impl HomeHost {
             };
             if compatibility {
                 (
-                    saved.world,
+                    *saved.world,
                     scenes,
                     camera,
                     saved.size,
@@ -258,7 +261,7 @@ impl HomeHost {
                     false,
                 )
             } else {
-                let mut old_world = saved.world;
+                let mut old_world = *saved.world;
                 let life = VillageLife::migrate_from_legacy(&saved.visitors, &mut old_world);
                 scenes.migrate_to_village(&mut old_world).map_err(|e| {
                     error(format!(
@@ -365,8 +368,8 @@ impl HomeHost {
         if let Some((revision, bytes)) = landscape_migration_source {
             keep_landscape_revision_backup(&home.root, revision, &bytes)?;
         }
-        if let Some(bytes) = behavior_migration_source {
-            keep_revision_backup(&home.root, "behavior-r0", &bytes)?;
+        if let Some((revision, bytes)) = behavior_migration_source {
+            keep_revision_backup(&home.root, &format!("behavior-r{revision}"), &bytes)?;
         }
         if upgraded {
             home.save()?;
@@ -736,11 +739,11 @@ impl HomeHost {
                     landscape_revision: LANDSCAPE_REVISION,
                     behavior_revision: BEHAVIOR_REVISION,
                     source_migration: self.source_migration.clone(),
-                    world: self.world.clone(),
-                    scenes: self.scenes.state().clone(),
+                    world: &self.world,
+                    scenes: self.scenes.state(),
                     camera: self.camera,
                     size,
-                    life: self.life.clone(),
+                    life: &self.life,
                     auto_camera: self.auto_camera,
                     companionship_ms: self.companionship_ms,
                 }),
@@ -754,11 +757,11 @@ impl HomeHost {
                 },
                 serde_json::to_vec(&SavedLegacy {
                     schema: 3,
-                    world: self.world.clone(),
-                    scenes: self.scenes.state().clone(),
+                    world: &self.world,
+                    scenes: self.scenes.state(),
                     camera: self.camera,
                     size,
-                    visitors: self.visitors.clone(),
+                    visitors: &self.visitors,
                 }),
             )
         };
@@ -1120,6 +1123,36 @@ mod landscape_save_tests {
         fs::write(root.join(V4_FILE),&future).unwrap();
         assert!(HomeHost::open(root.clone(),0,false).is_err());
         assert_eq!(read_bytes(&root.join(V4_FILE)).unwrap(),future);
+    }
+
+    // Keep the extra deserialized world out of the native-host test frame.
+    // Debug builds do not reuse its large serde stack slots after drop.
+    #[inline(never)]
+    fn revision_one_with_seen_action(original: &[u8]) -> Vec<u8> {
+        let mut old: serde_json::Value = serde_json::from_slice(original).unwrap();
+        old["behavior_revision"] = serde_json::json!(1);
+        let mut world: LivingWorld = serde_json::from_value(old["world"].clone()).unwrap();
+        let tile=cat_home::map_data::TilePos::new(15,20);
+        assert!(world.record_legacy_completion("H01-37",cat_home::legacy_content::LegacyActor::Household(0),tile,tile,
+            cat_home::legacy_content::LegacyPlace::Front,1,None));
+        old["world"]=serde_json::to_value(world).unwrap();
+        serde_json::to_vec_pretty(&old).unwrap()
+    }
+
+    #[test]
+    fn behavior_revision_one_archives_original_and_retains_seen_actions() {
+        let (root, original) = fixture("behavior-one");
+        let original=revision_one_with_seen_action(&original);
+        fs::write(root.join(V4_FILE),&original).unwrap();
+        let host=HomeHost::open(root.clone(),0,false).unwrap();
+        assert_eq!(host.world.legacy_behaviors().observed_count(),1);
+        drop(host);
+        let backup=root.join(format!("world-v4-behavior-r1-{:x}.json",Sha3_256::digest(&original)));
+        assert_eq!(read_bytes(&backup).unwrap(),original);
+        let saved=read_bytes(&root.join(V4_FILE)).unwrap();
+        assert_eq!(serde_json::from_slice::<serde_json::Value>(&saved).unwrap()["behavior_revision"],BEHAVIOR_REVISION);
+        let host=HomeHost::open(root.clone(),0,false).unwrap();drop(host);
+        assert_eq!(read_bytes(&root.join(V4_FILE)).unwrap(),saved);
     }
 }
 

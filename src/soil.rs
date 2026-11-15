@@ -37,6 +37,7 @@ pub(super) struct State {
     drain_tested: bool,
     leaves: u8,
     kitchen_scraps: u8,
+    visitor_compost_requested: bool,
     supplemented: u32,
     compost: Compost,
     fertilized: bool,
@@ -68,7 +69,7 @@ impl State {
     ) -> Option<Work> {
         if q02 && self.inspection.is_none() && !self.water_proven {
             if let Some((id, _)) = plots.iter().enumerate().find(|(id, plot)| {
-                *id != usize::from(grain::FIELD)
+                *id < village::ORIGINAL_VILLAGE_PLOTS && *id != usize::from(grain::FIELD)
                     && available & (1 << id) != 0
                     && flooded & (1 << id) == 0
                     && matches!(plot.stage, PlotStage::Seed | PlotStage::Growing)
@@ -94,7 +95,9 @@ impl State {
                 .find(|&plot| available & (1 << plot) != 0 && flooded & (1 << plot) == 0)
                 .map(Work::InspectDrain);
         }
-        if q03 && !self.fertilized {
+        if q03 && (!self.fertilized || self.visitor_compost_requested || self.kitchen_scraps == MATERIAL_CAP
+            || self.compost != Compost::Empty)
+        {
             return match self.compost {
                 Compost::Empty if self.leaves >= 2 && self.kitchen_scraps >= 1 => Some(Work::Mix),
                 Compost::Mixed {
@@ -104,6 +107,7 @@ impl State {
                 Compost::Ready => plots.iter().enumerate().find_map(|(id, plot)| {
                     (available & (1 << id) != 0
                         && flooded & (1 << id) == 0
+                        && self.supplemented & (1 << id) == 0
                         && plot.stage == PlotStage::Tilled)
                         .then_some(Work::Apply(id as u8))
                 }),
@@ -145,6 +149,29 @@ impl State {
     }
     pub(super) fn scraps(&mut self) {
         self.kitchen_scraps = self.kitchen_scraps.saturating_add(1).min(MATERIAL_CAP);
+    }
+
+    pub(super) fn add_visitor_scrap(&mut self) -> bool {
+        if self.kitchen_scraps == MATERIAL_CAP {
+            return false;
+        }
+        self.kitchen_scraps += 1;
+        self.visitor_compost_requested = true;
+        true
+    }
+
+    pub(super) fn accepts_visitor_scrap(&self) -> bool {
+        self.kitchen_scraps < MATERIAL_CAP
+    }
+
+    pub(super) fn visible_compost(&self) -> Option<(u8, u8)> {
+        match self.compost {
+            Compost::Empty if self.leaves + self.kitchen_scraps > 0 => Some((self.leaves + self.kitchen_scraps, 0)),
+            Compost::Empty => None,
+            Compost::Mixed { turned: false, .. } => Some((1, 1)),
+            Compost::Mixed { turned: true, .. } => Some((1, 2)),
+            Compost::Ready => Some((1, 3)),
+        }
     }
 
     pub(super) fn fishing(&mut self, caught: bool) {
@@ -222,6 +249,7 @@ impl State {
             {
                 self.leaves -= 2;
                 self.kitchen_scraps -= 1;
+                self.visitor_compost_requested = false;
                 self.compost = Compost::Mixed {
                     begun: now,
                     turned: false,
@@ -239,7 +267,8 @@ impl State {
             }
             Work::Apply(id)
                 if self.compost == Compost::Ready
-                    && field[usize::from(id)].stage == PlotStage::Tilled
+                    && field.get(usize::from(id)).is_some_and(|plot| plot.stage == PlotStage::Tilled)
+                    && self.supplemented & (1 << id) == 0
                     && flood & (1 << id) == 0 =>
             {
                 self.compost = Compost::Empty;
@@ -250,14 +279,15 @@ impl State {
         }
     }
 
-    pub(super) fn validate(&self, now: u64) -> bool {
+    pub(super) fn validate(&self, now: u64, plot_count: usize) -> bool {
         self.inspection.is_none_or(|id| id < 30)
             && self.drainage.is_none_or(|id| id < 30)
             && (!self.drain_clear || self.drainage.is_some())
             && (!self.drain_tested || self.drain_clear && self.water_proven)
             && self.leaves <= MATERIAL_CAP
             && self.kitchen_scraps <= MATERIAL_CAP
-            && self.supplemented >> 30 == 0
+            && self.supplemented.checked_shr(plot_count.min(village::VILLAGE_PLOT_CAP) as u32).unwrap_or(0) == 0
+            && (!self.visitor_compost_requested || self.kitchen_scraps > 0)
             && !matches!(self.compost, Compost::Mixed { begun, .. } if begun > now)
     }
 }

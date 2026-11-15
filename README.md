@@ -2,11 +2,13 @@
 
 Windows 桌面上的像素生活小世界。小禾、阿榆和橘猫住在村庄西北的小院，日常种植、收获、做饭、照料猫咪，出门赶集、劳动和建设。程序使用原生 Windows 窗口，不依赖浏览器或游戏引擎。
 
-1.1.5 将旧 5,000 条目录中的 **24 项基础行为、41 个条件变体，共 65 个编号**接入默认村庄。工具用后清理、真实收摊归仓、信件逾期退原处、画师写生并带画回家轮展、田鼠停听入草、青蛙与鸭子让岸等都会自主发生。右键“观察手记”中的“生活见闻”区分已接入与本档实际见到的数量。
+1.1.6 新增 **22 项基础行为**，累计将旧目录中的 **46 项基础行为、41 个条件变体，共 87 个编号**接入默认村庄。收后整地、分拣留种、分段补水、厨余制肥、给实际来客送餐、蜜蜂访花后果树结果，以及橘子的闻饭、午睡和夜归都有实际流程。右键“观察手记”显示谁在第几天做了什么，并区分已接入与本档实际见到的数量。
 
-![实际自主生活：动物避让与避雨、餐牌、写生和展画](docs/media/legacy-behaviors-1.1.5.png)
+![实际自主生活：授粉结果、动物作息、分段田务与实物交接](docs/media/legacy-behaviors-1.1.6.png)
 
-上图来自真实自主回放存档。65 个编号包括复用既有真实流程的完成记录，不是 65 套独立新动画，也不代表剩余 4,935 个已经完成。完整清单、适配差异和过程见 [本版实现](docs/LEGACY_BEHAVIORS_1_1_5.md)、[5,000 条审计](docs/LEGACY_CAST_AUDIT.md) 和 [验证记录](docs/VALIDATION.md)。本版仍复用现有走路、持物、工作等图集，补充画板、菜单、泥锄和动物实际站位表现。
+上图来自真实自主回放存档的不同时间与局部机位，保留原画像素。87 个编号包括复用既有真实流程的完成记录，不是 87 套独立新动画，也不代表剩余 4,913 个已经完成。逐项过程、自然触发与专项证据、改编边界见 [本版实现](docs/LEGACY_BEHAVIORS_1_1_6.md)、[5,000 条审计](docs/LEGACY_CAST_AUDIT.md) 和 [验证记录](docs/VALIDATION.md)。本版复用既有动作图集，补充实际种袋、饭盘、作业阶段和有限痕迹。
+
+保留 [1.1.5 的清理、写生、邮差、收摊和动物让岸流程](docs/LEGACY_BEHAVIORS_1_1_5.md)。这次也修复分段倒水的退还边界、新田施肥后的存档校验、满堆肥桶的继续处理，以及保存时整份世界复制的问题。
 
 保留 1.1.4 的真实资源生活：2,635 处树木、灌木、石头、倒木、草和芦苇可按实际需求采集。人物取工具、到场做工，留下倒木、树桩、碎石或草束，再搬回仓库；草纤维需在工坊搓成绳。木、石、绳供实际施工消耗，库满不会重复发材料。
 
@@ -94,6 +96,9 @@ cargo test --locked
 cargo build --locked --release
 python tools/compile_map.py --check
 python -m unittest discover -s tools -p test_compile_map.py
+python -X utf8 tools/compile_legacy_bindings.py --check
+python -X utf8 -m unittest discover -s tools -p test_compile_legacy_bindings.py
+python -X utf8 tools/audit_cast_rules.py --check
 ```
 
 生成的程序位于 `target/release/cat-home.exe`。构建直接读取已提交图集，通常无需 Python；修改地图或重烘焙图片时需要 Python，图集工具另需 Pillow。源码包会排除个人存档、编译目录、测试输出、日志、旧 EXE 和本机配置。
