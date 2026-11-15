@@ -1,0 +1,31 @@
+old_id	evidence
+A01-02~10241	Forage1: same paid meal actually consumed at original bowl; native winter clear daytime receipt.
+A01-02~20141	Forage1: same paid meal actually consumed at original bowl; native autumn clear dusk receipt.
+A01-13~01051	Trail1: same cat actually stepped from right onto damp ground; bounded 30 minute footprint, spring clouds dawn receipt.
+A01-13~21131	Trail1: same cat actually stepped from left onto damp ground; bounded 30 minute footprint, autumn clouds dusk receipt.
+H06-01~10041	Food1: source-paid actual same-day meal placed by cook at cat bowl (15,20), spring clear day; native d1819 17:28.
+H06-03~12031	Food1: same owned snack handed to actual guest under rain canopy; (89,44) left of (90,44), native d1819 14:56.
+H06-09~11241	Survey1: actual offered menu records current food inventory at same counter (82,53); native d22036 13:39 winter clouds.
+H06-09~12141	Survey1: actual offered menu records current food inventory at same counter (82,53); native d44199 13:18 autumn rain.
+S02~10141	Rest1: actual autumn clear daytime rest at (25,17); same resting place and restoration retained.
+A05-02~01101	Forage1: the same cached acorn was recovered and eaten on autumn cloudy dawn d505; actual immutable cache and route.
+H02-01~10051	Survey1: real soil profile stored after digging and backfilling the same plot; spring clear day right of target, native d21844 16:56.
+H06-01~11041	Food1: same paid portion placed at actual cat bowl; spring cloudy day, native d10877 17:32.
+H06-07~10251	Food1: real basket meal consumed by visiting party, winter clear day right of target, native d1778 13:12.
+H06-07~11151	Food1: same funded guest basket actually eaten; autumn cloudy daytime right of target, native resident-modes-guest receipt.
+H09-06~11021	Art1: same actual painting of installed house at pond, full autonomous board custody; legal level2 spring cloudy d4 09:38 targeted producer test, not natural new-game claim.
+A05-01~10101	Sow1: actual same autumn acorn stored into bounded earth cache; untouched 1.1.6 old-save upgrade d530 clear daytime actual deliveries 14:30 and 14:37.
+S02~11041	Targeted real producer test (not a naturally observed random replay): Same remembered spatial rest; cloudy spring 08:00–17:59 has no guard conflict. Same tile at and target.
+S02~20041	Targeted real producer test (not a naturally observed random replay): Same remembered spatial rest; job begun before 18:00 can finish during clear spring dusk.
+S13~10231	Targeted real producer test (not a naturally observed random replay): Real installed fixture version is saved in seen_fixture. Winter Clear legal, side foot (32,9) and midpoint (33,9) toward kitchen (34,9) verified.
+S13~11041	Targeted real producer test (not a naturally observed random replay): Real installed fixture version is saved in seen_fixture. Spring Clouds legal; front kitchen (34,11) and midpoint toward (34,9) verified.
+S13~11131	Targeted real producer test (not a naturally observed random replay): Real installed fixture version is saved in seen_fixture. Autumn Clouds legal; left kitchen (32,9) and midpoint verified.
+S13~20041	Targeted real producer test (not a naturally observed random replay): Real version saved, front geometry verified. Just before 18:00 dry spring starts can finish in dusk.
+S13~20131	Targeted real producer test (not a naturally observed random replay): Real version saved, left geometry verified. Just before 18:00 dry Autumn starts can finish in dusk.
+S18~00001	Targeted real producer test (not a naturally observed random replay): Real pulse testing currently consumes four well water units and creates the actual 4-water carry; place 0 accepts Expanded. 08–13 dedicated trial proposal, but ordinary public GetWater can finish 06:00–07:30.
+S18~23201	Targeted real producer test (not a naturally observed random replay): Same real 4-water trial. Dusk Winter Snow not barred by GetWater; place0 accepts Expanded.
+S18~30021	Targeted real producer test (not a naturally observed random replay): Same real 4-water trial. Night begins 20:00 while sleep scheduling only after 21:00; normal public trip may also finish afterward.
+S18~31021	Targeted real producer test (not a naturally observed random replay): Same real 4-water trial. Night begins 20:00 while sleep scheduling only after 21:00; normal public trip may also finish afterward.
+S18~31201	Targeted real producer test (not a naturally observed random replay): Same real 4-water trial. Night begins 20:00, place0 accepts Expanded. No complete native nighttime example.
+A01-49~03241	Targeted real producer test (not a naturally observed random replay): Real snow print geometry: candidate stand (16,25), (19,25) or (20,25) aims north. Dawn Snow winter still needs awake actor eligible before first probe of season. Existing natural examples are horizontal/day.
+H01-34~00001	Targeted real producer test (not a naturally observed random replay): Real crop flood cleared, no requirement ongoing rain at commit. For example spring d12 06:00 Clear followed 03–06 Rain. Prior genuine flood must remain.

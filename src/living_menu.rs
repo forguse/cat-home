@@ -85,6 +85,7 @@ fn show_native(hwnd: HWND, tray: bool) {
 
     append_label(menu, MF_STRING | MF_GRAYED, 0, &state.status);
     append_label(menu, MF_STRING, MENU_NOTEBOOK, "观察手记…");
+    append_label(menu, MF_STRING, MENU_TAP, "轻敲窗户（橘子在窗边时）");
     append_options(
         menu,
         "窗口大小",
@@ -120,6 +121,12 @@ fn show_native(hwnd: HWND, tray: bool) {
 
     let selected = pick_menu(hwnd, menu, point);
     match selected {
+        MENU_TAP => with_app(|app| {
+            if let Some(home) = &mut app.home {
+                home.tap_window(world::unix_millis());
+            }
+            app.refresh(hwnd);
+        }),
         MENU_NOTEBOOK => {
             if let Some(text) = read_app(|app| Some(app.home.as_ref()?.notebook())) {
                 message(hwnd, "观察手记", &text, MB_ICONINFORMATION);

@@ -47,6 +47,8 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Legacy registration boundary tests failed' }
           python -X utf8 tools/audit_cast_rules.py --check
           if ($LASTEXITCODE -ne 0) { throw 'Behavior audit table is stale' }
+          python -X utf8 tools/audit_current_behaviors.py --check
+          if ($LASTEXITCODE -ne 0) { throw 'Current producer census is stale' }
       - name: Test simulation and Windows adapter
         run: |
           cargo +stable test --locked --release --lib --bins

@@ -18,6 +18,7 @@ pub(super) enum Work {
     Cook,
     SaveSeed,
     SowRoot,
+    InspectRootShoulder,
     LiftRoot,
     StoreRoot,
     CookRoot,
@@ -54,6 +55,7 @@ impl Work {
         match self {
             Self::Sow | Self::SowRoot | Self::RecoverRootSeed => Activity::Sow,
             Self::Cut | Self::LiftRoot => Activity::Harvest,
+            Self::InspectRootShoulder => Activity::InspectRootShoulder,
             Self::CarrySheaf | Self::Store | Self::SaveSeed | Self::Cover => Activity::Store,
             Self::Thresh => Activity::SortHarvest,
             Self::Spread | Self::Uncover | Self::Turn => Activity::DryHarvest,
@@ -82,7 +84,7 @@ impl Work {
             Self::MountMill | Self::DemonstrateMill | Self::MillWheat | Self::MillIndependently => {
                 30 * MINUTE
             }
-            Self::ObserveMill | Self::RecoverRootSeed => 5 * MINUTE,
+            Self::ObserveMill | Self::RecoverRootSeed | Self::InspectRootShoulder => 5 * MINUTE,
             Self::Spread | Self::Uncover | Self::Turn | Self::SaveSeed => 10 * MINUTE,
         }
     }
@@ -123,6 +125,8 @@ pub(super) struct State {
     stored: bool,
     replanted: bool,
     root_seed: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    root_shoulder_revealed: Option<u8>,
     rotated: bool,
     root_cellar: u8,
     root_expires: u64,
@@ -158,6 +162,7 @@ impl Default for State {
             stored: false,
             replanted: false,
             root_seed: true,
+            root_shoulder_revealed: None,
             rotated: false,
             root_cellar: 0,
             root_expires: 0,
@@ -178,6 +183,23 @@ impl Default for State {
 }
 
 impl State {
+    fn root_shoulder_size(&self) -> Option<u8> {
+        (matches!(self.crop, Crop::RootGrowing | Crop::RootMature) && self.growing_days >= 3)
+            .then(|| (self.growing_days + self.watered_days + 2).saturating_sub(7).clamp(1, 3))
+    }
+
+    pub(super) fn root_shoulder_revealed(&self) -> Option<u8> {
+        self.root_shoulder_revealed
+    }
+
+    pub(super) fn reveal_root_shoulder(&mut self, weather: YardWeather) -> bool {
+        if self.root_shoulder_revealed.is_some() || matches!(weather, YardWeather::Rain | YardWeather::Snow) {
+            return false;
+        }
+        self.root_shoulder_revealed = self.root_shoulder_size();
+        self.root_shoulder_revealed.is_some()
+    }
+
     pub(super) fn completed(&self, chapter: &str) -> bool {
         match chapter {
             "Q09" => self.growing_days >= 8 || self.harvests != 0,
@@ -279,6 +301,11 @@ impl State {
             {
                 Task::Grain(Work::SowRoot)
             }
+            Crop::RootGrowing | Crop::RootMature
+                if !rain && self.root_shoulder_revealed.is_none() && self.root_shoulder_size().is_some() =>
+            {
+                Task::Grain(Work::InspectRootShoulder)
+            }
             Crop::RootMature if !rain => Task::Grain(Work::LiftRoot),
             Crop::RootsLifted => Task::Grain(Work::StoreRoot),
             Crop::Fallow if self.rotated && !self.root_seed && !self.completed("Q14") => {
@@ -351,12 +378,14 @@ impl State {
                 if self.replanted && self.root_seed && self.eaten == 0b11 =>
             {
                 self.root_seed = false;
+                self.root_shoulder_revealed = None;
                 self.sow_day = now / DAY_MS;
                 self.growing_days = 0;
                 self.watered_days = 0;
                 self.crop = Crop::RootGrowing;
             }
             (Crop::RootMature, Work::LiftRoot) if clear => {
+                self.root_shoulder_revealed = None;
                 self.crop = Crop::RootsLifted;
             }
             (Crop::RootsLifted, Work::StoreRoot) => {
@@ -511,6 +540,7 @@ impl State {
             && (!self.replanted || self.seed_saved)
             && (!self.stored || self.harvests > 0)
             && self.root_cellar <= 3
+            && self.root_shoulder_revealed.is_none_or(|size| self.root_shoulder_size().is_some_and(|current| (1..=current).contains(&size)))
             && (self.root_expires == 0) == (self.root_cellar == 0)
             && (self.root_expires == 0
                 || (now..=now.saturating_add(10 * DAY_MS)).contains(&self.root_expires))
@@ -530,4 +560,36 @@ impl State {
 pub(super) fn drying_site() -> Cell {
     let loading = village::poi("pantry_loading");
     Cell(loading.0, loading.1 + 1)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn inspecting_a_living_root_reveals_size_and_clears_on_lifting() {
+        let mut world = LivingWorld::new_village_wall_ms(0);
+        let worker = ActorKind::Xiaohe.index();
+        let plot = &WILLOW_VILLAGE.crops[usize::from(FIELD)];
+        world.now_ms = (5..30).map(|day| day * DAY_MS + 10 * HOUR)
+            .find(|&at| matches!(LivingWorld::weather_at(at), YardWeather::Clear | YardWeather::Clouds)).unwrap();
+        let grain = &mut world.village.as_mut().unwrap().grain;
+        grain.crop = Crop::RootGrowing;
+        grain.growing_days = 3;
+        grain.watered_days = 3;
+        let inspect = Task::Grain(Work::InspectRootShoulder);
+        world.commit(worker, inspect);
+        assert_eq!(world.root_shoulder_visual(), None);
+        world.actors[worker].cell = Cell::from(plot.work);
+        let stock_before = world.stock.clone();
+        world.commit(worker, inspect);
+        assert_eq!(world.root_shoulder_visual(), Some((TilePos::new(plot.rect.x, plot.rect.y), 1)));
+        world.commit(worker, inspect);
+        assert_eq!(world.stock, stock_before);
+        let mut reopened: LivingWorld = serde_json::from_slice(&serde_json::to_vec(&world).unwrap()).unwrap();
+        assert_eq!(world.root_shoulder_visual(), reopened.root_shoulder_visual());
+        reopened.village.as_mut().unwrap().grain.crop = Crop::RootMature;
+        reopened.commit(worker, Task::Grain(Work::LiftRoot));
+        assert_eq!(reopened.root_shoulder_visual(), None);
+    }
 }

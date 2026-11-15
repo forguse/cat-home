@@ -42,13 +42,25 @@ pub(super) struct State {
     pub passing: Option<PassingWitness>,
     pub porch_considered: [Option<u64>; 2],
     pub porch_ready: [Option<u64>; 2],
+    #[serde(skip_serializing_if = "super::household_detail::State::is_empty")]
+    pub detail: super::household_detail::State,
+    #[serde(skip_serializing_if = "super::yard_mat::Mat::is_empty")]
+    pub mat: super::yard_mat::Mat,
+    #[serde(skip_serializing_if = "super::orchard_ground::Cover::is_empty")]
+    pub orchard_cover: super::orchard_ground::Cover,
+    #[serde(skip_serializing_if = "super::yard_survey::State::is_empty")]
+    pub survey: super::yard_survey::State,
+    #[serde(skip_serializing_if = "super::soil_profile::Surveyed::is_empty")]
+    pub soil_profile: super::soil_profile::Surveyed,
 }
 
 impl State {
     pub fn is_empty(&self) -> bool { self == &Self::default() }
 
     pub fn valid(&self, now: u64, actors: &[Actor; 3], cat_food: bool) -> bool {
-        self.rotation_due & 0x3fff_ffff == 0
+        self.detail.valid(now, cat_food, actors) && self.mat.valid(now, actors)
+            && self.orchard_cover.valid(now) && self.survey.valid(now) && self.soil_profile.valid()
+            && self.rotation_due & 0x3fff_ffff == 0
             && (!self.cat_meal_sniffed || cat_food)
             && self.cat_last_meal.is_none_or(|time| time <= now)
             && self.cat_napped_after.is_none_or(|time| self.cat_last_meal.is_some_and(|last| time <= last))
@@ -175,11 +187,12 @@ impl LivingWorld {
 
     pub(super) fn finish_rain_shift(&mut self, i: usize, at: TilePos) {
         if i < 2 && self.actors[i].outfit == Outfit::Raincoat && self.weather() == YardWeather::Rain
-            && let Some(state) = &mut self.village
-            && state.family_routines.raincoat_spell[i] == Some(self.now_ms / (3 * HOUR))
-        {
-            state.family_routines.raincoat_spell[i] = None;
-            self.record_household_completion("H01-52", i, at, LegacyPlace::Front);
+            && let Some(state) = &mut self.village {
+            state.family_routines.detail.rain_shift_done[i] = true;
+            if state.family_routines.raincoat_spell[i] == Some(self.now_ms / (3 * HOUR)) {
+                state.family_routines.raincoat_spell[i] = None;
+                self.record_household_completion("H01-52", i, at, LegacyPlace::Front);
+            }
         }
     }
 
@@ -262,7 +275,7 @@ impl LivingWorld {
         {
             return None;
         }
-        let covered = matches!(self.weather(), YardWeather::Rain | YardWeather::Snow);
+        let covered = matches!(self.weather(), YardWeather::Rain | YardWeather::Snow) || !self.cat_mat_ready();
         let place = if covered { self.home_door(0) } else { village::poi("cat_rest") };
         self.quiet_visit_site_available(ActorKind::Orange.index(), place.tile()).then_some(Task::CatNap(place.tile()))
     }

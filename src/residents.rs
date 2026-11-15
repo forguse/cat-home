@@ -33,7 +33,7 @@ const NEIGHBOUR_PANTRY_TARGET: u16 = 10;
 const RESIDENT_COUNT: usize = 20;
 const FIRST_RESIDENTS: [usize; 6] = [1, 2, 3, 5, 6, 9];
 const EXTERNAL_COUNT: usize = MAX_HUMAN_VISITORS;
-pub const VILLAGE_OCCUPANCY: usize = (RESIDENT_COUNT + EXTERNAL_COUNT) * 2;
+pub const VILLAGE_OCCUPANCY: usize = (RESIDENT_COUNT + EXTERNAL_COUNT) * 2 + 1;
 const HOMEBOUND: [ActorKind; 3] = [ActorKind::Xiaohe, ActorKind::Ayu, ActorKind::Orange];
 #[cfg(test)]
 const ITEMS: [Item; 8] = [
@@ -349,6 +349,23 @@ struct Cargo {
 struct CounterBatch {
     shop: u8,
     cargo: Cargo,
+    #[serde(default, skip_serializing_if = "SeedPaper::plain")]
+    paper: SeedPaper,
+}
+
+#[derive(Clone, Copy, Debug, Default, Serialize, Deserialize, Eq, PartialEq)]
+enum SeedPaper {
+    #[default]
+    Plain,
+    Offered,
+    Damp { work_at: Option<u64> },
+    Sealed,
+}
+
+impl SeedPaper {
+    fn plain(&self) -> bool {
+        *self == Self::Plain
+    }
 }
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize, Eq, PartialEq)]
@@ -378,6 +395,10 @@ struct Resident {
     returning_cargo: Option<Cargo>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     counter: Option<CounterBatch>,
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    sealed_seed_stock: bool,
+    #[serde(default, skip_serializing_if = "seed_wrap_unused")]
+    seed_wraps_used: u8,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     tool: Option<VisitorTool>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -436,6 +457,11 @@ impl Resident {
         } else {
             0
         });
+        let held = held.saturating_add(if cargo.item == Item::Seeds && self.sealed_seed_stock {
+            SHOPS[1].goods.quantity
+        } else {
+            0
+        });
         self.count(cargo.item)
             .saturating_add(held)
             .saturating_add(cargo.quantity)
@@ -459,32 +485,60 @@ impl Resident {
     fn ready_to_exchange(&self, shop_id: usize, keep_meal: bool) -> bool {
         let shop = shop(shop_id);
         self.counter_goods(shop_id) >= shop.goods.quantity
+            && !self.counter.is_some_and(|batch| matches!(batch.paper, SeedPaper::Damp { .. }))
             && self.can_accept(shop.cost)
             && (!keep_meal || self.count(Item::Food) > 0)
     }
 
+    fn can_pack_counter(&self, shop_id: usize, reserve: u16) -> bool {
+        let shop = shop(shop_id);
+        self.counter.is_none()
+            && (legacy::seed_trade(shop_id) && self.sealed_seed_stock && reserve == 0
+                || self.count(shop.goods.item) >= shop.goods.quantity + reserve)
+    }
+
     fn pack_counter(&mut self, shop_id: usize, reserve: u16) -> bool {
         let goods = shop(shop_id).goods;
-        if self.counter.is_some()
-            || self.count(goods.item) < goods.quantity + reserve
-            || !self.outgoing(goods)
-        {
+        if !self.can_pack_counter(shop_id, reserve) {
             return false;
         }
+        let paper = if legacy::seed_trade(shop_id) && self.sealed_seed_stock && reserve == 0 {
+            self.sealed_seed_stock = false;
+            SeedPaper::Sealed
+        } else {
+            assert!(self.outgoing(goods));
+            SeedPaper::Plain
+        };
         self.counter = Some(CounterBatch {
             shop: shop_id as u8,
             cargo: goods,
+            paper,
         });
         true
     }
 
     fn stow_counter(&mut self) -> Option<CounterBatch> {
         let batch = self.counter.take()?;
-        assert!(
-            self.incoming(batch.cargo),
-            "a packed lot keeps its private cupboard capacity"
-        );
+        if batch.paper == SeedPaper::Sealed {
+            assert!(!self.sealed_seed_stock);
+            self.sealed_seed_stock = true;
+        } else {
+            assert!(
+                self.incoming(batch.cargo),
+                "a packed lot keeps its private cupboard capacity"
+            );
+        }
         Some(batch)
+    }
+
+    fn wet_returning_seed_lot(&mut self) {
+        if self.seed_wraps_used < SEED_WRAP_SPARES
+            && !self.sealed_seed_stock
+            && let Some(batch) = self.counter.as_mut()
+            && batch.paper == SeedPaper::Offered
+        {
+            batch.paper = SeedPaper::Damp { work_at: None };
+        }
     }
 
     fn gather_produce(&mut self, goods: Cargo) -> bool {
@@ -521,6 +575,12 @@ impl Resident {
         }
     }
 }
+
+fn seed_wrap_unused(used: &u8) -> bool {
+    *used == 0
+}
+
+const SEED_WRAP_SPARES: u8 = 3;
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize, Eq, PartialEq)]
 pub enum TripStage {
@@ -887,7 +947,7 @@ fn animal_visible(id: usize, a: Animal, world: &LivingWorld) -> bool {
                     && world.season() != YardSeason::Winter
             }
             2 => world.weather() == YardWeather::Rain && world.season() != YardSeason::Winter,
-            3 => world.weather() == YardWeather::Clear && world.season() == YardSeason::Summer,
+            3 => matches!(world.weather(), YardWeather::Clear | YardWeather::Clouds) && world.season() == YardSeason::Summer,
             4 => world.weather() != YardWeather::Snow,
             _ => true,
         }
@@ -936,6 +996,8 @@ struct Trip {
     outgoing: Cargo,
     incoming: Cargo,
     accepted: bool,
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    sealed_seeds: bool,
     leg: u8,
     hold: bool,
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
@@ -1294,6 +1356,8 @@ mod legacy;
 mod art;
 #[path = "residents_care.rs"]
 mod care;
+#[path = "residents_rain.rs"]
+mod rain;
 pub use art::{VillageArtSubject, VillageArtVisual};
 #[path = "social_story.rs"]
 mod social_story;
@@ -1340,6 +1404,8 @@ pub struct VillageLife {
     art: art::State,
     #[serde(default, skip_serializing_if = "care::State::empty")]
     care: care::State,
+    #[serde(default, skip_serializing_if = "rain::State::empty")]
+    rain: rain::State,
     #[serde(default)]
     evidence: LifeEvidence,
     #[serde(default, skip_serializing_if = "wildlife::State::empty")]
@@ -1370,6 +1436,8 @@ impl Default for VillageLife {
             escrow: None,
             returning_cargo: None,
             counter: None,
+            sealed_seed_stock: false,
+            seed_wraps_used: 0,
             tool: None,
             produce_in_transit: None,
             service_material: None,
@@ -1431,6 +1499,7 @@ impl Default for VillageLife {
             legacy: legacy::State::default(),
             art: art::State::default(),
             care: care::State::default(),
+            rain: rain::State::default(),
             evidence: LifeEvidence::default(),
             wildlife: wildlife::State::default(),
             ecology: [EcoVisit::default(); 19],
@@ -1626,15 +1695,26 @@ impl VillageLife {
     pub fn household_held(&self, actor: ActorKind) -> Option<VisitorHeld> {
         self.trip
             .filter(|trip| trip.actor == actor)
-            .and_then(|trip| trip.bag)
-            .map(|batch| VisitorHeld::Goods(batch.item))
+            .and_then(|trip| trip.bag.map(|batch| {
+                if trip.sealed_seeds {
+                    VisitorHeld::Parcel("wrapped_seed_packet")
+                } else {
+                    VisitorHeld::Goods(batch.item)
+                }
+            }))
             .or_else(|| self.social.host_held(actor))
     }
 
     fn resident_held(&self, id: usize) -> Option<VisitorHeld> {
         let resident = &self.people[id];
+        if self.care.has_placed_saucer(id) {
+            return None;
+        }
         if let Some(held) = self.care.held(id) {
             return Some(held);
+        }
+        if let Some(item) = self.rain.held(id) {
+            return Some(VisitorHeld::Goods(item));
         }
         if resident.service_material.is_some_and(|part| part.shaped) {
             return Some(VisitorHeld::Parcel("cut_wood"));
@@ -1654,6 +1734,9 @@ impl VillageLife {
             return Some(VisitorHeld::MoveBox);
         }
         if let Some(asset) = self.services.carried_asset(id as u8) {
+            if let Some(parcel) = self.services.wrapped_appearance(id as u8) {
+                return Some(VisitorHeld::Parcel(parcel));
+            }
             return Some(match asset {
                 "fishing_rod" => VisitorHeld::Tool(VisitorTool::Rod),
                 "tool" => VisitorHeld::Tool(VisitorTool::Hoe),
@@ -1661,13 +1744,21 @@ impl VillageLife {
                 _ => VisitorHeld::Parcel(asset),
             });
         }
-        if id == art::ARTIST && self.art.carries_panel() {
-            return Some(VisitorHeld::Parcel("art_panel"));
+        if id == art::ARTIST {
+            if self.art.holds_leaf() {
+                return Some(VisitorHeld::Parcel("orchard_leaf"));
+            }
+            if self.art.carries_panel() {
+                return Some(VisitorHeld::Parcel("art_panel"));
+            }
         }
         if let Some(batch) = resident.counter.filter(|batch| {
             resident.walk.at != booth_slot(usize::from(batch.shop))
                 || resident.walk.state != State::AtWork
         }) {
+            if batch.paper == SeedPaper::Sealed {
+                return Some(VisitorHeld::Parcel("wrapped_seed_packet"));
+            }
             return Some(VisitorHeld::Goods(batch.cargo.item));
         }
         resident.tool.map(VisitorHeld::Tool)
@@ -1687,16 +1778,20 @@ impl VillageLife {
                 continue;
             }
             let profession = Profession::resident(id);
-            let job = r
+            let job = r.counter.filter(|batch| matches!(batch.paper, SeedPaper::Damp { work_at: Some(_) }))
+                .map(|_| "在干盘上给受潮种袋换防水封")
+                .or_else(|| r
                 .neighbour_meal
-                .map(|_| "把自家多煮的饭送去粮仓")
+                .map(|_| "把自家多煮的饭送去粮仓"))
                 .or_else(|| {
                     r.job
                         .and_then(|j| contracts().nth(j as usize))
                         .map(|c| c.name)
                 })
                 .or_else(|| self.social.resident_activity(id))
-                .or_else(|| self.care.name(id));
+                .or_else(|| self.care.name(id))
+                .or_else(|| self.rain.name(id))
+                .or_else(|| (id == art::ARTIST && self.art.holds_leaf()).then_some("把同一枚果园落叶带回拓印"));
             let held = self.resident_held(id);
             let moving_pose = if held.is_some_and(|item| !matches!(item, VisitorHeld::Tool(_))) {
                 VisitorPose::Carrying
@@ -1804,10 +1899,14 @@ impl VillageLife {
             && self.services.validate(now)
             && self.legacy.valid(self, now)
             && self.art.valid(now)
+            && self.art.leaf_walk_valid(&self.people[art::ARTIST].walk)
             && self.care.valid(self, now)
+            && self.rain.valid(&self.people[16], now)
             && self.services.carriers().all(|(owner, returning)| {
                 self.people.get(usize::from(owner)).is_some_and(|r| {
-                    if returning {
+                    if self.care.carries_tray(owner) {
+                        r.job.is_none() && self.services.carried_asset(owner) == Some("tray")
+                    } else if returning {
                         r.job.is_none()
                     } else {
                         r.job.is_some()
@@ -1907,11 +2006,27 @@ impl VillageLife {
                             && (1..=5).contains(&batch.quantity)
                             && r.count(batch.item) + batch.quantity <= HARD_STOCK_CAP
                     })
+                    && (id == 1 || !r.sealed_seed_stock && r.seed_wraps_used == 0)
+                    && r.seed_wraps_used <= SEED_WRAP_SPARES
+                    && (!r.sealed_seed_stock || r.seed_wraps_used > 0)
+                    && (!r.sealed_seed_stock || r.can_accept(cargo(Item::Seeds, 0)))
                     && r.counter.is_none_or(|batch| {
                         let index = usize::from(batch.shop);
                         index < SHOP_COUNT
                             && batch.cargo == shop(index).goods
                             && (shop(index).merchant == id || index == 5 && id == 6)
+                            && (batch.paper == SeedPaper::Plain
+                                || id == 1 && legacy::seed_trade(index))
+                            && (!matches!(batch.paper, SeedPaper::Sealed | SeedPaper::Damp { .. })
+                                || !r.sealed_seed_stock)
+                            && match batch.paper {
+                                SeedPaper::Sealed => r.seed_wraps_used > 0,
+                                SeedPaper::Damp { work_at } => {
+                                    r.seed_wraps_used < SEED_WRAP_SPARES
+                                        && work_at.is_none_or(|time| time <= now && r.walk.at == house(id).door)
+                                }
+                                _ => true,
+                            }
                             && r.count(batch.cargo.item)
                                 + batch.cargo.quantity
                                 + r.escrow
@@ -1956,6 +2071,8 @@ impl VillageLife {
                     && t.bag.is_none_or(|current| {
                         current == if t.accepted { t.incoming } else { t.outgoing }
                     })
+                    && (!t.sealed_seeds || t.accepted && legacy::seed_trade(usize::from(t.shop))
+                        && t.bag == Some(SHOPS[1].goods))
                     && (t.bag.is_some() || t.stage == TripStage::Pack)
                     && t.outgoing == shop(usize::from(t.shop)).cost
                     && t.incoming == shop(usize::from(t.shop)).goods
@@ -2071,6 +2188,7 @@ impl VillageLife {
                     wildlife::Receipt::DuckPrint { first, last } => {
                         world.record_legacy_completion("A10-01", LegacyActor::Wildlife(wildlife::DUCK as u8), first, last, LegacyPlace::Nearby, 1, None);
                     }
+                    wildlife::Receipt::Route(proof) => proof.record(world),
                     wildlife::Receipt::DuckRejoined => unreachable!("internal wildlife route marker"),
                 }
             }
@@ -2089,6 +2207,13 @@ impl VillageLife {
             if !self.people[id].walk.moving() || self.people[id].walk.due > now {
                 continue;
             }
+            if self.people[id].walk.edge.is_some() && world.weather() == YardWeather::Rain {
+                if id == 0 {
+                    self.services.expose_carried_paper_to_rain(id as u8);
+                } else if id == 1 && self.people[id].walk.target == house(1).door {
+                    self.people[id].wet_returning_seed_lot();
+                }
+            }
             let previous_wait = self.people[id].walk.wait;
             let previous_state = self.people[id].walk.state;
             let mut walking = std::mem::replace(
@@ -2096,8 +2221,9 @@ impl VillageLife {
                 Walker::new(house(id).door, State::Unsettled),
             );
             let laden = previous_state == State::MovingIn
-                || (id == art::ARTIST && self.art.carries_panel())
+                || (id == art::ARTIST && (self.art.carries_panel() || self.art.holds_leaf()))
                 || self.care.held(id).is_some_and(|held| matches!(held, VisitorHeld::Parcel(_)))
+                || self.rain.held(id).is_some()
                 || self.people[id].counter.is_some()
                 || self.people[id].escrow.is_some()
                 || self.people[id].returning_cargo.is_some()
@@ -2234,6 +2360,7 @@ impl VillageLife {
         let (target, autumn) = self.social.market_crop_request(world);
         world.set_market_crop_reserve(target, autumn);
         world.set_neighbour_food_reserve(self.social.neighbour_food_needed());
+        world.set_soil_survey_plot(self.care.soil_survey_plot());
     }
 
     fn guest_bed(&self, bed: u8) -> Option<TilePos> {
@@ -2271,6 +2398,7 @@ impl VillageLife {
             || !self.services.map_density_positions().all(protected)
             || self.art.subject_destination().is_some_and(|tile| !open(tile))
             || !self.care.positions().all(open)
+            || self.rain.site().is_some_and(|tile| !open(tile))
         {
             return false;
         }
@@ -2296,6 +2424,7 @@ impl VillageLife {
             .chain(self.trip.iter().map(|trip| trip.target)).chain(self.social.map_density_positions())
             .chain(self.art.subject_destination())
             .chain(self.care.positions())
+            .chain(self.rain.site())
     }
 
     pub fn map_density_preserves_wildlife() -> bool {
@@ -2307,6 +2436,10 @@ impl VillageLife {
 
     pub fn write_occupied_tiles(&self, tiles: &mut [TilePos; VILLAGE_OCCUPANCY]) -> usize {
         let mut len = 0;
+        if let Some((tile, _)) = self.care.saucer() {
+            tiles[len] = tile;
+            len += 1;
+        }
         for walker in self
             .people
             .iter()
@@ -2431,6 +2564,7 @@ impl VillageLife {
             .next_construction_material_shortfall()
             .map(|(item, _)| item);
         let retail_home = booth_slot(MOBILE);
+        self.rain.rain_fill(world, now);
         let mut visitors = self.present();
         let planning_guest = self.social.market_planning_guest();
         for id in 0..RESIDENT_COUNT {
@@ -2440,7 +2574,13 @@ impl VillageLife {
             }
             let home = house(id).door;
             let state = self.people[id].walk.state;
+            if id == 1 && self.wrap_returned_seed_lot(world, now) {
+                continue;
+            }
             if self.care.active(id) && self.schedule_care(world, id, mask, now, false) {
+                continue;
+            }
+            if self.rain.active(id) && self.schedule_rain(world, now, false) {
                 continue;
             }
             if id == art::ARTIST && self.art.active() {
@@ -2602,7 +2742,12 @@ impl VillageLife {
             if state == State::MovingIn || state == State::Leaving {
                 continue;
             }
-            if matches!(id, 3 | 16) && self.schedule_care(world, id, mask, now, true) {
+            if matches!(id, 3 | 6 | 16) && self.schedule_care(world, id, mask, now, true) {
+                continue;
+            }
+            if id == 16 && !self.social.prepare_visitor_water(id, day)
+                && self.schedule_rain(world, now, true)
+            {
                 continue;
             }
             if id == 0 && state == State::Inside && minute < 450
@@ -2613,7 +2758,22 @@ impl VillageLife {
                 self.people[id].job_stop = 0;
                 self.orders[id] = Some(WorkOrder { opened: now, attempts: 0 });
             }
-            if id == art::ARTIST && state == State::Inside
+            if id == art::ARTIST
+                && self.people[id].walk.at == home
+                && matches!(state, State::Inside | State::AtWork)
+                && self.people[id].job.is_none()
+                && self.people[id].escrow.is_none()
+                && self.services.carried_asset(id as u8).is_none()
+                && !self.occupied(world, home, Some(id), None)
+                && let Some((tree, site)) = self.art.leaf_candidate(world, now)
+                && !self.occupied(world, site, Some(id), None)
+                && !self.social.is_destination_reserved(site)
+            {
+                self.art.start_leaf(&mut self.people[id].walk, tree, site, now);
+                continue;
+            }
+            if id == art::ARTIST && (state == State::Inside
+                || state == State::AtWork && self.people[id].walk.at == home && self.people[id].job.is_none())
                 && !self.occupied(world, home, Some(id), None)
                 && let Some((site, subject)) = self.art.candidate(world, now)
                 && !self.occupied(world, site, Some(id), None)
@@ -2662,6 +2822,17 @@ impl VillageLife {
                     self.setup |= 1 << i;
                 }
             }
+            if id == 1 && world.town_allows(TownEra::MarketStreet) {
+                let seller = &self.people[id];
+                if let Some(batch) = seller.counter
+                    && batch.paper == SeedPaper::Plain
+                    && legacy::seed_trade(usize::from(batch.shop))
+                    && state == State::AtWork && seller.walk.at == booth_slot(usize::from(batch.shop))
+                    && self.business_open(usize::from(batch.shop), mask, now)
+                {
+                    self.people[id].counter.as_mut().unwrap().paper = SeedPaper::Offered;
+                }
+            }
             let shop_open = (0..SHOP_COUNT).find(|&i| {
                 merchant_at(i, now) == id
                     && !preparing_weekly_meal
@@ -2684,7 +2855,6 @@ impl VillageLife {
             } else {
                 shop_open
             };
-            let counter_stored = self.people[id].counter.is_none();
             let default_site = self.work_site(id, mask, world, now);
             let at_market = assigned_shop
                 .filter(|_| {
@@ -2692,6 +2862,7 @@ impl VillageLife {
                         && self.people[id].produce_in_transit.is_none()
                         && self.people[id].escrow.is_none()
                         && self.people[id].service_material.is_none()
+                        && !matches!(self.people[id].counter.map(|lot| lot.paper), Some(SeedPaper::Damp { .. }))
                         && self.services.carried_asset(id as u8).is_none()
                 })
                 .and_then(|index| {
@@ -2699,8 +2870,7 @@ impl VillageLife {
                     let reserve =
                         u16::from(index == MEAL_SHOP && self.weekly_meal_demand(world, now));
                     (self.people[id].counter_goods(index) >= s.goods.quantity
-                        || (counter_stored
-                            && self.people[id].count(s.goods.item) >= s.goods.quantity + reserve))
+                        || self.people[id].can_pack_counter(index, reserve))
                         .then_some(())
                         .filter(|_| {
                             index < MOBILE
@@ -2721,7 +2891,8 @@ impl VillageLife {
                     return booth;
                 }
                 if seller.walk.at == home && seller.escrow.is_none() {
-                    let cupboard = seller.count(shop(index).goods.item);
+                    let cupboard = seller.count(shop(index).goods.item)
+                        + if legacy::seed_trade(index) && seller.sealed_seed_stock { shop(index).goods.quantity } else { 0 };
                     if seller.pack_counter(index, reserve) && legacy::seed_trade(index) {
                         self.legacy.seed_packed(now, seller.counter.unwrap(), cupboard);
                     }
@@ -2880,11 +3051,65 @@ impl VillageLife {
         }
     }
 
+    fn wrap_returned_seed_lot(&mut self, world: &mut LivingWorld, now: u64) -> bool {
+        let at = house(1).door;
+        let seller = &mut self.people[1];
+        if seller.walk.at != at || seller.walk.edge.is_some() {
+            return false;
+        }
+        let Some(batch) = seller.counter.as_mut() else {
+            return false;
+        };
+        let SeedPaper::Damp { work_at } = &mut batch.paper else {
+            return false;
+        };
+        let started = *work_at.get_or_insert(now);
+        seller.walk.state = State::AtWork;
+        if now.saturating_sub(started) < 4 * MINUTE {
+            return true;
+        }
+        // The three waterproof sleeves are the seller's fixed starting supply.
+        // Sealing moves the same three seeds into protected custody.
+        seller.seed_wraps_used += 1;
+        batch.paper = SeedPaper::Sealed;
+        self.stow_resident_counter(1);
+        world.record_legacy_completion(
+            "H10-04", crate::legacy_content::LegacyActor::Resident(1), at, at,
+            crate::legacy_content::LegacyPlace::Nearby, 1, None,
+        );
+        true
+    }
+
     fn schedule_care(&mut self, world: &mut LivingWorld, id: usize, mask: PhaseMask, now: u64, allow_start: bool) -> bool {
         let mut care = std::mem::take(&mut self.care);
         let handled = care.schedule(self, world, id, mask, now, allow_start);
         self.care = care;
         handled
+    }
+
+    fn schedule_rain(&mut self, world: &mut LivingWorld, now: u64, allow_start: bool) -> bool {
+        let mut rain = std::mem::take(&mut self.rain);
+        let handled = rain.schedule(self, world, now, allow_start);
+        self.rain = rain;
+        handled
+    }
+
+    pub fn rain_barrel(&self) -> Option<(TilePos, u8, bool)> {
+        self.rain.visual()
+    }
+
+    pub fn soil_window(&self, world: &LivingWorld) -> Option<(TilePos, crate::living_world::SoilProfile)> {
+        world.village_subsoil(self.care.soil_window(world.world_ms())?)
+    }
+
+    /// Ground tile and whether an actual unconsumed portion sits on the plate.
+    pub fn village_food_saucer(&self) -> Option<(TilePos, bool)> {
+        self.care.saucer()
+    }
+
+    /// Studio door, original orchard tree ID, rubbing progress 0..100.
+    pub fn village_leaf_card(&self, world: &LivingWorld) -> Option<(TilePos, u8, u8)> {
+        self.art.leaf_display(world.world_ms())
     }
 
     fn update_legacy_counters(&mut self, world: &mut LivingWorld, mask: PhaseMask, now: u64) {
@@ -3048,6 +3273,9 @@ impl VillageLife {
                 }
             }
             8 => {
+                if self.art.waiting_for_dusk(world, now) {
+                    return house(id).door;
+                }
                 if wet {
                     "quarry_shelter.door"
                 } else if day % 7 == 6 {
@@ -3398,6 +3626,7 @@ impl VillageLife {
             outgoing: s.cost,
             incoming: s.goods,
             accepted: false,
+            sealed_seeds: false,
             leg: 0,
             hold: true,
             regular_meal,
@@ -3575,6 +3804,7 @@ impl VillageLife {
                     assert_eq!(batch.cargo, t.incoming);
                     t.bag = Some(t.incoming);
                     t.accepted = true;
+                    t.sealed_seeds = batch.paper == SeedPaper::Sealed;
                     if legacy::seed_trade(shop_id) {
                         self.legacy.seed_exchanged(world, batch, t.actor);
                     }
@@ -3935,6 +4165,9 @@ impl VillageLife {
         c: Contract,
         mask: PhaseMask,
     ) -> Option<TilePos> {
+        if self.services.needs_wrapping(id as u8) {
+            return Some(house(id).door);
+        }
         if let Some((_, household)) = self.service_materials(c)
             && self.people[id].service_material.is_none()
         {
@@ -4040,6 +4273,16 @@ impl VillageLife {
         {
             if self.orders[id].is_none_or(|o| now > o.opened + 5 * HOUR) {
                 self.finish_daily_order(id, day);
+                return;
+            }
+            if self.services.needs_wrapping(id as u8) {
+                let at = self.people[id].walk.at;
+                if let Some(base) = self.services.wrap_at_own_porch(id as u8, at, now) {
+                    use crate::legacy_content::{LegacyActor, LegacyPlace};
+                    world.record_legacy_completion(
+                        base, LegacyActor::Resident(id as u8), at, at, LegacyPlace::Nearby, 1, None,
+                    );
+                }
                 return;
             }
             if let Some((batch, household)) = self.service_materials(c)
@@ -5032,7 +5275,8 @@ impl VillageLife {
         skip_resident: Option<usize>,
         skip_guest: Option<usize>,
     ) -> bool {
-        HOMEBOUND
+        self.care.saucer().is_some_and(|(at, _)| at == p)
+            || HOMEBOUND
             .iter()
             .any(|&k| world.actor_tile(k) == p || world.actor_next_tile(k) == Some(p))
             || self.people.iter().enumerate().any(|(i, r)| {
@@ -7007,6 +7251,7 @@ mod tests {
             outgoing: SHOPS[1].cost,
             incoming: SHOPS[1].goods,
             accepted: false,
+            sealed_seeds: false,
             leg: 0,
             hold: true,
             regular_meal: false,
@@ -7226,6 +7471,7 @@ mod tests {
             outgoing: shop.cost,
             incoming: bag,
             accepted: true,
+            sealed_seeds: true,
             leg: INBOUND_WAYPOINTS.len() as u8,
             hold: true,
             regular_meal: false,
@@ -7235,7 +7481,7 @@ mod tests {
         assert!(!life.trip.unwrap().hold);
         assert_eq!(
             life.household_held(actor),
-            Some(VisitorHeld::Goods(bag.item))
+            Some(VisitorHeld::Parcel("wrapped_seed_packet"))
         );
 
         assert!(world.reserve_market_trip(actor));
@@ -7262,7 +7508,7 @@ mod tests {
         assert_eq!(world.stock().count(bag.item), full - space);
         assert_eq!(
             life.household_held(actor),
-            Some(VisitorHeld::Goods(bag.item))
+            Some(VisitorHeld::Parcel("wrapped_seed_packet"))
         );
         assert_eq!(life.trip.unwrap().actor, actor);
 

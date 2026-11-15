@@ -1,7 +1,7 @@
 //! Willow Village rendering using the same high-density compositing as the yard.
 use super::*;
 use crate::companionship::{REWARDS, RewardStyle};
-use crate::living_world::{ScenicResourceView, ScenicStage};
+use crate::living_world::{ScenicResourceView, ScenicStage, SoilProfile};
 use crate::map_data::{
     ArtRect, BuildingDef, PhaseMask, ScenicKind, ScenicObject, SlotPos, TilePos, TileRect,
     WILLOW_VILLAGE,
@@ -12,6 +12,7 @@ use crate::visitors::{VisitorHeld, VisitorPose, VisitorTool};
 const CHUNK_ART: i32 = 256;
 const MAP_CHUNKS: usize = 96;
 const CHUNK_COLUMNS: usize = 12;
+const CAT_LAMP: TilePos = TilePos::new(20, 17);
 pub(super) const STONE_PROP_SCALE: Scale = Scale::new(2, 5);
 const STATIC_PROPS: [(&str, &str, Option<&str>); 8] = [
     ("home_table", "shared_table", Some("home_table.tabletop")),
@@ -23,6 +24,13 @@ const STATIC_PROPS: [(&str, &str, Option<&str>); 8] = [
     ("market_notice", "village_notice", None),
     ("commons_garden", "garden", None),
 ];
+
+fn dusk_board_colors([wall, sky, grass]: [u8; 3]) -> [[u8; 3]; 3] {
+    let walls = [[155, 115, 84], [185, 127, 88], [194, 149, 105], [126, 103, 91]];
+    let skies = [[205, 139, 122], [141, 128, 154], [131, 141, 154], [166, 158, 175]];
+    let grasses = [[120, 142, 83], [89, 124, 79], [159, 133, 65], [134, 133, 112]];
+    [walls[usize::from(wall.min(3))], skies[usize::from(sky.min(3))], grasses[usize::from(grass.min(3))]]
+}
 
 pub(super) fn item_asset(item: Item) -> &'static str {
     match item {
@@ -42,6 +50,8 @@ pub(super) fn held_asset(held: VisitorHeld) -> Option<(&'static str, Scale)> {
         VisitorHeld::Goods(item) => (item_asset(item), Scale::new(3, 5)),
         VisitorHeld::MoveBox => ("housing_moving_box", Scale::new(3, 4)),
         VisitorHeld::Parcel("kitchen_scraps" | "guest_food_basket") => ("prop_basket", Scale::new(1, 2)),
+        VisitorHeld::Parcel("warm_cat_supper") => ("prop_bowl", Scale::new(3, 5)),
+        VisitorHeld::Parcel("covered_snack_tray" | "empty_snack_tray" | "saucer_meal" | "empty_saucer" | "wrapped_letter" | "wrapped_seed_packet" | "orchard_leaf") => return None,
         VisitorHeld::Parcel(_) => ("housing_moving_box", Scale::new(2, 5)),
         VisitorHeld::Tool(tool) => (
             match tool {
@@ -335,10 +345,12 @@ fn canopy_subjects(
     view: ArtRect,
     commands: &[FrameCommand],
     store: Option<&PluginStore>,
-) -> [Option<CanopySubject>; 2] {
-    [0, 1].map(|i| {
+) -> [Option<CanopySubject>; 3] {
+    [0, 1, 2].map(|i| {
         let actor = &world.actors()[i];
-        if actor.inside() || actor.pose == Pose::Sleep {
+        if actor.inside() || actor.pose == Pose::Sleep
+            || actor.kind == ActorKind::Orange && world.cat_bloom_target().is_none()
+        {
             return None;
         }
         let overlay = store.and_then(|_| {
@@ -354,6 +366,9 @@ fn canopy_subjects(
             w: 31,
             h: 52,
         };
+        if actor.kind == ActorKind::Orange {
+            area = ArtRect { x: x * 2 - 13, y: y * 2 - 23, w: 27, h: 27 };
+        }
         let mut depth = overlay.map_or(p.y as i32, |c| c.depth);
         if overlay.is_none()
             && actor.pose == Pose::Work
@@ -538,7 +553,7 @@ fn blit_canopy(
     sprite: Sprite,
     visible: ArtRect,
     roots: i32,
-    cutaways: [Option<ArtRect>; 2],
+    cutaways: [Option<ArtRect>; 3],
 ) {
     let [left, top, width, height] = sprite.rect.map(i32::from);
     for y in visible.y..visible.y + visible.h {
@@ -589,11 +604,27 @@ enum Visible<'a> {
     BridgeRail(TilePos, u8),
     Menu(Point, u16, u8),
     Artwork(Point, VillageArtVisual),
-    CatPlate(Point),
+    CatPlate(Point, bool),
+    RainBarrel(Point, u8, bool),
+    LeafCard(Point, u8, u8),
+    FoodSaucer(Point, bool, bool),
+    CoatHook(Point),
+    DoorFur(Point),
+    YardReport(Point, bool, bool),
     Compost(Point, u8, u8),
 }
 
 impl LivingView {
+    fn village_food_saucer(&mut self, (x, y): (i32, i32), full: bool) {
+        self.resource_line((x - 4, y + 1), (8, 0), [91, 90, 86]);
+        self.resource_line((x - 3, y), (6, 0), [195, 174, 150]);
+        self.resource_line((x - 2, y + 2), (4, 0), [158, 138, 116]);
+        if full {
+            self.resource_line((x - 2, y - 1), (4, 0), [215, 134, 68]);
+            self.resource_texel((x + 1, y - 2), [165, 151, 83]);
+        }
+    }
+
     fn resource_texel(&mut self, (x, y): (i32, i32), [r, g, b]: [u8; 3]) {
         if (0..self.width).contains(&x) && (0..self.height).contains(&y) {
             let at = ((y * self.width + x) * 4) as usize;
@@ -608,6 +639,89 @@ impl LivingView {
         }
     }
 
+    pub(super) fn village_cooking_apron(&mut self, (x, y): (i32, i32), facing_left: bool) {
+        let x = x * 2 + if facing_left { -1 } else { 1 };
+        let y = y * 2;
+        let trim = [139, 98, 70];
+        self.resource_line((x - 3, y - 23), (1, 4), trim);
+        self.resource_line((x + 3, y - 23), (-1, 4), trim);
+        for row in -19..=-10 {
+            let radius = if row < -16 { 2 } else { 4 };
+            let linen = if row == -16 || row == -10 { [174, 128, 86] } else { [231, 194, 137] };
+            self.resource_line((x - radius, y + row), (radius * 2, 0), linen);
+        }
+        self.resource_line((x - 1, y - 13), (3, 0), [188, 143, 99]);
+    }
+
+    pub(super) fn village_oilpaper(&mut self, (x, y): (i32, i32), seeds: bool) {
+        for row in -4..=1 {
+            let ink = if row == -4 || row == 1 { [95, 62, 38] } else { [166, 117, 66] };
+            self.resource_line((x - 4, y + row), (8, 0), ink);
+        }
+        self.resource_line((x - 1, y - 4), (1, 5), [229, 190, 120]);
+        self.resource_line((x - 4, y - 1), (8, 0), [201, 158, 96]);
+        self.resource_texel((x, y - 2), [239, 209, 146]);
+        if seeds {
+            self.resource_line((x + 1, y - 2), (2, -2), [114, 151, 81]);
+        }
+    }
+
+    fn village_root_shoulder(&mut self, (x, y): (i32, i32), size: u8) {
+        let (x, y) = (x * 2 + 3, y * 2);
+        let radius = i32::from(size.clamp(1, 3)) + 2;
+        self.resource_line((x - radius - 1, y + 3), (radius * 2 + 2, 0), [112, 80, 62]);
+        for row in -2..=2 {
+            let half = if row == -2 || row == 2 { radius - 1 } else { radius };
+            let ink = if row <= -1 { [169, 95, 112] } else { [217, 152, 149] };
+            self.resource_line((x - half, y + row), (half * 2, 0), ink);
+        }
+        self.resource_line((x - 2, y), (3, -1), [248, 206, 172]);
+        self.resource_line((x, y - 3), (-2, -4), [92, 132, 76]);
+        self.resource_line((x + 1, y - 3), (3, -3), [139, 158, 82]);
+        self.resource_line((x - radius, y + 3), (2, 0), [160, 113, 81]);
+    }
+
+    fn village_soil_cut(&mut self, (x, y): (i32, i32), profile: SoilProfile) {
+        let (x, y) = (x * 2, y * 2 + 1);
+        let [top, mid, floor] = match profile {
+            SoilProfile::Loam => [[148, 109, 74], [105, 76, 60], [77, 56, 46]],
+            SoilProfile::Sand => [[217, 173, 107], [184, 139, 90], [145, 110, 75]],
+            SoilProfile::Clay => [[177, 118, 85], [158, 83, 63], [118, 66, 55]],
+        };
+        self.resource_line((x - 5, y - 5), (10, 0), [91, 110, 66]);
+        for (row, shade) in [top, top, mid, mid, mid, floor, floor].into_iter().enumerate() {
+            let half = if row == 0 || row >= 5 { 4 } else { 6 };
+            self.resource_line((x - half, y + row as i32 - 4), (2 * half, 0), shade);
+        }
+        for (dx, dy) in [(-4, -1), (1, -3), (3, 0)] {
+            self.resource_texel((x + dx, y + dy), top.map(|n| n.saturating_add(18)));
+        }
+    }
+
+    fn village_apple_leaf(&mut self, (x, y): (i32, i32)) {
+        self.resource_line((x - 3, y + 1), (5, -4), [161, 106, 58]);
+        self.resource_line((x - 1, y - 2), (3, 0), [205, 145, 68]);
+        self.resource_texel((x + 2, y - 4), [181, 121, 65]);
+    }
+
+    fn village_leaf_rubbing(&mut self, (x, y): (i32, i32), tree: u8, progress: u8) {
+        let (x, y) = (x * 2 + 10, y * 2 - 11);
+        self.resource_line((x - 3, y + 4), (0, 7), [126, 85, 50]);
+        self.resource_line((x + 5, y + 4), (0, 7), [126, 85, 50]);
+        for row in -6..=4 {
+            let ink = if row == 4 { [135, 101, 64] } else { [234, 202, 150] };
+            self.resource_line((x - 7, y + row), (14, 0), ink);
+        }
+        if progress >= 20 && (8..12).contains(&tree) {
+            self.resource_line((x - 4, y + 2), (7, -7), [125, 95, 68]);
+            for (i, (dx, dy)) in [(-2, 0), (0, -2), (2, -4)].into_iter().enumerate() {
+                if usize::from(progress) < 30 + i * 20 { break; }
+                self.resource_line((x + dx, y + dy), (0, -3), [156, 116, 77]);
+                self.resource_line((x + dx, y + dy), (3, -1), [156, 116, 77]);
+            }
+        }
+    }
+
     fn village_family_detail(&mut self, world: &LivingWorld, actor: &Actor, origin: (i32, i32)) {
         let (x, y) = local(actor.position, origin);
         let (x, y) = (x * 2, y * 2);
@@ -615,7 +729,73 @@ impl LivingView {
             let side = if actor.facing_left { -1 } else { 1 };
             self.core_at_texel("prop_seeds", (x + 7 * side, y - 15), false, Scale::new(2, 5), Palette::Unchanged);
         }
-        if actor.kind != ActorKind::Orange { return; }
+        let detail = world.household_detail_progress(actor.kind);
+        if actor.kind != ActorKind::Orange {
+            if matches!(actor.activity, Activity::RecordHarvest | Activity::RecordRepair)
+                && let Some((elapsed, duration)) = detail
+                && let Some(table) = world.resolve_poi("home_table")
+            {
+                let (tx, ty) = local(table, origin);
+                let (tx, ty) = (tx * 2 + 5, ty * 2 - 11);
+                for dy in -4..=3 {
+                    self.resource_line((tx - 5, ty + dy), (10, 0), [229, 204, 155]);
+                }
+                let marks = 1 + (elapsed.saturating_mul(2) / duration.max(1)).min(2) as i32;
+                for row in 0..marks {
+                    self.resource_line((tx - 3, ty + row * 2 - 2), (5, 0), [115, 93, 75]);
+                }
+                self.resource_line((tx + 3, ty + 2), (4, -4), [107, 80, 64]);
+            }
+            return;
+        }
+        if let Some((elapsed, duration)) = detail {
+            let middle = (duration / 4..duration.saturating_mul(3) / 4).contains(&elapsed);
+            let side = if actor.facing_left { -1 } else { 1 };
+            match actor.activity {
+                Activity::GroomWhiskers if middle => {
+                    self.resource_line((x + side * 4, y - 6), (side * 2, 1), [173, 102, 81]);
+                    self.resource_texel((x + side * 6, y - 5), [237, 162, 126]);
+                }
+                Activity::StretchAtDoor if middle => {
+                    self.resource_line((x + side * 3, y - 1), (side * 5, 0), [214, 134, 76]);
+                    self.resource_texel((x + side * 8, y - 1), [238, 164, 99]);
+                }
+                Activity::DryCoat if middle && world.cat_coat_wet() => {
+                    let drift = (elapsed / 18_000 % 3) as i32;
+                    for dx in [-1, 1] {
+                        self.resource_texel((x + dx * (6 + drift), y - 7 - drift), [144, 181, 192]);
+                        self.resource_texel((x + dx * (8 + drift), y - 3 + drift), [174, 197, 199]);
+                    }
+                }
+                _ => {}
+            }
+        }
+        if let Some((stand, tree)) = world.cat_bloom_target()
+            && actor.position == point(stand)
+        {
+            let (tx, ty) = local(point(tree), origin);
+            let side = if tree.x == stand.x { if actor.facing_left { -1 } else { 1 } } else { (tx * 2 - x).signum() };
+            let bow = i32::from(detail.is_some_and(|(elapsed, total)| (total / 3..total * 2 / 3).contains(&elapsed)));
+            let end = (x + side * (8 - bow), y - 8 + bow);
+            let twig = (tx * 2 - side * 3, ty * 2 - 15);
+            self.resource_line(twig, (end.0 - twig.0, end.1 - twig.1), [131, 95, 68]);
+            for (dx, dy) in [(-1, 0), (0, -1), (1, 0)] {
+                self.resource_texel((end.0 + dx, end.1 + dy), [243, 177, 168]);
+            }
+            self.resource_texel(end, [251, 224, 172]);
+        }
+        if let Some((window, turn)) = world.cat_window_tap_visual() {
+            let (wx, wy) = local(point(window), origin);
+            let toward = if wx * 2 == x { if actor.facing_left { -1 } else { 1 } } else { (wx * 2 - x).signum() };
+            let ear = (x + toward * 4, y - 11);
+            self.resource_line(ear, (toward * 2, -2), [232, 147, 89]);
+            if turn == 0 {
+                self.resource_texel((wx * 2, wy * 2 - 9), [221, 190, 141]);
+            } else {
+                self.resource_texel((x + toward * 6, y - 7), [81, 60, 44]);
+                self.resource_texel((x + toward * 7, y - 6), [235, 173, 106]);
+            }
+        }
         if village_cat_smelling(world, actor) {
             for (i, puff) in [(-12, -13), (-8, -14)].into_iter().enumerate() {
                 let offset = ((world.world_ms() / 14_000 + i as u64) % 3) as i32;
@@ -638,6 +818,25 @@ impl LivingView {
                 self.resource_texel((paw.0 + direction.0 * 2, paw.1 + direction.1), [236, 235, 204]);
                 self.resource_texel((paw.0 - 2, paw.1 - 2), [216, 225, 216]);
             }
+        }
+    }
+
+    fn village_rain_barrel(&mut self, (x, y): (i32, i32), units: u8, leaking: bool) {
+        let (x, y) = (x * 2, y * 2);
+        self.resource_line((x - 2, y - 18), (0, 7), [94, 110, 103]);
+        self.resource_line((x - 2, y - 11), (3, 0), [121, 137, 123]);
+        for row in -10..=-1 {
+            let half = if (-8..=-3).contains(&row) { 5 } else { 4 };
+            let ink = if row == -8 || row == -3 { [97, 79, 60] } else { [152, 106, 68] };
+            self.resource_line((x - half, y + row), (2 * half, 0), ink);
+        }
+        self.resource_line((x - 3, y - 9), (6, 0), [105, 72, 48]);
+        if units > 0 {
+            self.resource_line((x - 3, y - 9), (i32::from(units.min(6)), 0), [106, 170, 169]);
+        }
+        if leaking && units > 0 {
+            self.resource_texel((x + 4, y - 1), [142, 192, 185]);
+            self.resource_texel((x + 5, y + 1), [90, 150, 149]);
         }
     }
 
@@ -797,6 +996,39 @@ impl LivingView {
                     self.resource_line((x-6,y-8),(4,0),[161,189,172]);
                 }
             }
+            VillageArtSubject::DuskSwatches(indices) => {
+                for (i, color) in dusk_board_colors(indices).into_iter().enumerate() {
+                    if usize::from(board.progress) < 20 + 27 * i { break; }
+                    for dy in -14..=-9 {
+                        self.resource_line((x - 7 + i as i32 * 5, y + dy), (3, 0), color);
+                    }
+                }
+            }
+            VillageArtSubject::DuskStreet(indices) => {
+                let [wall, sky, grass] = dusk_board_colors(indices);
+                for dy in -16..=-10 {
+                    self.resource_line((x - 7, y + dy), (14, 0), sky);
+                }
+                if board.progress >= 40 {
+                    for dy in -10..=-7 {
+                        self.resource_line((x - 7, y + dy), (14, 0), grass);
+                    }
+                }
+                if board.progress >= 65 {
+                    for dy in -12..=-9 {
+                        self.resource_line((x - 5, y + dy), (7, 0), wall);
+                    }
+                    let roof = wall.map(|c| c.saturating_sub(32));
+                    self.resource_line((x - 6, y - 13), (5, -2), roof);
+                    self.resource_line((x - 1, y - 15), (4, 2), roof);
+                    self.resource_line((x - 5, y - 13), (7, 0), roof);
+                }
+                if board.progress >= 85 {
+                    self.resource_line((x + 6, y - 7), (-3, -2), [188, 154, 111]);
+                    self.resource_texel((x - 3, y - 11), [245, 200, 128]);
+                    self.resource_texel((x, y - 11), [245, 200, 128]);
+                }
+            }
         }
     }
 
@@ -946,8 +1178,14 @@ impl LivingView {
                 (x * 2, y * 2)
             })
         });
-        self.indoor_reveals =
-            [0, 1].map(|i| self.awake_screen_feet[i].filter(|_| world.actors()[i].inside()));
+        self.indoor_reveals = [0, 1].map(|i| {
+            let actor = &world.actors()[i];
+            if !actor.inside() { return None; }
+            self.awake_screen_feet[i].or_else(|| {
+                let (x, y) = local(actor.position, origin);
+                (actor.pose == Pose::Work && clip(self, (x, y), (24, 32), 12)).then_some((x * 2, y * 2))
+            })
+        });
         self.paint_premium_ground(world, origin);
         for mark in world.village_footprints() {
             let (x, y) = local(point(mark.tile), origin);
@@ -1178,6 +1416,18 @@ impl LivingView {
                 self.village_crop_footprint(plot, world.plot_stage(index), rect, origin);
             }
         }
+        if let Some((tile, size)) = world.root_shoulder_visual() {
+            let p = local(point(tile), origin);
+            if clip(self, p, (16, 16), 3) {
+                self.village_root_shoulder(p, size);
+            }
+        }
+        if let Some((tile, profile)) = self.village_soil_window {
+            let p = local(point(tile), origin);
+            if clip(self, p, (16, 12), 3) {
+                self.village_soil_cut(p, profile);
+            }
+        }
         for kind in [ActorKind::Xiaohe, ActorKind::Ayu] {
             if let Some(work) = world.field_water_work(kind) {
                 self.village_field_water(origin, work, world.world_ms());
@@ -1232,7 +1482,7 @@ impl LivingView {
         if world.cat_food_served() && let Some(bowls) = world.resolve_poi("cat_water") {
             let plate = Point { x: bowls.x - 8.0, y: bowls.y + 1.0 };
             if clip(self, local(plate, origin), (10, 10), 2) {
-                push(plate.y as i32 - 2, Visible::CatPlate(plate));
+                push(plate.y as i32 - 2, Visible::CatPlate(plate, world.cat_fish_served()));
             }
         }
         if let Some((tile, units, stage)) = world.village_compost_visual() {
@@ -1240,6 +1490,53 @@ impl LivingView {
             let bin = Point { x: p.x + 6.0, y: p.y - 2.0 };
             if clip(self, local(bin, origin), (12, 10), 3) {
                 push(bin.y as i32, Visible::Compost(bin, units, stage));
+            }
+        }
+        if let Some((tile, units, leak)) = self.village_rain_barrel {
+            let door = point(tile);
+            let barrel = Point { x: door.x + 9.0, y: door.y - 1.0 };
+            if clip(self, local(barrel, origin), (13, 20), 4) {
+                push(door.y as i32 + 1, Visible::RainBarrel(barrel, units, leak));
+            }
+        }
+        if let Some((tile, tree, progress)) = self.village_leaf_card {
+            let p = point(tile);
+            if clip(self, local(p, origin), (18, 20), 4) {
+                push(p.y as i32 + 2, Visible::LeafCard(p, tree, progress));
+            }
+        }
+        if let Some((tile, full)) = self.village_food_saucer {
+            let p = point(tile);
+            if clip(self, local(p, origin), (10, 8), 2) {
+                push(p.y as i32, Visible::FoodSaucer(p, full, world.village_mud_at(tile)));
+            }
+        }
+        if let Some(tile) = world.cat_door_fur() {
+            let p = point(tile);
+            if clip(self, local(p, origin), (9, 8), 3) {
+                push(p.y as i32 + 1, Visible::DoorFur(p));
+            }
+        }
+        if let Some((tile, repaired, filed)) = world.yard_flood_report() {
+            let p = point(tile);
+            if clip(self, local(p, origin), (10, 14), 3) {
+                push(p.y as i32, Visible::YardReport(p, repaired, filed));
+            }
+        }
+        if let Some((corners, count)) = world.yard_survey_line() {
+            let count = usize::from(count.min(4));
+            let ends = if count == 4 { 4 } else { count.saturating_sub(1) };
+            for i in 0..ends {
+                let (a, b) = (local(point(corners[i]), origin), local(point(corners[(i + 1) % 4]), origin));
+                self.resource_line((a.0 * 2, a.1 * 2), ((b.0 - a.0) * 2, (b.1 - a.1) * 2), [191, 156, 81]);
+            }
+        }
+        for kind in [ActorKind::Xiaohe, ActorKind::Ayu] {
+            if world.raincoat_on_home_hook(kind) && let Some(door) = world.home_of(kind) {
+                let hook = Point { x: door.x - 9.0, y: door.y - 5.0 };
+                if clip(self, local(hook, origin), (8, 12), 3) {
+                    push(door.y as i32 + 1, Visible::CoatHook(hook));
+                }
             }
         }
         if let Some(stand) = stalls
@@ -1469,6 +1766,82 @@ impl LivingView {
                 }
                 Visible::Wild(v) => {
                     let (x, y) = local(v.position, origin);
+                    if v.sprite.starts_with("wild_acorn") {
+                        let (x, y) = (x * 2, y * 2);
+                        match v.sprite {
+                            "wild_acorn" | "wild_acorn_held" => {
+                                self.resource_line((x - 2, y), (4, 0), [91, 64, 47]);
+                                self.resource_line((x - 1, y - 1), (2, 0), [209, 156, 93]);
+                                self.resource_texel((x, y - 2), [103, 79, 49]);
+                            }
+                            "wild_acorn_covered_soil" => {
+                                self.resource_line((x - 4, y + 1), (8, 0), [123, 94, 61]);
+                                self.resource_line((x - 2, y), (4, 0), [169, 123, 80]);
+                            }
+                            "wild_acorn_sprout" => {
+                                self.resource_line((x, y + 2), (0, -7), [84, 111, 59]);
+                                self.resource_line((x, y - 2), (-4, -3), [114, 157, 71]);
+                                self.resource_line((x, y - 3), (4, -3), [162, 183, 82]);
+                            }
+                            "wild_acorn_young_oak" => {
+                                self.resource_line((x, y + 1), (0, -11), [115, 87, 57]);
+                                self.resource_line((x, y - 4), (-4, -4), [86, 120, 66]);
+                                self.resource_line((x, y - 6), (4, -5), [109, 145, 62]);
+                                self.resource_line((x - 5, y - 9), (6, 0), [146, 167, 74]);
+                                self.resource_line((x + 2, y - 11), (4, 0), [159, 178, 79]);
+                            }
+                            "wild_acorn_cover_leaf" | "wild_acorn_leaf_held" => {
+                                self.resource_line((x - 3, y + 1), (6, -2), [147, 96, 59]);
+                                self.resource_line((x - 2, y), (4, -2), [210, 145, 67]);
+                            }
+                            "wild_acorn_leaf_scraps" => {
+                                for (dx, dy) in [(-4, 1), (1, -2), (3, 2)] {
+                                    self.resource_texel((x + dx, y + dy), [178, 122, 66]);
+                                }
+                            }
+                            _ => {}
+                        }
+                        continue;
+                    }
+                    if matches!(v.sprite, "wild_swallow_nest_base" | "wild_swallow_nest") {
+                        let (x, y) = (x * 2, y * 2);
+                        let finished = v.sprite == "wild_swallow_nest";
+                        if finished {
+                            for (dy, half, ink) in [
+                                (2, 6, [109, 90, 63]),
+                                (3, 7, [177, 135, 92]),
+                                (4, 7, [151, 105, 76]),
+                                (5, 6, [139, 98, 70]),
+                                (6, 5, [125, 89, 66]),
+                                (7, 4, [103, 75, 54]),
+                                (8, 2, [88, 63, 49]),
+                            ] {
+                                self.resource_line((x - half, y + dy), (2 * half, 0), ink);
+                            }
+                            for (dx, dy) in [(-5, 4), (-2, 5), (2, 4), (4, 3)] {
+                                self.resource_texel((x + dx, y + dy), [196, 151, 103]);
+                            }
+                        } else {
+                            self.resource_line((x - 5, y + 3), (10, 0), [153, 114, 82]);
+                            self.resource_line((x - 4, y + 4), (8, 0), [108, 80, 56]);
+                        }
+                        continue;
+                    }
+                    if v.sprite == "wild_swallow_mud_in_beak" {
+                        let face = if v.facing_left { -1 } else { 1 };
+                        let (x, y) = (x * 2 + 4 * face, y * 2 - 5);
+                        self.resource_line((x, y), (2 * face, 0), [167, 122, 83]);
+                        self.resource_texel((x + face, y + 1), [106, 77, 55]);
+                        continue;
+                    }
+                    if matches!(v.sprite, "wild_snail_trace" | "wild_snail_trace_faint") {
+                        let (x, y) = (x * 2, y * 2);
+                        let ink = if v.sprite == "wild_snail_trace" { [143, 170, 144] } else { [118, 147, 123] };
+                        self.resource_line((x - 1, y - 7), (2, 4), ink);
+                        self.resource_line((x + 1, y - 3), (-2, 5), ink);
+                        self.resource_line((x - 1, y + 2), (1, 5), ink);
+                        continue;
+                    }
                     if v.sprite == "wild_duck_track" {
                         let (tx, ty) = ((v.position.x / TILE_PX as f32) as i32, (v.position.y / TILE_PX as f32) as i32);
                         if matches!(world.ground(tx, ty), Ground::Grass | Ground::Soil) && world.can_walk(tx, ty) {
@@ -1514,11 +1887,51 @@ impl LivingView {
                 }
                 Visible::Menu(p, servings, free) => self.village_menu_sign(local(p, origin), servings, free),
                 Visible::Artwork(p, board) => self.village_art_board(local(p, origin), board),
-                Visible::CatPlate(p) => {
+                Visible::CatPlate(p, fish) => {
                     let (x, y) = local(p, origin);
-                    self.core_at_texel("prop_meal", (x * 2, y * 2), false, Scale::new(2, 5), Palette::Unchanged);
+                    if fish {
+                        self.core_at_texel("prop_bowl", (x * 2, y * 2), false, Scale::new(2, 5), Palette::Unchanged);
+                        self.core_at_texel("prop_fish", (x * 2, y * 2 - 2), false, Scale::new(2, 5), Palette::Unchanged);
+                    } else {
+                        self.core_at_texel("prop_meal", (x * 2, y * 2), false, Scale::new(2, 5), Palette::Unchanged);
+                    }
                 }
                 Visible::Compost(p, units, stage) => self.village_compost_bin(local(p, origin), units, stage),
+                Visible::RainBarrel(p, units, leak) => self.village_rain_barrel(local(p, origin), units, leak),
+                Visible::FoodSaucer(p, full, muddy) => {
+                    let (x, y) = local(p, origin);
+                    let (x, y) = (x * 2, y * 2);
+                    if muddy {
+                        self.resource_line((x - 5, y + 2), (11, 0), [123, 93, 69]);
+                        self.resource_line((x - 4, y + 3), (9, 0), [135, 105, 80]);
+                    }
+                    self.village_food_saucer((x, y), full);
+                }
+                Visible::LeafCard(p, tree, progress) => self.village_leaf_rubbing(local(p, origin), tree, progress),
+                Visible::CoatHook(p) => {
+                    let (x, y) = local(p, origin);
+                    let (x, y) = (x * 2, y * 2);
+                    for dy in -8..=0 {
+                        let half = if dy < -5 { 2 } else { 4 };
+                        self.resource_line((x - half, y + dy), (2 * half, 0), [166, 140, 69]);
+                        self.resource_texel((x, y + dy), [200, 165, 86]);
+                    }
+                    self.resource_line((x, y - 10), (0, 2), [92, 78, 66]);
+                }
+                Visible::DoorFur(p) => {
+                    let (x, y) = local(p, origin);
+                    let (x, y) = (x * 2, y * 2);
+                    self.resource_line((x + 3, y - 5), (3, -2), [191, 130, 74]);
+                    self.resource_line((x + 5, y - 8), (2, 1), [230, 165, 97]);
+                }
+                Visible::YardReport(p, repaired, filed) => {
+                    let (x, y) = local(p, origin);
+                    let (x, y) = (x * 2 + 5, y * 2 - 3);
+                    self.resource_line((x, y + 2), (0, -10), [110, 83, 52]);
+                    let tint = if filed { [105, 145, 104] } else if repaired { [211, 180, 96] } else { [210, 131, 69] };
+                    self.resource_line((x, y - 8), (4, 0), tint);
+                    self.resource_line((x, y - 7), (3, 0), tint);
+                }
                 Visible::Prop(key, p) => self.village_prop(key, p, world, origin),
                 Visible::DoorTrim(key, p) => {
                     let (x, y) = local(p, origin);
@@ -1544,6 +1957,11 @@ impl LivingView {
                 }
                 Visible::Scenic(item, resource) => {
                     self.village_scenic(item, resource, origin, &canopy_subjects);
+                    if item.kind == ScenicKind::Lamp && item.tile == CAT_LAMP && world.household_lamp_lit() {
+                        let (x, y) = local(point(item.tile), origin);
+                        self.rect(x - 1, y - 7, 3, 3, [229, 159, 80]);
+                        self.pixel(x, y - 6, [255, 223, 145]);
+                    }
                 }
                 Visible::Lamp(p) => self.market_lamp(p, origin, world.minute_of_day()),
                 Visible::Drain(p) => {
@@ -1584,6 +2002,18 @@ impl LivingView {
                         .orchard_phase(i)
                         .filter(|_| t.stage == TreeStage::Standing)
                     {
+                        if world.sapling_soil_ring().is_some_and(|root| point(root) == t.position) {
+                            let (x, y) = (x * 2, y * 2);
+                            for (dx, dy, width) in [(-6, -3, 12), (-8, -2, 16), (-8, -1, 16), (-7, 0, 14), (-6, 1, 12), (-4, 2, 8)] {
+                                self.resource_line((x + dx, y + dy), (width, 0), if dy < 0 { [141, 102, 74] } else { [167, 124, 87] });
+                            }
+                        }
+                        if let Some(mulch) = world.village_tree_mulch(i) {
+                            let (mx, my) = local(point(mulch), origin);
+                            for (dx, dy, end) in [(-7, -1, 4), (-5, 0, 5), (2, 0, 5), (-4, 2, 3), (1, 2, 4)] {
+                                self.resource_line((mx * 2 + dx, my * 2 + dy), (end, 0), [153, 111, 62]);
+                            }
+                        }
                         self.village_orchard(
                             phase,
                             (x, y),
@@ -1940,26 +2370,54 @@ impl LivingView {
         if !have_body {
             self.premium_frame(&frame, (x, y), v.facing_left, color);
         }
-        if let Some((prop, scale)) = v.held.and_then(held_asset) {
+        if let Some(held) = v.held {
             let hand = self
                 .premium_hand(&frame, (x, y), v.facing_left)
                 .unwrap_or((x * 2, y * 2 - 15));
             let at = if north { ((x - 5) * 2, (y - 7) * 2) } else { hand };
-            self.core_at_texel(
-                prop,
-                at,
-                false,
-                scale,
-                Palette::Unchanged,
-            );
-            match v.held {
-                Some(VisitorHeld::Parcel("kitchen_scraps")) => {
+            if !matches!(held, VisitorHeld::Parcel("letter" | "booking_slip"))
+                && let Some((prop, scale)) = held_asset(held)
+            {
+                self.core_at_texel(prop, at, false, scale, Palette::Unchanged);
+            }
+            match held {
+                VisitorHeld::Parcel("letter" | "booking_slip") => {
+                    for row in -4..=1 {
+                        let ink = if row == -4 || row == 1 { [143, 110, 74] } else { [244, 222, 172] };
+                        self.resource_line((at.0 - 4, at.1 + row), (8, 0), ink);
+                    }
+                    self.resource_line((at.0 - 3, at.1 - 3), (3, 2), [198, 158, 106]);
+                    self.resource_line((at.0, at.1 - 1), (3, -2), [198, 158, 106]);
+                    self.resource_texel((at.0, at.1 - 1), [166, 81, 61]);
+                }
+                VisitorHeld::Parcel("wrapped_letter" | "wrapped_seed_packet") => {
+                    self.village_oilpaper(at, held == VisitorHeld::Parcel("wrapped_seed_packet"));
+                }
+                VisitorHeld::Parcel("orchard_leaf") => self.village_apple_leaf(at),
+                VisitorHeld::Parcel("kitchen_scraps") => {
                     self.resource_line((at.0 - 2, at.1 - 3), (3, -2), [160, 116, 65]);
                     self.resource_texel((at.0 + 1, at.1 - 4), [194, 150, 73]);
                 }
-                Some(VisitorHeld::Parcel("guest_food_basket")) => {
+                VisitorHeld::Parcel("guest_food_basket") => {
                     self.resource_line((at.0 - 3, at.1 - 4), (6, 0), [231, 205, 154]);
                     self.resource_line((at.0, at.1 - 5), (1, 3), [125, 116, 67]);
+                }
+                VisitorHeld::Parcel("warm_cat_supper") => {
+                    self.resource_line((at.0 - 2, at.1 - 2), (4, 0), [181, 124, 70]);
+                    self.resource_texel((at.0 - 1, at.1 - 3), [230, 167, 89]);
+                    self.resource_texel((at.0 + 1, at.1 - 3), [229, 183, 103]);
+                }
+                VisitorHeld::Parcel("saucer_meal" | "empty_saucer") => {
+                    self.village_food_saucer(hand, held == VisitorHeld::Parcel("saucer_meal"));
+                }
+                VisitorHeld::Parcel("covered_snack_tray" | "empty_snack_tray") => {
+                    self.resource_line((at.0 - 6, at.1), (12, 0), [148, 97, 60]);
+                    self.resource_line((at.0 - 5, at.1 + 1), (10, 0), [101, 67, 45]);
+                    if held == VisitorHeld::Parcel("covered_snack_tray") {
+                        self.resource_line((at.0 - 4, at.1 - 1), (8, 0), [199, 181, 140]);
+                        self.resource_line((at.0 - 3, at.1 - 2), (6, 0), [225, 201, 158]);
+                        self.resource_line((at.0 - 1, at.1 - 3), (2, 0), [237, 216, 173]);
+                    }
                 }
                 _ => {}
             }
@@ -2054,7 +2512,7 @@ impl LivingView {
         (x, y): (i32, i32),
         depth: i32,
         flip: bool,
-        subjects: &[Option<CanopySubject>; 2],
+        subjects: &[Option<CanopySubject>; 3],
     ) {
         let position = (x * 2, y * 2);
         self.contact_shadow((x + 4, y + 1), (12, 4), 42);
@@ -2083,7 +2541,7 @@ impl LivingView {
         item: &ScenicObject,
         resource: Option<ScenicResourceView>,
         origin: (i32, i32),
-        subjects: &[Option<CanopySubject>; 2],
+        subjects: &[Option<CanopySubject>; 3],
     ) {
         let p = point(item.tile);
         let foot = local(p, origin);
@@ -2135,6 +2593,16 @@ impl LivingView {
             self.draw_tree_canopy(
                 art.bank, art.key, position, p.y as i32, art.flip, art.scale, subjects,
             );
+        } else if item.kind == ScenicKind::Bench
+            && let Some((tile, _)) = self.village_food_saucer
+            && tile.offset(0, 1) == Some(item.tile)
+        {
+            let dish = point(tile);
+            let (x, y) = local(dish, origin);
+            let subject = CanopySubject { area: ArtRect { x: x * 2 - 6, y: y * 2 - 4, w: 13, h: 9 }, depth: dish.y as i32 };
+            self.draw_tree_canopy(
+                art.bank, art.key, position, p.y as i32, art.flip, art.scale, &[Some(subject), None, None],
+            );
         } else {
             self.draw_village_sprite(
                 art.bank,
@@ -2159,7 +2627,7 @@ impl LivingView {
         depth: i32,
         flip: bool,
         scale: Scale,
-        subjects: &[Option<CanopySubject>; 2],
+        subjects: &[Option<CanopySubject>; 3],
     ) {
         let Some(atlas) = bank.atlas(
             self.art.as_ref(),
@@ -2381,6 +2849,16 @@ mod tests {
             if panel != blank {
                 assert!((24..=40).contains(&(i % 64)) && (15..=26).contains(&(i / 64)));
             }
+        }
+        let dawn = render(&mut view, VillageArtSubject::DuskSwatches([1, 0, 0]), None, 100);
+        let cloudy = render(&mut view, VillageArtSubject::DuskSwatches([1, 1, 2]), None, 100);
+        let evening = render(&mut view, VillageArtSubject::DuskStreet([1, 1, 2]), Some(0), 100);
+        assert_ne!(dawn, cloudy);
+        assert_ne!(cloudy, evening);
+        for [r, g, b] in dusk_board_colors([1, 1, 2]) {
+            let pigment = [b, g, r, 255];
+            assert!(cloudy.chunks_exact(4).any(|p| p == pigment));
+            assert!(evening.chunks_exact(4).any(|p| p == pigment));
         }
     }
 
@@ -2705,7 +3183,7 @@ mod tests {
 
         // Place the same three real species in front of the worker. Pixels
         // outside the narrow cutaway, and below the tree roots, must agree.
-        fn layered(subjects: &[Option<CanopySubject>; 2]) -> Vec<u8> {
+        fn layered(subjects: &[Option<CanopySubject>; 3]) -> Vec<u8> {
             let mut view = LivingView::new();
             view.enable_builtin_premium().unwrap();
             view.width = 200;
@@ -2720,7 +3198,7 @@ mod tests {
             }
             view.pixels
         }
-        let full = layered(&[None, None]);
+        let full = layered(&[None, None, None]);
         let cut = layered(&subjects);
         let mut in_front = subjects;
         in_front[0].as_mut().unwrap().depth = 164;

@@ -9,6 +9,16 @@ use std::sync::OnceLock;
 
 #[path = "residents_habitat.rs"]
 mod habitat;
+#[path = "residents_wildlife_routes.rs"]
+mod routes;
+#[path = "residents_wildlife_flock.rs"]
+mod flock;
+#[path = "residents_wildlife_nest.rs"]
+mod nest;
+#[path = "residents_wildlife_wind.rs"]
+mod wind;
+#[path = "residents_wildlife_acorns.rs"]
+mod acorns;
 pub(super) const SPARROW: usize = 8;
 pub(super) const BEE: usize = 17;
 
@@ -52,6 +62,7 @@ pub(super) enum Receipt {
         last: TilePos,
     },
     DuckRejoined,
+    Route(routes::Proof),
 }
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize)]
@@ -187,6 +198,15 @@ impl Roof {
 }
 
 pub(crate) fn layered_depth(world: &LivingWorld, entry: &WildlifeVisual) -> Option<i32> {
+    if matches!(entry.sprite, "wild_acorn_held" | "wild_acorn_leaf_held") {
+        return Some(entry.position.y as i32 + 6);
+    }
+    if let Some(depth) = routes::layered_depth(world, entry) {
+        return Some(depth);
+    }
+    if let Some(depth) = flock::layered_depth(world, entry) {
+        return Some(depth);
+    }
     if let Some(depth) = habitat::layered_depth(world, entry) {
         return Some(depth);
     }
@@ -257,6 +277,16 @@ pub(super) struct State {
     rain_seen: Option<bool>,
     next_probe: u64,
     habitat: habitat::Habitat,
+    #[serde(skip_serializing_if = "routes::State::empty")]
+    routes: routes::State,
+    #[serde(skip_serializing_if = "flock::State::empty")]
+    flock: flock::State,
+    #[serde(skip_serializing_if = "nest::State::empty")]
+    nest: nest::State,
+    #[serde(skip_serializing_if = "wind::State::empty")]
+    wind: wind::State,
+    #[serde(skip_serializing_if = "acorns::State::empty")]
+    acorns: acorns::State,
 }
 
 fn tile(p: Point) -> TilePos {
@@ -373,7 +403,7 @@ impl State {
         if let Some(pond) = self.pond {
             deadline = deadline.min(pond.frog.end.max(pond.duck.end));
         }
-        deadline.min(self.habitat.deadline())
+        deadline.min(self.habitat.deadline()).min(self.routes.deadline()).min(self.flock.deadline()).min(self.nest.deadline()).min(self.wind.deadline()).min(self.acorns.deadline())
     }
 
     pub(super) fn needs_update(&self, world: &LivingWorld) -> bool {
@@ -384,6 +414,14 @@ impl State {
         let now = world.world_ms();
         self.next_probe <= now.saturating_add(MINUTE)
             && self.habitat.valid(world)
+            && self.routes.valid(world)
+            && self.flock.valid(world)
+            && self.nest.valid(world)
+            && self.wind.valid(world)
+            && self.acorns.valid(world)
+            && !(self.wind.active() && (self.bird.is_some() || self.flock.active() || self.nest.active()))
+            && !(self.nest.active() && (self.bird.is_some() || self.flock.active()))
+            && !(self.flock.active() && self.bird.is_some())
             && !(self.pond.is_some() && self.habitat.duck_active())
             && [self.mouse_day, self.bird_day, self.pond_day]
                 .into_iter()
@@ -459,13 +497,15 @@ impl State {
     }
 
     pub(super) fn routine_phase(&self, id: usize, now: u64) -> u64 {
-        if let Some(phase) = self.habitat.phase(id, now) {
+        if let Some(phase) = self.routes.phase(id, now) {
             return phase;
         }
-        SHIFTED
+        let original = SHIFTED
             .iter()
             .position(|&animal| animal == id)
-            .and_then(|slot| self.resume[slot])
+            .and_then(|slot| self.resume[slot]);
+        [original, self.habitat.resume(id), self.flock.resume(id), self.nest.resume(id), self.wind.resume(id), self.acorns.resume(id)]
+            .into_iter().flatten().max_by_key(|resume| resume.at)
             .map_or_else(
                 || now.saturating_add(1_951 * id as u64),
                 |r| {
@@ -479,7 +519,7 @@ impl State {
         &mut self,
         world: &LivingWorld,
         occupied: &[TilePos],
-    ) -> [Option<Receipt>; 6] {
+    ) -> [Option<Receipt>; 14] {
         let now = world.world_ms();
         let probe = now >= self.next_probe;
         if probe {
@@ -503,10 +543,35 @@ impl State {
         };
         self.start_mouse(world, occupied);
         if probe {
-            self.start_bird(world);
+            if !self.flock.active() && !self.nest.active() && !self.wind.active() { self.start_bird(world); }
             self.start_pond(world, occupied);
         }
-        [mouse, swallow, pond, bee, sparrow, duck]
+        let [snail, firefly, rabbit] = self.routes.advance(world, occupied, probe).map(|proof| proof.map(Receipt::Route));
+        let both = self.bird.is_none() && !self.nest.active() && !self.wind.active() && self.habitat.visual(SPARROW, world).is_none();
+        let positions = [SPARROW, SWALLOW]
+            .map(|id| super::routine_animal(id, world, self.routine_phase(id, now)).position);
+        let yield_landing = self.flock.advance(world, probe && both, positions)
+            .then_some(Receipt::Route(routes::Proof::SharedLanding));
+        let nest = self.nest.advance(
+            world,
+            occupied,
+            probe,
+            self.bird.is_none() && !self.flock.active() && !self.wind.active(),
+            positions[1],
+        ).map(Receipt::Route);
+        let wind = self.wind.advance(world, occupied, probe && self.bird.is_none() && !self.flock.active() && !self.nest.active(), positions[1]).map(Receipt::Route);
+        let acorn_positions = acorns::ANIMALS_WITH_CACHES.map(|id| {
+            super::routine_animal(id, world, self.routine_phase(id, now)).position
+        });
+        let other_bird = self.acorns.crow_checks_flock(world, probe) && [SPARROW, SWALLOW, DUCK, 12, 13].into_iter().any(|id| {
+            let position = self.visual(id, world).map(|v| v.position).or_else(|| {
+                animal_visible(id, ANIMALS[id], world).then(|| super::routine_animal(id, world, self.routine_phase(id, now)).position)
+            });
+            position.is_some_and(|p| (178..=184).contains(&tile(p).x) && (14..=20).contains(&tile(p).y))
+        });
+        let [squirrel, crow] = self.acorns.advance(world, occupied, probe, acorn_positions, other_bird)
+            .map(|e| e.map(routes::Proof::Acorn).map(Receipt::Route));
+        [mouse, swallow, pond, bee, sparrow, duck, snail, firefly, rabbit, yield_landing, nest, wind, squirrel, crow]
     }
 
     fn mouse_witness(&self, world: &LivingWorld) -> Option<(ActorKind, Point)> {
@@ -805,6 +870,21 @@ impl State {
     }
 
     pub(super) fn visual(&self, id: usize, world: &LivingWorld) -> Option<WildlifeVisual> {
+        if let Some(visual) = self.acorns.visual(id, world) {
+            return Some(visual);
+        }
+        if id == SWALLOW && let Some(visual) = self.wind.visual(world) {
+            return Some(visual);
+        }
+        if id == SWALLOW && let Some(visual) = self.nest.visual(world) {
+            return Some(visual);
+        }
+        if let Some(visual) = self.flock.visual(id, world) {
+            return Some(visual);
+        }
+        if let Some(visual) = self.routes.visual(id, world) {
+            return Some(visual);
+        }
         if let Some(visual) = self.habitat.visual(id, world) {
             return Some(visual);
         }
@@ -868,7 +948,7 @@ impl State {
     }
 
     pub(super) fn marks(&self, world: &LivingWorld) -> impl Iterator<Item = WildlifeVisual> + '_ {
-        self.habitat.marks(world)
+        self.habitat.marks(world).chain(self.routes.marks(world)).chain(self.nest.marks(world)).chain(self.acorns.marks(world).into_iter().flatten())
     }
 }
 

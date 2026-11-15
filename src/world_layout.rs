@@ -368,6 +368,8 @@ pub(super) struct OrchardTree {
     pub last_care_day: u64,
     #[serde(default, skip_serializing_if = "is_false")]
     pub pending_pollination: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub flower_opened_day: Option<u64>,
 }
 
 fn initial_orchard() -> [OrchardTree; 4] {
@@ -382,6 +384,7 @@ fn initial_orchard() -> [OrchardTree; 4] {
         fruit: 0,
         last_care_day: 0,
         pending_pollination: false,
+        flower_opened_day: None,
     })
 }
 
@@ -486,7 +489,9 @@ impl State {
     pub fn advance_orchard(&mut self, day: u64) {
         for (index, tree) in self.orchard.iter_mut().enumerate() {
             tree.age_days = tree.age_days.saturating_add(1);
-            if day > tree.last_care_day + 25 && day % 7 == 0 {
+            if day > tree.last_care_day + 25 && day % 7 == 0
+                && !self.family_routines.orchard_cover.protects_orchard(index, day)
+            {
                 tree.health = tree.health.saturating_sub(1).max(30);
             }
             let phase = if tree.age_days < 28 {
@@ -516,6 +521,11 @@ impl State {
             }
             if phase != OrchardPhase::Ripe {
                 tree.fruit = 0;
+            }
+            if phase == OrchardPhase::Flower && tree.phase != phase {
+                tree.flower_opened_day = Some(day);
+            } else if phase != OrchardPhase::Flower {
+                tree.flower_opened_day = None;
             }
             tree.phase = phase;
         }

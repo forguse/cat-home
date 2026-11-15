@@ -1,17 +1,46 @@
 base	roles	variant_modes	places	weather	periods	seasons	binding	display_label
 A01-02	A01						Cat smells the actually served paid meal at its bowl before eating that meal	先闻一闻碗里的饭再开动
+A01-04	A01						Only a real bowl debit can schedule a one-minute whisker motion, consumes no second water. Base only; no global rest marks.	饮水后舔净胡须
+A01-06	A01						One existing fish becomes the plate meal with persistent provenance and is actually consumed once. Live hunger and full plate guarded. Original fish family had no generated variants.	吃完这一尾从池里钓来的鱼
+A01-07	A01						Two minutes of actual kneading before sleep imprint lasts one hour; cat does not knead the porch. Base only.	在自己的垫上踩奶后休息
 A01-08	A01						Actual recent meal permits outdoor midday nap; rain wakes the cat into a continuous walk to cover	饭后到室外打盹
+A01-09	A01						Real timed two-minute stretch; does not interrupt urgent needs. Base only.	长睡醒来在门框边伸展
 A01-10	A01						Cat reaches the actual home door before entering at night; no outdoor bed counted as indoors	天黑后回屋睡觉
+A01-12	A01						Fisher briefly really waits with empty line only when cat can approach. Orange physically arrives and delays until same event ends, both restore normal decisions. No successful fish or unobserved bank counts.	到空钩旁坐下陪着钓鱼的人
 A01-13	A01						Actual soft-ground cat steps leave bounded fading paw marks; no territorial ownership simulation	巡路时留下真实小爪印
+A01-15	A01						A short body rub only after actual full patrol and approach. One bounded fur mark at the door during same day.	巡完院子沿熟悉门柱蹭一蹭
+A01-25	A01						On the day the same orchard tree genuinely enters Flower, Orange reaches a distinct legal adjacent tile, spends time smelling, leaves the newly opened flower intact, and stores the bounded observation.	到刚开花的果树旁闻花
+A01-31	A01	1	0	0	1	1	Tracks exact farmer, same plot and due edge; cat watches from outside seedlings and receipt requires delivery of true new Crop by that same harvesting work. Saves only the recent observed plot and day.	在畦外看同一份收菜工作
+A01-37	A01						The cat yields one actual edge, waits while same carried Stock/box leaves the contested foot, then walks back to original cell before recording. Goods remain owned.	为拿东西的人让路后回原位
+A01-38	A01						The actual apron wearer leaves their own occupied door and waits only when Orange is physically near. Cat reaches a distinct adjacent foot, rubs that wearer once and retains two hours of real closer approach for that same gardener, same H01 partner passed.	在门前蹭围裙边打招呼
 A01-49	A01						First winter snow probe reaches adjacent snow from legal ground and leaves one actual paw mark	试探初雪并收回爪子
+A01-50	A01						Walk to covered own entrance, stop under eaves six minutes. No interrupted-goal resumption is attributed to this single-actor original. Base only.	被雨淋湿后到自家檐下
+A01-51	A01						Actual wetness consumed by a work shake beside active lamp. No claimant where decorative lights are unavailable. Base only.	雨停后在暖灯旁抖干毛尖
+A01-55	A01						A real foreground window-tap command only while awake and within 3 tiles of the occupied home window. First ears then gaze, then resumes the original patrol goal or remaining rest, no generated input.	听见轻敲窗时转耳回望
 A04-10	A04						Sparrow flies continuously to Ayu's real roof and perches to chirp once per dawn	黎明飞到屋檐报到鸣叫
+A05-01	A05						Real bounded ecology custody and continuous route; producer residents_wildlife_ecology; base only.	把同一秋果藏进地里
+A05-02	A05						Real bounded ecology custody and continuous route; producer residents_wildlife_ecology; base only.	循原路找回埋藏的秋果
+A05-03	A05						Real bounded ecology custody and continuous route; producer residents_wildlife_ecology; base only.	春天发现原藏果已经发芽
+A07-09	A07						Same rabbit reaches a free real side eave in rain, waits, peeks out once dry, returns on a bounded route and completes one actual foraging edge. Ordinary day-10 save reopened in flight and finished at the original foraging route.	等雨停后从檐侧探头，回到原地觅食
 A08-10	A08						Frog leaves real shared bank before the same duck lands; companion A10 required	先让出岸边再请小鸭上岸
+A09-01	A09						One real bank load of damp mud is carried in the existing swallow to the same eave and applied; two actual deliveries complete the reusable nest. Rain sends the same load back to its bank.	到溪岸衔湿泥，为屋檐搭第一圈巢
+A09-08	A09						Same physically built two-course nest is approached and rested on in a later spring without using a new bank load; one attested re-use per year.	春归停在去年用过的同一座燕巢
 A10-01	A10						Duck takes two legal wet-shore steps after rain; paired footprints expire in bounded storage	在雨后湿岸留下蹼印
+A11-01	A11						Two completed hard-ground legs on the genuine courtyard crop path leave separate short-lived damp lines after rain. Interruptions do not create missed marks.	沿菜畦步道留下雨后湿痕
+A11-05	A11						Same snail uses an existing protected grass shadow, seals after three game hours of real dry weather, opens on rain and rejoins its original path.	干燥时躲进草荫封壳，等雨后再出
+A13-05	A13						Same firefly lands on the actual reed in rain, waits, and flies back to its original wet-bank leg on a real summer night rain break.	在芦叶下等雨，雨停回原岸复飞
+A13-10	A13						Same firefly holds a specific live reed through daybreak and later physically resumes patrol from that remembered reed.	黎明停在同一片芦叶背
 A14-01	A14						Bee physically visits two distinct flowering orchard trees; same target's next ripe batch gains one capped fruit once	在两株开花果树间传粉
+A15-01	A15						Real bounded ecology custody and continuous route; producer residents_wildlife_ecology; base only.	把实果塞进石缝并盖上叶子
+A15-02	A15						Real bounded ecology custody and continuous route; producer residents_wildlife_ecology; base only.	雨后回到原石缝取回果子
 A19-09	A19						Mouse hears a real nearby walker, pauses and follows a new safe grass route	听到脚步后沿草路避让
+H01-07	H01						Actual young tree 11 while still sapling, actual neighbor foot, three minutes of bare-hand work, persistent compressed earth ring until growth or 12 days. No yield bonus.	用手掌压实幼树根土
 H01-13	H01						Only the two reclaimed fields require real hoeing after harvest before the next sowing	收获后用锄重新整行
+H01-16	H01						The real named root crop reaches recorded growth day 3 or 4. Work at the exact unflooded field exposes a shoulder sized by actual growth and watering; it stays exposed until lifting that same root. No additional produce.	拨土查看真实萝卜肩
 H01-17	H01						Sorting one real harvest batch separates its legitimate seed pouch and stores both with the crop basket	分拣收成并留种
+H01-19	H01						Actual one rope picked from pantry, same actor uses it around all four corners and stows it before normal work. A partial survey shows only visited corners and never emits.	实地用放线绳量新屋四角
 H01-20	H01	1	4	0,1,2	0,1,2	0,1,2	Paid housing frame from its real front work stand; existing whole-frame animation	安装住房框架
+H01-23	H01	1	0,2	0	1,2	0,1,2	One existing paid timber input and held hammer, in four persisted chunks of the same base shift. Only stage 1 actual commissioning emits. The existing planter shares modern geometry and does not track four independent items in stock.	分四段装紧花槽角
 H01-27	H01						Actual dirty borrowed hoe brushed before returning; hoe adapts original spade	刷净借来的泥锄并归还
 H01-29	H01						A borrowed rod reaches a real pond and casting starts	带钓竿到池边下竿
 H01-30	H01						Caught fish deposited or unsuccessful rod personally returned	把鱼入仓或空竿归还
@@ -19,29 +48,54 @@ H01-33	H01						Two dry summer periods trigger one paid water bucket in three ti
 H01-34	H01						Household performs three on-site drainage phases before removing the actual plot flood flag	给真正受淹的田排水
 H01-37	H01	1	4	0,1,2,3	1,2	0,1,2	One owned meal delivered into actual cat bowl from its actual front stand	把一份饭送到橘子的碗里
 H01-38	H01	1	3	0,1,2,3	0,1,2	0,1,2	Actual dirty bowl cleaned and refilled from the real left-hand work stand	洗净猫碗并补水
+H01-39	H01						Same bounded mat carried, hung, physically retrieved dry; if rained on again it really stays damp. Does not demand extra material. Base only.	把湿猫垫挂起晾干后取回
+H01-40	H01						Single existing rug reverses its healthy side and loses old creases only when cat leaves. No doubled mat.	给用过的猫垫翻面
 H01-48	H01						Household recipient walks to the booked handover stand and receives the same original letter from the courier; custody moves only on real arrival	从邮差手中接下原信
+H01-49	H01						Existing gardener clothes (hat/overalls) are physically donned before first completed gardening job; no claim separately simulated muddy pants.	换上园丁服去做田务
+H01-50	H01						The same healthy worker physically dons their own wardrobe apron before actual daytime Cook, paid ingredients become the original number of meals, and the accessory returns to the same wardrobe. The installed shared kitchen is used.	系好厨房围裙完成一炉饭
 H01-52	H01						Indoor change to the existing raincoat followed by actual outdoor field work during that wet spell	进屋换雨衣后到湿地工作
 H01-53	H01						Healthy actor changes to existing Home clothes indoors then consumes real water while resting on own porch in a cool dry evening	回屋换家居服后在门廊休息
+H01-54	H01						Moves own raincoat to one persisted hook, subsequent coat pickup removes it. Own face/clothing visual reuses already authored assets.	从田里收工后挂回雨衣
+H01-55	H01						At the real first apple blossom arrival, Xiaohe visits the same still living tree, then true courtyard table writes a fixed apple-flower note and its glyph. Day/identity validated, no repeats per species.	到实树辨花后写下第一朵苹果花
+H01-56	H01	1	2	0	1	0	Attach the latest exact scheduled earliest work time to the board only if the carried estimate still belongs to that same project. Single pinned notice; removes from view once stale. Existing reusable board rather than inventing wood stock.	给施工公告牌钉上续班时间
+H01-57	H01	1	0,1	0,1	2	0,1,2	Actual processed produce only counts after successful stow, pending tally goes to one capped seasonal notebook slot. Modern table stands in for old chalkboard.	在院桌写下刚进仓的收成
+H01-58	H01						One pending flood report must match actual drainage and original plot; strong rain re-flooding supersedes it. Modern table stands in for old board.	将当前受淹地块的报告改成已修复
 H01-60	H01						Real night journey to actor's own residence followed by actual indoor sleep; once per night	夜里走回自己的房间睡觉
+H02-01	H02						开口看分层并回填。测量控制下一实际准备，黏土现已观察真实翻松	挖开新畦看土质后填平
+H02-08	H02	1	2	0,1	0,1	1	同一真实果树本秋落叶耗尽形成根部覆盖，保持至来春芽，真实减轻缺水健康损失	在果树根旁铺本树的落叶
 H03-02	H03						Real wood taken to the carpenter saw bench and cut into a bounded owned repair piece, then carried to the damaged grain rack; adapts old construction-sized boards	把实木加工成定尺修补件
+H06-01	H06						陶盘实际被同一份苏灶私柜Food接入，猫之后闻并真吃；满碗原食送回	给橘子端一份当日做的晚餐
+H06-03	H06						真实预约来客改走到檐下，消费一份自有熟食，同一空盘实回厨房；中止食物与盘均回源	将同一位来客的点心送到檐下
 H06-05	H06						Cooking actual crops creates bounded scraps carried to the bin and poured through timed work; compost must mature before field use	把实际菜皮送去堆肥
 H06-07	H06						Chef carries one owned food portion to the same arrived guest appointment, hands over and observes eating; cancellation returns original portion	为约好的来客打包礼篮
+H06-08	H06						Same paid guest meal rests on the finite real saucer above actual muddy ground; after guest eats the same empty saucer is retrieved and returned to original kitchen.	用托碟垫住泥地上的餐盘，饭后收回
 H06-09	H06						Two bounded menu entries reflect real counter stock and reservations	按实有餐食开放预约
 H07-01	H07						Collect the same owned outgoing letter from its physical source	到来源点收取原信
+H07-04	H07						同一实体油纸阻止后续雨湿且回库/交付拆除	到原门廊给淋湿的短札换防水包
 H07-05	H07						One arrival receipt for the same delivered letter	送到原信并盖交付戳
 H07-06	H07						Expired appointment letter physically returned to its original owner	把逾期原信退回来源
+H08-02	H08						从真实家庭余量扣一木板、实际搬回并六分维修；同一桶不再漏，存量不多加	取实木补好漏水的雨桶
+H08-03	H08						六世界分钟调准同一分管、真降雨才入水有限6，择干田带一实桶	对准屋檐短管给雨桶接水
 H08-04	H08						Irrigator takes their trench tool from home and works six game minutes at a genuinely flooded field; successful drainage only after work completes	给受涝地开排水槽
 H09-01	H09						Real orchard blossom painted onto a reusable owned board; adapts the old flower bed	在开花果树旁写生
+H09-03	H09						一季一张真样条，后续一次街景数据必须来自同一palette	配出暮色试色条供下一幅画使用
 H09-06	H09						Actual pond and existing home reflection painted at their safe shore	在池边画住屋倒影
+H09-07	H09						拿取并携带同一整叶到真桌，拓成这一轮唯一卡；遇雨/超时物件走回原果树再归家	把真实果树落叶拓成一张叶脉卡
 H09-10	H09	1	4	0,1	1	0,1,2	Painted board physically carried home and replaces one of three display boards	把完成的画带回家换展
 H10-01	H10						Count actual packed seed stock at the open counter	开摊清点实有种子
 H10-02	H10	1	0	0,1	1	0,1,2	Actual crop-for-seed exchange; one bag means the real traded batch	用余菜交换种子
+H10-04	H10						同一3粒种留独立保管，有限三只封套，真到家四分钟换封，下次出摊受保护，正常卖出才交货买家	将返程淋湿的种袋换上防水封
 H10-07	H10						Last actual seed batch reserved to the same booked buyer and trip; fulfillment or cancellation releases the bounded reservation	为真实买家暂留最后一袋种子
 H10-10	H10						Remaining seed goods carried home and stale reservations released	收摊把余种归仓
 S01	H01						Two protagonists meet on opposing real routes, step aside legally, preserve cargo and tasks, and both reach original goals before recording	窄路会车让行后继续原路
 S02	H01						Return to the one remembered successful rest spot during discretionary time, then release it	重访上次休息的地方
+S04	A01						Pauses only discretionary original patrol at a completed edge, physically visits eave, then visits exact same original continuing target. Adaptation uses real onset as first precipitation step, not a separate rain-intensity model. Old Rain-at-completion contexts withheld.	进檐下躲雨后恢复同一巡路
+S05	A09						Requires sparrow as actual lower partner. Both arrive at the same real rail approach; swallow circles aside after sparrow occupies it and reaches a distinct adjacent rail.	燕子给先下行的麻雀让出落点
 S08	H01,A01	1,2,3	3,4,5	2	0,1,2,3	0,1	Three contiguous real steps; actual shallow, wet or saturated ground gives tracks 30, 60 or 90 game minutes	走过湿地留下一串脚印
 S09	H01						Real reclamation work leftovers removed from source and returned to stock	把开荒工位的余料收回
+S12	H01,A01						Real pause then subsequent planner restores ordinary schedule. This is the runtime cloud-strength step; no multiple wind/light physics modes and no fabricated signal trail.	实际云散时停步看新天光
 S13	H01						Briefly inspect a genuinely newly installed fixture from a legal stand, remember its version	走近看看新装的设施
 S14	H01						Arrive at empty meal source, wait, then use a genuinely available alternative	餐源空了，改用原料做饭
+S15	A09						Real bounded ecology custody and continuous route; producer residents_wildlife_ecology; base only.	借同一阵顺风飞过溪桥
 S18	H01	1	2	0,1,2,3	0,1,2	0,1,2	Repaired expanded-district public well tested by its next actual use, with bounded result memory	修井后实际提水试用
+S22	H01,A01						Only real standing→fall event can create one current spatial signal. A nearby empty-handed bystander physically backs away two clear tiles, each at most once; normal destinations resume, no ambient sounds or added loot.	听见真树倒地后退到安全地段

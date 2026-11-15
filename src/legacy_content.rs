@@ -24,6 +24,7 @@ impl LegacyActor {
             Self::Resident(1) => Some(9),
             Self::Resident(2) => Some(2),
             Self::Resident(3) => Some(5),
+            Self::Resident(6) => Some(1),
             Self::Resident(8) => Some(8),
             Self::Resident(16) => Some(7),
             Self::Wildlife(id) => [

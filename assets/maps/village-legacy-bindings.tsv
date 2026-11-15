@@ -1,50 +1,130 @@
 old_id	base_id	kind	roles	period	weather	season	place	mode	partner	implementation
 A01-02	A01-02	base	A01						-	Cat smells the actually served paid meal at its bowl before eating that meal
+A01-02~10241	A01-02	variant	A01	1	0	2	4	1	-	Forage1: same paid meal actually consumed at original bowl; native winter clear daytime receipt.
+A01-02~20141	A01-02	variant	A01	2	0	1	4	1	-	Forage1: same paid meal actually consumed at original bowl; native autumn clear dusk receipt.
+A01-04	A01-04	base	A01						-	Only a real bowl debit can schedule a one-minute whisker motion, consumes no second water. Base only; no global rest marks.
+A01-06	A01-06	base	A01						-	One existing fish becomes the plate meal with persistent provenance and is actually consumed once. Live hunger and full plate guarded. Original fish family had no generated variants.
+A01-07	A01-07	base	A01						-	Two minutes of actual kneading before sleep imprint lasts one hour; cat does not knead the porch. Base only.
 A01-08	A01-08	base	A01						-	Actual recent meal permits outdoor midday nap; rain wakes the cat into a continuous walk to cover
+A01-09	A01-09	base	A01						-	Real timed two-minute stretch; does not interrupt urgent needs. Base only.
 A01-10	A01-10	base	A01						-	Cat reaches the actual home door before entering at night; no outdoor bed counted as indoors
+A01-12	A01-12	base	A01						-	Fisher briefly really waits with empty line only when cat can approach. Orange physically arrives and delays until same event ends, both restore normal decisions. No successful fish or unobserved bank counts.
 A01-13	A01-13	base	A01						-	Actual soft-ground cat steps leave bounded fading paw marks; no territorial ownership simulation
+A01-13~01051	A01-13	variant	A01	0	1	0	5	1	-	Trail1: same cat actually stepped from right onto damp ground; bounded 30 minute footprint, spring clouds dawn receipt.
+A01-13~21131	A01-13	variant	A01	2	1	1	3	1	-	Trail1: same cat actually stepped from left onto damp ground; bounded 30 minute footprint, autumn clouds dusk receipt.
+A01-15	A01-15	base	A01						-	A short body rub only after actual full patrol and approach. One bounded fur mark at the door during same day.
+A01-25	A01-25	base	A01						-	On the day the same orchard tree genuinely enters Flower, Orange reaches a distinct legal adjacent tile, spends time smelling, leaves the newly opened flower intact, and stores the bounded observation.
+A01-31	A01-31	base	A01						-	Tracks exact farmer, same plot and due edge; cat watches from outside seedlings and receipt requires delivery of true new Crop by that same harvesting work. Saves only the recent observed plot and day.
+A01-31~10101	A01-31	variant	A01	1	0	1	0	1	-	Tracks exact farmer, same plot and due edge; cat watches from outside seedlings and receipt requires delivery of true new Crop by that same harvesting work. Saves only the recent observed plot and day.
+A01-37	A01-37	base	A01						-	The cat yields one actual edge, waits while same carried Stock/box leaves the contested foot, then walks back to original cell before recording. Goods remain owned.
+A01-38	A01-38	base	A01						-	The actual apron wearer leaves their own occupied door and waits only when Orange is physically near. Cat reaches a distinct adjacent foot, rubs that wearer once and retains two hours of real closer approach for that same gardener, same H01 partner passed.
 A01-49	A01-49	base	A01						-	First winter snow probe reaches adjacent snow from legal ground and leaves one actual paw mark
+A01-49~03241	A01-49	variant	A01	0	3	2	4	1	-	Targeted real producer test (not a naturally observed random replay): Real snow print geometry: candidate stand (16,25), (19,25) or (20,25) aims north. Dawn Snow winter still needs awake actor eligible before first probe of season. Existing natural examples are horizontal/day.
+A01-50	A01-50	base	A01						-	Walk to covered own entrance, stop under eaves six minutes. No interrupted-goal resumption is attributed to this single-actor original. Base only.
+A01-51	A01-51	base	A01						-	Actual wetness consumed by a work shake beside active lamp. No claimant where decorative lights are unavailable. Base only.
+A01-55	A01-55	base	A01						-	A real foreground window-tap command only while awake and within 3 tiles of the occupied home window. First ears then gaze, then resumes the original patrol goal or remaining rest, no generated input.
 A04-10	A04-10	base	A04						-	Sparrow flies continuously to Ayu's real roof and perches to chirp once per dawn
+A05-01	A05-01	base	A05						-	Real bounded ecology custody and continuous route; producer residents_wildlife_ecology; base only.
+A05-01~10101	A05-01	variant	A05	1	0	1	0	1	-	Sow1: actual same autumn acorn stored into bounded earth cache; untouched 1.1.6 old-save upgrade d530 clear daytime actual deliveries 14:30 and 14:37.
+A05-02	A05-02	base	A05						-	Real bounded ecology custody and continuous route; producer residents_wildlife_ecology; base only.
+A05-02~01101	A05-02	variant	A05	0	1	1	0	1	-	Forage1: the same cached acorn was recovered and eaten on autumn cloudy dawn d505; actual immutable cache and route.
+A05-03	A05-03	base	A05						-	Real bounded ecology custody and continuous route; producer residents_wildlife_ecology; base only.
+A07-09	A07-09	base	A07						-	Same rabbit reaches a free real side eave in rain, waits, peeks out once dry, returns on a bounded route and completes one actual foraging edge. Ordinary day-10 save reopened in flight and finished at the original foraging route.
 A08-10	A08-10	base	A08						A10	Frog leaves real shared bank before the same duck lands; companion A10 required
+A09-01	A09-01	base	A09						-	One real bank load of damp mud is carried in the existing swallow to the same eave and applied; two actual deliveries complete the reusable nest. Rain sends the same load back to its bank.
+A09-08	A09-08	base	A09						-	Same physically built two-course nest is approached and rested on in a later spring without using a new bank load; one attested re-use per year.
 A10-01	A10-01	base	A10						-	Duck takes two legal wet-shore steps after rain; paired footprints expire in bounded storage
+A11-01	A11-01	base	A11						-	Two completed hard-ground legs on the genuine courtyard crop path leave separate short-lived damp lines after rain. Interruptions do not create missed marks.
+A11-05	A11-05	base	A11						-	Same snail uses an existing protected grass shadow, seals after three game hours of real dry weather, opens on rain and rejoins its original path.
+A13-05	A13-05	base	A13						-	Same firefly lands on the actual reed in rain, waits, and flies back to its original wet-bank leg on a real summer night rain break.
+A13-10	A13-10	base	A13						-	Same firefly holds a specific live reed through daybreak and later physically resumes patrol from that remembered reed.
 A14-01	A14-01	base	A14						-	Bee physically visits two distinct flowering orchard trees; same target's next ripe batch gains one capped fruit once
+A15-01	A15-01	base	A15						-	Real bounded ecology custody and continuous route; producer residents_wildlife_ecology; base only.
+A15-02	A15-02	base	A15						-	Real bounded ecology custody and continuous route; producer residents_wildlife_ecology; base only.
 A19-09	A19-09	base	A19						-	Mouse hears a real nearby walker, pauses and follows a new safe grass route
+H01-07	H01-07	base	H01						-	Actual young tree 11 while still sapling, actual neighbor foot, three minutes of bare-hand work, persistent compressed earth ring until growth or 12 days. No yield bonus.
 H01-13	H01-13	base	H01						-	Only the two reclaimed fields require real hoeing after harvest before the next sowing
+H01-16	H01-16	base	H01						-	The real named root crop reaches recorded growth day 3 or 4. Work at the exact unflooded field exposes a shoulder sized by actual growth and watering; it stays exposed until lifting that same root. No additional produce.
 H01-17	H01-17	base	H01						-	Sorting one real harvest batch separates its legitimate seed pouch and stores both with the crop basket
+H01-19	H01-19	base	H01						-	Actual one rope picked from pantry, same actor uses it around all four corners and stows it before normal work. A partial survey shows only visited corners and never emits.
 H01-20	H01-20	base	H01						-	Paid housing frame from its real front work stand; existing whole-frame animation
 H01-20~11141	H01-20	variant	H01	1	1	1	4	1	-	Paid housing frame from its real front work stand; existing whole-frame animation
 H01-20~12041	H01-20	variant	H01	1	2	0	4	1	-	Paid housing frame from its real front work stand; existing whole-frame animation
+H01-23	H01-23	base	H01						-	One existing paid timber input and held hammer, in four persisted chunks of the same base shift. Only stage 1 actual commissioning emits. The existing planter shares modern geometry and does not track four independent items in stock.
+H01-23~10001	H01-23	variant	H01	1	0	0	0	1	-	One existing paid timber input and held hammer, in four persisted chunks of the same base shift. Only stage 1 actual commissioning emits. The existing planter shares modern geometry and does not track four independent items in stock.
+H01-23~20221	H01-23	variant	H01	2	0	2	2	1	-	One existing paid timber input and held hammer, in four persisted chunks of the same base shift. Only stage 1 actual commissioning emits. The existing planter shares modern geometry and does not track four independent items in stock.
 H01-27	H01-27	base	H01						-	Actual dirty borrowed hoe brushed before returning; hoe adapts original spade
 H01-29	H01-29	base	H01						-	A borrowed rod reaches a real pond and casting starts
 H01-30	H01-30	base	H01						-	Caught fish deposited or unsuccessful rod personally returned
 H01-33	H01-33	base	H01						-	Two dry summer periods trigger one paid water bucket in three timed pours; spent water cannot be refunded
 H01-34	H01-34	base	H01						-	Household performs three on-site drainage phases before removing the actual plot flood flag
+H01-34~00001	H01-34	variant	H01	0	0	0	0	1	-	Targeted real producer test (not a naturally observed random replay): Real crop flood cleared, no requirement ongoing rain at commit. For example spring d12 06:00 Clear followed 03–06 Rain. Prior genuine flood must remain.
 H01-37	H01-37	base	H01						-	One owned meal delivered into actual cat bowl from its actual front stand
 H01-37~13241	H01-37	variant	H01	1	3	2	4	1	-	One owned meal delivered into actual cat bowl from its actual front stand
 H01-38	H01-38	base	H01						-	Actual dirty bowl cleaned and refilled from the real left-hand work stand
+H01-39	H01-39	base	H01						-	Same bounded mat carried, hung, physically retrieved dry; if rained on again it really stays damp. Does not demand extra material. Base only.
+H01-40	H01-40	base	H01						-	Single existing rug reverses its healthy side and loses old creases only when cat leaves. No doubled mat.
 H01-48	H01-48	base	H01						-	Household recipient walks to the booked handover stand and receives the same original letter from the courier; custody moves only on real arrival
+H01-49	H01-49	base	H01						-	Existing gardener clothes (hat/overalls) are physically donned before first completed gardening job; no claim separately simulated muddy pants.
+H01-50	H01-50	base	H01						-	The same healthy worker physically dons their own wardrobe apron before actual daytime Cook, paid ingredients become the original number of meals, and the accessory returns to the same wardrobe. The installed shared kitchen is used.
 H01-52	H01-52	base	H01						-	Indoor change to the existing raincoat followed by actual outdoor field work during that wet spell
 H01-53	H01-53	base	H01						-	Healthy actor changes to existing Home clothes indoors then consumes real water while resting on own porch in a cool dry evening
+H01-54	H01-54	base	H01						-	Moves own raincoat to one persisted hook, subsequent coat pickup removes it. Own face/clothing visual reuses already authored assets.
+H01-55	H01-55	base	H01						-	At the real first apple blossom arrival, Xiaohe visits the same still living tree, then true courtyard table writes a fixed apple-flower note and its glyph. Day/identity validated, no repeats per species.
+H01-56	H01-56	base	H01						-	Attach the latest exact scheduled earliest work time to the board only if the carried estimate still belongs to that same project. Single pinned notice; removes from view once stale. Existing reusable board rather than inventing wood stock.
+H01-56~10021	H01-56	variant	H01	1	0	0	2	1	-	Attach the latest exact scheduled earliest work time to the board only if the carried estimate still belongs to that same project. Single pinned notice; removes from view once stale. Existing reusable board rather than inventing wood stock.
+H01-57	H01-57	base	H01						-	Actual processed produce only counts after successful stow, pending tally goes to one capped seasonal notebook slot. Modern table stands in for old chalkboard.
+H01-57~20201	H01-57	variant	H01	2	0	2	0	1	-	Actual processed produce only counts after successful stow, pending tally goes to one capped seasonal notebook slot. Modern table stands in for old chalkboard.
+H01-57~21011	H01-57	variant	H01	2	1	0	1	1	-	Actual processed produce only counts after successful stow, pending tally goes to one capped seasonal notebook slot. Modern table stands in for old chalkboard.
+H01-58	H01-58	base	H01						-	One pending flood report must match actual drainage and original plot; strong rain re-flooding supersedes it. Modern table stands in for old board.
 H01-60	H01-60	base	H01						-	Real night journey to actor's own residence followed by actual indoor sleep; once per night
+H02-01	H02-01	base	H02						-	开口看分层并回填。测量控制下一实际准备，黏土现已观察真实翻松
+H02-01~10051	H02-01	variant	H02	1	0	0	5	1	-	Survey1: real soil profile stored after digging and backfilling the same plot; spring clear day right of target, native d21844 16:56.
+H02-08	H02-08	base	H02						-	同一真实果树本秋落叶耗尽形成根部覆盖，保持至来春芽，真实减轻缺水健康损失
+H02-08~00121	H02-08	variant	H02	0	0	1	2	1	-	同一真实果树本秋落叶耗尽形成根部覆盖，保持至来春芽，真实减轻缺水健康损失
+H02-08~01121	H02-08	variant	H02	0	1	1	2	1	-	同一真实果树本秋落叶耗尽形成根部覆盖，保持至来春芽，真实减轻缺水健康损失
+H02-08~10121	H02-08	variant	H02	1	0	1	2	1	-	同一真实果树本秋落叶耗尽形成根部覆盖，保持至来春芽，真实减轻缺水健康损失
 H03-02	H03-02	base	H03						-	Real wood taken to the carpenter saw bench and cut into a bounded owned repair piece, then carried to the damaged grain rack; adapts old construction-sized boards
+H06-01	H06-01	base	H06						-	陶盘实际被同一份苏灶私柜Food接入，猫之后闻并真吃；满碗原食送回
+H06-01~10041	H06-01	variant	H06	1	0	0	4	1	-	Food1: source-paid actual same-day meal placed by cook at cat bowl (15,20), spring clear day; native d1819 17:28.
+H06-01~11041	H06-01	variant	H06	1	1	0	4	1	-	Food1: same paid portion placed at actual cat bowl; spring cloudy day, native d10877 17:32.
+H06-03	H06-03	base	H06						-	真实预约来客改走到檐下，消费一份自有熟食，同一空盘实回厨房；中止食物与盘均回源
+H06-03~12031	H06-03	variant	H06	1	2	0	3	1	-	Food1: same owned snack handed to actual guest under rain canopy; (89,44) left of (90,44), native d1819 14:56.
 H06-05	H06-05	base	H06						-	Cooking actual crops creates bounded scraps carried to the bin and poured through timed work; compost must mature before field use
 H06-07	H06-07	base	H06						-	Chef carries one owned food portion to the same arrived guest appointment, hands over and observes eating; cancellation returns original portion
+H06-07~10251	H06-07	variant	H06	1	0	2	5	1	-	Food1: real basket meal consumed by visiting party, winter clear day right of target, native d1778 13:12.
+H06-07~11151	H06-07	variant	H06	1	1	1	5	1	-	Food1: same funded guest basket actually eaten; autumn cloudy daytime right of target, native resident-modes-guest receipt.
+H06-08	H06-08	base	H06						-	Same paid guest meal rests on the finite real saucer above actual muddy ground; after guest eats the same empty saucer is retrieved and returned to original kitchen.
 H06-09	H06-09	base	H06						-	Two bounded menu entries reflect real counter stock and reservations
+H06-09~11241	H06-09	variant	H06	1	1	2	4	1	-	Survey1: actual offered menu records current food inventory at same counter (82,53); native d22036 13:39 winter clouds.
+H06-09~12141	H06-09	variant	H06	1	2	1	4	1	-	Survey1: actual offered menu records current food inventory at same counter (82,53); native d44199 13:18 autumn rain.
 H07-01	H07-01	base	H07						-	Collect the same owned outgoing letter from its physical source
+H07-04	H07-04	base	H07						-	同一实体油纸阻止后续雨湿且回库/交付拆除
 H07-05	H07-05	base	H07						-	One arrival receipt for the same delivered letter
 H07-06	H07-06	base	H07						-	Expired appointment letter physically returned to its original owner
+H08-02	H08-02	base	H08						-	从真实家庭余量扣一木板、实际搬回并六分维修；同一桶不再漏，存量不多加
+H08-03	H08-03	base	H08						-	六世界分钟调准同一分管、真降雨才入水有限6，择干田带一实桶
 H08-04	H08-04	base	H08						-	Irrigator takes their trench tool from home and works six game minutes at a genuinely flooded field; successful drainage only after work completes
 H09-01	H09-01	base	H09						-	Real orchard blossom painted onto a reusable owned board; adapts the old flower bed
+H09-03	H09-03	base	H09						-	一季一张真样条，后续一次街景数据必须来自同一palette
 H09-06	H09-06	base	H09						-	Actual pond and existing home reflection painted at their safe shore
+H09-06~11021	H09-06	variant	H09	1	1	0	2	1	-	Art1: same actual painting of installed house at pond, full autonomous board custody; legal level2 spring cloudy d4 09:38 targeted producer test, not natural new-game claim.
+H09-07	H09-07	base	H09						-	拿取并携带同一整叶到真桌，拓成这一轮唯一卡；遇雨/超时物件走回原果树再归家
 H09-10	H09-10	base	H09						-	Painted board physically carried home and replaces one of three display boards
 H09-10~10041	H09-10	variant	H09	1	0	0	4	1	-	Painted board physically carried home and replaces one of three display boards
 H10-01	H10-01	base	H10						-	Count actual packed seed stock at the open counter
 H10-02	H10-02	base	H10						-	Actual crop-for-seed exchange; one bag means the real traded batch
 H10-02~10101	H10-02	variant	H10	1	0	1	0	1	-	Actual crop-for-seed exchange; one bag means the real traded batch
+H10-04	H10-04	base	H10						-	同一3粒种留独立保管，有限三只封套，真到家四分钟换封，下次出摊受保护，正常卖出才交货买家
 H10-07	H10-07	base	H10						-	Last actual seed batch reserved to the same booked buyer and trip; fulfillment or cancellation releases the bounded reservation
 H10-10	H10-10	base	H10						-	Remaining seed goods carried home and stale reservations released
 S01	S01	base	H01						-	Two protagonists meet on opposing real routes, step aside legally, preserve cargo and tasks, and both reach original goals before recording
 S02	S02	base	H01						-	Return to the one remembered successful rest spot during discretionary time, then release it
+S02~10141	S02	variant	H01	1	0	1	4	1	-	Rest1: actual autumn clear daytime rest at (25,17); same resting place and restoration retained.
+S02~11041	S02	variant	H01	1	1	0	4	1	-	Targeted real producer test (not a naturally observed random replay): Same remembered spatial rest; cloudy spring 08:00–17:59 has no guard conflict. Same tile at and target.
+S02~20041	S02	variant	H01	2	0	0	4	1	-	Targeted real producer test (not a naturally observed random replay): Same remembered spatial rest; job begun before 18:00 can finish during clear spring dusk.
+S04	S04	base	A01						-	Pauses only discretionary original patrol at a completed edge, physically visits eave, then visits exact same original continuing target. Adaptation uses real onset as first precipitation step, not a separate rain-intensity model. Old Rain-at-completion contexts withheld.
+S05	S05	base	A09						-	Requires sparrow as actual lower partner. Both arrive at the same real rail approach; swallow circles aside after sparrow occupies it and reaches a distinct adjacent rail.
 S08	S08	base	H01,A01						-	Three contiguous real steps; actual shallow, wet or saturated ground gives tracks 30, 60 or 90 game minutes
 S08~02031	S08	variant	H01,A01	0	2	0	3	1	-	Three contiguous real steps; actual shallow, wet or saturated ground gives tracks 30, 60 or 90 game minutes
 S08~02043	S08	variant	H01,A01	0	2	0	4	3	-	Three contiguous real steps; actual shallow, wet or saturated ground gives tracks 30, 60 or 90 game minutes
@@ -76,9 +156,17 @@ S08~32132	S08	variant	H01,A01	3	2	1	3	2	-	Three contiguous real steps; actual sh
 S08~32141	S08	variant	H01,A01	3	2	1	4	1	-	Three contiguous real steps; actual shallow, wet or saturated ground gives tracks 30, 60 or 90 game minutes
 S08~32153	S08	variant	H01,A01	3	2	1	5	3	-	Three contiguous real steps; actual shallow, wet or saturated ground gives tracks 30, 60 or 90 game minutes
 S09	S09	base	H01						-	Real reclamation work leftovers removed from source and returned to stock
+S12	S12	base	H01,A01						-	Real pause then subsequent planner restores ordinary schedule. This is the runtime cloud-strength step; no multiple wind/light physics modes and no fabricated signal trail.
 S13	S13	base	H01						-	Briefly inspect a genuinely newly installed fixture from a legal stand, remember its version
+S13~10231	S13	variant	H01	1	0	2	3	1	-	Targeted real producer test (not a naturally observed random replay): Real installed fixture version is saved in seen_fixture. Winter Clear legal, side foot (32,9) and midpoint (33,9) toward kitchen (34,9) verified.
+S13~11041	S13	variant	H01	1	1	0	4	1	-	Targeted real producer test (not a naturally observed random replay): Real installed fixture version is saved in seen_fixture. Spring Clouds legal; front kitchen (34,11) and midpoint toward (34,9) verified.
+S13~11131	S13	variant	H01	1	1	1	3	1	-	Targeted real producer test (not a naturally observed random replay): Real installed fixture version is saved in seen_fixture. Autumn Clouds legal; left kitchen (32,9) and midpoint verified.
+S13~20041	S13	variant	H01	2	0	0	4	1	-	Targeted real producer test (not a naturally observed random replay): Real version saved, front geometry verified. Just before 18:00 dry spring starts can finish in dusk.
+S13~20131	S13	variant	H01	2	0	1	3	1	-	Targeted real producer test (not a naturally observed random replay): Real version saved, left geometry verified. Just before 18:00 dry Autumn starts can finish in dusk.
 S14	S14	base	H01						-	Arrive at empty meal source, wait, then use a genuinely available alternative
+S15	S15	base	A09						-	Real bounded ecology custody and continuous route; producer residents_wildlife_ecology; base only.
 S18	S18	base	H01						-	Repaired expanded-district public well tested by its next actual use, with bounded result memory
+S18~00001	S18	variant	H01	0	0	0	0	1	-	Targeted real producer test (not a naturally observed random replay): Real pulse testing currently consumes four well water units and creates the actual 4-water carry; place 0 accepts Expanded. 08–13 dedicated trial proposal, but ordinary public GetWater can finish 06:00–07:30.
 S18~01221	S18	variant	H01	0	1	2	2	1	-	Repaired expanded-district public well tested by its next actual use, with bounded result memory
 S18~10221	S18	variant	H01	1	0	2	2	1	-	Repaired expanded-district public well tested by its next actual use, with bounded result memory
 S18~11121	S18	variant	H01	1	1	1	2	1	-	Repaired expanded-district public well tested by its next actual use, with bounded result memory
@@ -86,3 +174,8 @@ S18~12121	S18	variant	H01	1	2	1	2	1	-	Repaired expanded-district public well tes
 S18~20121	S18	variant	H01	2	0	1	2	1	-	Repaired expanded-district public well tested by its next actual use, with bounded result memory
 S18~21121	S18	variant	H01	2	1	1	2	1	-	Repaired expanded-district public well tested by its next actual use, with bounded result memory
 S18~22021	S18	variant	H01	2	2	0	2	1	-	Repaired expanded-district public well tested by its next actual use, with bounded result memory
+S18~23201	S18	variant	H01	2	3	2	0	1	-	Targeted real producer test (not a naturally observed random replay): Same real 4-water trial. Dusk Winter Snow not barred by GetWater; place0 accepts Expanded.
+S18~30021	S18	variant	H01	3	0	0	2	1	-	Targeted real producer test (not a naturally observed random replay): Same real 4-water trial. Night begins 20:00 while sleep scheduling only after 21:00; normal public trip may also finish afterward.
+S18~31021	S18	variant	H01	3	1	0	2	1	-	Targeted real producer test (not a naturally observed random replay): Same real 4-water trial. Night begins 20:00 while sleep scheduling only after 21:00; normal public trip may also finish afterward.
+S18~31201	S18	variant	H01	3	1	2	0	1	-	Targeted real producer test (not a naturally observed random replay): Same real 4-water trial. Night begins 20:00, place0 accepts Expanded. No complete native nighttime example.
+S22	S22	base	H01,A01						-	Only real standing→fall event can create one current spatial signal. A nearby empty-handed bystander physically backs away two clear tiles, each at most once; normal destinations resume, no ambient sounds or added loot.

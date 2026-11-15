@@ -142,13 +142,13 @@ impl Habitat {
         .unwrap_or(u64::MAX)
     }
 
-    pub(super) fn phase(&self, id: usize, now: u64) -> Option<u64> {
+    pub(super) fn resume(&self, id: usize) -> Option<Resume> {
         let slot = match id {
             BEE => 0,
             SPARROW => 1,
             _ => return None,
         };
-        self.resumes[slot].map(|r| now.saturating_sub(r.at))
+        self.resumes[slot]
     }
 
     pub(super) fn valid(&self, world: &LivingWorld) -> bool {

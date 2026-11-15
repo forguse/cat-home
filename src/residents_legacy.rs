@@ -522,6 +522,49 @@ impl State {
 mod tests {
     use super::*;
 
+    #[test]
+    fn expansion_returned_seed_sleeve_carries_the_same_paid_counter_lot() {
+        let mut world = LivingWorld::new_village_wall_ms(0);
+        let now = world.world_ms();
+        let mut life = VillageLife::default();
+        let doorway = house(SEED_MERCHANT).door;
+        let stand = booth_slot(1);
+        let goods = shop(1).goods;
+        let before = life.people[SEED_MERCHANT].count(Item::Seeds);
+        let merchant = &mut life.people[SEED_MERCHANT];
+        assert!(merchant.pack_counter(1, 0));
+        assert_eq!(merchant.count(Item::Seeds), before - goods.quantity);
+        merchant.wet_returning_seed_lot();
+        assert_eq!(merchant.counter.unwrap().paper, SeedPaper::Plain);
+        merchant.counter.as_mut().unwrap().paper = SeedPaper::Offered;
+        merchant.wet_returning_seed_lot();
+        merchant.walk = Walker::new(stand, super::super::State::AtWork);
+        assert!(!life.wrap_returned_seed_lot(&mut world, now));
+        assert!(!life.people[SEED_MERCHANT].ready_to_exchange(1, false));
+        life.people[SEED_MERCHANT].walk = Walker::new(doorway, super::super::State::AtWork);
+        assert!(life.wrap_returned_seed_lot(&mut world, now));
+        assert!(life.wrap_returned_seed_lot(&mut world, now + 3 * MINUTE));
+        assert!(!life.people[SEED_MERCHANT].sealed_seed_stock);
+        let mut life: VillageLife =
+            serde_json::from_slice(&serde_json::to_vec(&life).unwrap()).unwrap();
+        assert!(life.wrap_returned_seed_lot(&mut world, now + 4 * MINUTE));
+        let merchant = &mut life.people[SEED_MERCHANT];
+        assert_eq!(merchant.seed_wraps_used, 1);
+        assert!(merchant.sealed_seed_stock && merchant.counter.is_none());
+        assert_eq!(merchant.count(Item::Seeds), before - goods.quantity);
+        assert!(merchant.pack_counter(MOBILE, 0));
+        assert_eq!(merchant.count(Item::Seeds), before - goods.quantity);
+        assert!(!merchant.sealed_seed_stock);
+        merchant.wet_returning_seed_lot();
+        assert_eq!(merchant.counter.unwrap().paper, SeedPaper::Sealed);
+        assert_eq!(merchant.counter.unwrap().cargo, goods);
+        assert!(merchant.ready_to_exchange(MOBILE, false));
+        assert_eq!(merchant.stow_counter().unwrap().cargo, goods);
+        assert!(merchant.sealed_seed_stock);
+        assert_eq!(merchant.seed_wraps_used, 1);
+        assert_eq!(merchant.count(Item::Seeds) + goods.quantity, before);
+    }
+
     fn saw(world: &LivingWorld, base: &str) -> bool {
         world
             .legacy_behaviors()
@@ -570,6 +613,7 @@ mod tests {
             outgoing: shop(1).cost,
             incoming: shop(1).goods,
             accepted: false,
+            sealed_seeds: false,
             leg: 0,
             hold: true,
             regular_meal: false,
@@ -727,6 +771,7 @@ mod tests {
             outgoing: tray.cost,
             incoming: tray.goods,
             accepted: false,
+            sealed_seeds: false,
             leg: 0,
             hold: true,
             regular_meal: false,

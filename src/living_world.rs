@@ -18,6 +18,9 @@ mod village;
 mod grain;
 #[path = "soil.rs"]
 mod soil;
+#[path = "soil_profile.rs"]
+mod soil_profile;
+pub use soil_profile::SoilProfile;
 #[path = "workshop_story.rs"]
 mod workshop_story;
 #[path = "pantry_plan.rs"]
@@ -40,6 +43,19 @@ mod footprints;
 mod legacy_yard_rules;
 #[path = "household_routines.rs"]
 mod household_routines;
+#[path = "household_detail.rs"]
+mod household_detail;
+use household_detail::Detail;
+#[path = "family_contacts.rs"]
+mod family_contacts;
+#[path = "yard_mat.rs"]
+mod yard_mat;
+#[path = "orchard_ground.rs"]
+mod orchard_ground;
+#[path = "yard_survey.rs"]
+mod yard_survey;
+use yard_mat::MatWork;
+pub use yard_mat::{MatPlacement, YardMatVisual};
 use crate::legacy_content::{BehaviorLedger, CompletedBehavior, LegacyActor, LegacyPlace};
 use footprints::Impression;
 use legacy_yard_rules::{CastResult, EmptyMealSource, FixtureVersion, QuietVisit, EMPTY_MEAL_WINDOW, NEW_FIXTURE_WINDOW};
@@ -133,6 +149,13 @@ pub enum Activity {
     Sow,
     Water,
     Harvest,
+    InspectRootShoulder,
+    SmellFirstBloom,
+    PackSaplingSoil,
+    ObserveNewAppleFlower,
+    WriteFirstFlower,
+    GreetApron,
+    HearWindowTap,
     Store,
     Cook,
     Eat,
@@ -152,6 +175,22 @@ pub enum Activity {
     CatNap,
     ProbeSnow,
     PorchBreak,
+    GroomWhiskers,
+    StretchAtDoor,
+    ShelterFromRain,
+    DryCoat,
+    NoticeLight,
+    RecordHarvest,
+    RecordRepair,
+    WatchHarvest,
+    RubDoor,
+    WatchEmptyHook,
+    YieldToCarrier,
+    SurveyHome,
+    PostNextShift,
+    MoveAwayFromNoise,
+    TendYardMat,
+    KneadMat,
     ChangeClothes,
     Explore,
     Roadwork,
@@ -190,6 +229,13 @@ impl Activity {
             Self::Sow => "播种",
             Self::Water => "浇水",
             Self::Harvest => "收获",
+            Self::InspectRootShoulder => "拨土查看真实萝卜肩",
+            Self::SmellFirstBloom => "到刚开花的果树旁闻花",
+            Self::PackSaplingSoil => "用手掌压实幼树根土",
+            Self::ObserveNewAppleFlower => "到果树旁辨认初开的苹果花",
+            Self::WriteFirstFlower => "把苹果花和花形记进手记",
+            Self::GreetApron => "沿围裙边转身蹭一下",
+            Self::HearWindowTap => "转耳听敲窗，再抬头看",
             Self::Store => "入库",
             Self::Cook => "做饭",
             Self::Eat => "吃饭",
@@ -225,6 +271,22 @@ impl Activity {
             Self::CatNap => "饭后在院里打盹",
             Self::ProbeSnow => "伸爪探一探薄雪",
             Self::PorchBreak => "穿家居外套在门廊喝水",
+            Self::GroomWhiskers => "喝水后舔净胡须",
+            Self::StretchAtDoor => "醒来在门边伸展",
+            Self::ShelterFromRain => "跑到檐下避雨",
+            Self::DryCoat => "在灯边抖干毛尖",
+            Self::NoticeLight => "停步看天光转亮",
+            Self::RecordHarvest => "在院桌记下进仓的收成",
+            Self::RecordRepair => "把受淹记录改为已修复",
+            Self::WatchHarvest => "在畦外看同一次收菜",
+            Self::RubDoor => "沿熟悉的门柱蹭一蹭",
+            Self::WatchEmptyHook => "在池岸陪伴空钩归来的人",
+            Self::YieldToCarrier => "给抱着物件的人让路",
+            Self::SurveyHome => "带放线绳测量新屋四角",
+            Self::PostNextShift => "到公告牌记下施工可续班时间",
+            Self::MoveAwayFromNoise => "听见树木倒下后退到安全脚点",
+            Self::TendYardMat => "翻晒或搬回橘子的垫子",
+            Self::KneadMat => "在垫子上踩奶",
         }
     }
 }
@@ -736,11 +798,15 @@ enum Task {
     UnpackHome,
     RackRod,
     ServeCat,
+    ServeCatFish,
     CatSmellMeal,
     CatEat,
     CatNap(TilePos),
     CatSleepInside(TilePos),
     CatProbeSnow { stand: TilePos, snow: TilePos },
+    Detail(Detail),
+    Mat(MatWork),
+    SurveyHome(yard_survey::Visit),
     CookHomeHarvest,
     EatSavedPortion,
     EatWhileDrying,
@@ -801,13 +867,16 @@ impl Task {
             Self::ProcessHarvest(_) => Activity::PackHarvest,
             Self::CareOrchard(_) => Activity::Orchard,
             Self::Drain(_) => Activity::DrainField,
-            Self::UnpackHome | Self::ServeCat => Activity::Store,
+            Self::UnpackHome | Self::ServeCat | Self::ServeCatFish => Activity::Store,
             Self::RackRod => Activity::ReturnTool,
             Self::CatSmellMeal => Activity::SmellMeal,
             Self::CatEat => Activity::Eat,
             Self::CatNap(_) => Activity::CatNap,
             Self::CatSleepInside(_) => Activity::Sleep,
             Self::CatProbeSnow { .. } => Activity::ProbeSnow,
+            Self::Detail(action) => action.activity(),
+            Self::Mat(_) => Activity::TendYardMat,
+            Self::SurveyHome(_) => Activity::SurveyHome,
             Self::Grain(work) => work.activity(),
             Self::Soil(soil::Work::ClearDrain(_) | soil::Work::TestDrain(_)) => Activity::DrainField,
             Self::Soil(_) => Activity::TendGarden,
@@ -899,12 +968,15 @@ impl Task {
             Self::External(_) => 0,
             Self::ReturnHome => 0,
             Self::UnpackHome => 5 * MINUTE,
-            Self::RackRod | Self::ServeCat => MINUTE,
+            Self::RackRod | Self::ServeCat | Self::ServeCatFish => MINUTE,
             Self::CatSmellMeal => 45_000,
             Self::CatEat => 4 * MINUTE,
             Self::CatNap(_) => 28 * MINUTE,
             Self::CatSleepInside(_) => 3 * HOUR,
             Self::CatProbeSnow { .. } => 70_000,
+            Self::Detail(action) => action.minutes() * MINUTE,
+            Self::Mat(_) => 2 * MINUTE,
+            Self::SurveyHome(_) => 3 * MINUTE,
             Self::Grain(work) => work.duration(),
             Self::Soil(_) => 8 * MINUTE,
             Self::WorkshopStory(_) => 25 * MINUTE,
@@ -939,7 +1011,7 @@ impl Task {
             Self::Improve(order) => order.phase <= 1,
             Self::BuildHome(order) => order.valid_for(village),
             Self::Explore(i) => usize::from(i) < if village { village::VILLAGE_CAT_SPOTS } else { CAT_SPOTS.len() },
-            Self::UnpackHome | Self::RackRod | Self::ServeCat | Self::CatEat | Self::CookHomeHarvest
+            Self::UnpackHome | Self::RackRod | Self::ServeCat | Self::ServeCatFish | Self::CatEat | Self::CookHomeHarvest
             | Self::EatSavedPortion | Self::CourtyardBreak | Self::EatWhileDrying | Self::GetHomeWater => village,
             Self::Grain(_) | Self::WorkshopStory(_) | Self::Preserve(_)
             | Self::Soil(soil::Work::Mix | soil::Work::Turn) => village,
@@ -972,6 +1044,9 @@ impl Task {
             Self::CatNap(at) | Self::CatSleepInside(at) | Self::PorchBreak(at) => village && at.index().is_some(),
             Self::CatProbeSnow { stand, snow } => village && stand.index().is_some()
                 && snow.index().is_some() && Cell::from(stand).distance(Cell::from(snow)) == 1,
+            Self::Detail(action) => village && action.valid(),
+            Self::Mat(_) => village,
+            Self::SurveyHome(visit) => village && visit.valid(),
             _ => true,
         }
     }
@@ -1033,6 +1108,8 @@ pub struct LivingWorld {
     land_use_custody: village::Occupancy,
     #[serde(skip)]
     social_harvest_plot: village::ReservedPlot,
+    #[serde(skip)]
+    soil_survey_plot: Option<u8>,
     #[serde(skip)]
     supply_requests: village::SupplyRequests,
     #[serde(skip)]
@@ -1099,6 +1176,7 @@ impl LivingWorld {
             external_occupied: village::Occupancy::default(),
             land_use_custody: village::Occupancy::default(),
             social_harvest_plot: village::ReservedPlot::default(),
+            soil_survey_plot: None,
             supply_requests: village::SupplyRequests::default(),
             footprints: footprints::Tracks::default(),
             legacy_behaviors: BehaviorLedger::default(),
@@ -1586,6 +1664,10 @@ impl LivingWorld {
         self.social_harvest_plot.0 = plot.filter(|&plot| self.social_eligible_harvest(plot));
     }
 
+    pub(crate) fn set_soil_survey_plot(&mut self, plot: Option<u8>) {
+        self.soil_survey_plot = plot.filter(|&plot| (29..=31).contains(&plot));
+    }
+
     /// The live market can request ordinary farm work while gathering a batch.
     /// This advisory target owns no stock and is rebuilt by the market on load.
     pub(crate) fn set_market_crop_reserve(&mut self, target: Option<u16>, autumn: bool) {
@@ -1735,6 +1817,41 @@ impl LivingWorld {
             && self.village.as_ref().is_some_and(|state| state.flooded_plots & (1 << index) != 0)
     }
 
+    fn external_watering_foot(&self, plot: u8) -> Option<TilePos> {
+        if !self.village_plot_needs_water(plot)
+            || self.actors.iter().any(|actor| actor.task.is_some_and(|task| task.uses_plot(plot)))
+        {
+            return None;
+        }
+        let at = Self::plot_work_cell(usize::from(plot));
+        (self.valid_world_cell(at) && !self.actors.iter().any(|actor| {
+            !actor.inside && (actor.cell == at || actor.route.get(actor.route_next) == Some(&at))
+        })).then_some(at.tile())
+    }
+
+    pub(crate) fn village_barrel_watering_site(&self) -> Option<(u8, TilePos)> {
+        let south = village::poi("south_grain");
+        (0..self.plots.len() as u8).filter_map(|plot| {
+            self.external_watering_foot(plot).map(|at| (plot, at))
+        }).min_by_key(|&(plot, at)| (south.distance(Cell::from(at)), plot))
+    }
+
+    /// The caller owns one carried unit of barrel water. It consumes that
+    /// unit only after this arrival has committed the real watering work.
+    pub(crate) fn village_water_from_barrel(&mut self, plot: u8, at: TilePos) -> bool {
+        if self.external_watering_foot(plot) != Some(at) { return false; }
+        self.wet_external_plot(usize::from(plot));
+        true
+    }
+
+    fn wet_external_plot(&mut self, index: usize) {
+        let supplemented = self.village.as_mut().unwrap().soil.fertilizer(index);
+        let plot = &mut self.plots[index];
+        plot.watered = true;
+        let interval = if plot.stage == PlotStage::Seed { 55 } else { 105 };
+        plot.due = self.now_ms + (interval - if supplemented { 5 } else { 0 }) * MINUTE;
+    }
+
     /// Apply an orchard or field worker's completed task. Their scheduler must
     /// verify arrival and its own reservation before committing this operation.
     pub fn village_local_work(&mut self, operation: &str, plot: Option<u8>) -> bool {
@@ -1754,12 +1871,16 @@ impl LivingWorld {
         }
         let phase = self.plots[index].stage;
         let bit = 1 << index;
+        if self.soil_survey_plot == Some(index as u8) && operation != "inspect" && operation != "drain" {
+            return false;
+        }
         if operation == "drain" {
             let state = self.village.as_mut().expect("village plots");
             let present = state.flooded_plots & bit != 0;
             state.flooded_plots &= !bit;
             if present {
                 state.soil.drained(index as u8);
+                state.family_routines.detail.repair_flood(index as u8, self.now_ms);
             }
             return present;
         }
@@ -1778,9 +1899,11 @@ impl LivingWorld {
                 }
                 true
             }
-            ("till", PlotStage::Cleared) => {
+            ("till", PlotStage::Cleared) if !self.before_sow_moisture_required(index as u8)
+                && !self.surveyed_loam_ready_to_sow(index as u8) => {
                 self.plots[index].stage = PlotStage::Tilled;
                 self.village.as_mut().expect("village plots").family_routines.rotation_due &= !bit;
+                self.finish_measured_soil_preparation(index as u8);
                 true
             }
             ("sow", PlotStage::Tilled) if self.take_stock(Item::Seeds, 1) => {
@@ -1790,15 +1913,7 @@ impl LivingWorld {
             ("water", PlotStage::Seed | PlotStage::Growing)
                 if !self.plots[index].watered && self.take_stock(Item::Water, 1) =>
             {
-                let supplemented = self.village.as_mut().unwrap().soil.fertilizer(index);
-                let plot = &mut self.plots[index];
-                plot.watered = true;
-                plot.due = self.now_ms
-                    + if phase == PlotStage::Seed {
-                        55 * MINUTE
-                    } else {
-                        105 * MINUTE
-                    } - if supplemented { 5 * MINUTE } else { 0 };
+                self.wet_external_plot(index);
                 true
             }
             ("harvest", PlotStage::Mature)
@@ -2154,6 +2269,7 @@ impl LivingWorld {
         if !self.is_village() || from.distance(to) != 1 {
             return;
         }
+        self.observe_cat_weather_edge(kind, from, to);
         if let Some((snow, impression)) = self.soft_ground(from) {
             if self.footprints.add(from.tile(), to.tile(), kind, snow, impression, self.now_ms) {
                 let parcel = if self.in_household_region(from) { LegacyPlace::Front } else { LegacyPlace::Expanded };
@@ -2182,6 +2298,11 @@ impl LivingWorld {
     }
     pub fn plots(&self) -> &[Plot] {
         &self.plots
+    }
+    pub fn root_shoulder_visual(&self) -> Option<(TilePos, u8)> {
+        let plot = &WILLOW_VILLAGE.crops[usize::from(grain::FIELD)];
+        let size = self.village.as_ref()?.grain.root_shoulder_revealed()?;
+        Some((TilePos::new(plot.rect.x, plot.rect.y), size))
     }
     pub fn trees(&self) -> &[Tree] {
         &self.trees
@@ -3510,6 +3631,7 @@ impl LivingWorld {
             self.now_ms = next;
             if entered_weather_spell && Self::wet_spell(next / (3 * HOUR)) {
                 self.footprints.erase();
+                self.observe_mat_rain();
                 self.redirect_wet_nap();
             }
             self.environment();
@@ -3754,7 +3876,10 @@ impl LivingWorld {
                         && (rain_spell + i as u64) % 5 == 0
                         && !state.soil.has_clear_outlet(i)
                     {
-                        state.flooded_plots |= 1 << i;
+                        if state.flooded_plots & (1 << i) == 0 {
+                            state.family_routines.detail.report_flood(i as u8, self.now_ms);
+                            state.flooded_plots |= 1 << i;
+                        }
                     } else if !plot.watered && state.flooded_plots & (1 << i) == 0 {
                         plot.watered = true;
                         plot.due = self.now_ms
@@ -3836,6 +3961,7 @@ impl LivingWorld {
         !actor.outside
             && actor.carried.is_none()
             && self.landscape_carried_fibre(kind) == 0
+            && !self.mat_in_hand(kind.index())
             && actor.tool.is_none()
             && actor.hunger < 72
             && actor.thirst < 78
@@ -3869,6 +3995,7 @@ impl LivingWorld {
             || actor.inside
             || actor.carried.is_some()
             || self.landscape_carried_fibre(kind) > 0
+            || self.mat_in_hand(kind.index())
             || actor.moving_box
             || actor.hunger >= 65
             || actor.thirst >= 71
@@ -4003,9 +4130,17 @@ impl LivingWorld {
         {
             state.household_rules.empty_meal_source[i] = None;
         }
+        if i < 2 && !self.actors[i].outside && let Some(task) = self.continue_house_survey(i) {
+            if !self.begin(i, task) { self.idle(i, MINUTE); }
+            return;
+        }
         let actor = &self.actors[i];
         if actor.outside {
             self.actors[i].until = self.now_ms + 5 * MINUTE;
+            return;
+        }
+        if let Some(task) = self.mat_carry_task(i) {
+            if !self.begin(i, task) { self.idle(i, MINUTE); }
             return;
         }
         let hour = self.minute_of_day() / 60;
@@ -4126,7 +4261,9 @@ impl LivingWorld {
         } else if actor.traced_wood.is_some() {
             Some(Task::WorkshopStory(workshop_story::Work::MillBeam))
         } else if actor.carried.is_some() {
-            if actor.carried == Some(Item::Water)
+            if self.cat_fish_due(i) {
+                Some(Task::ServeCatFish)
+            } else if actor.carried == Some(Item::Water)
                 && self.bowl < BOWL_CAP
                 && actor.kind != ActorKind::Orange
             {
@@ -4208,7 +4345,7 @@ impl LivingWorld {
         } else if self.mature_cat_meal_needed(i) {
             Some(Task::ServeCat)
         } else if actor.kind == ActorKind::Orange {
-            self.cat_post_meal_nap().or_else(|| self.first_snow_probe()).or_else(|| {
+            self.cat_detail().or_else(|| self.cat_post_meal_nap()).or_else(|| self.first_snow_probe()).or_else(|| {
                 let rests_midday = (11..14).contains(&hour);
                 let bad_weather = matches!(self.weather(), YardWeather::Rain | YardWeather::Snow);
                 let goal = self.cat_spot(usize::from(self.next_cat_spot));
@@ -4317,6 +4454,14 @@ impl LivingWorld {
             None
         };
         if let Some(task) = essential {
+            if task == Task::Cook
+                && !courtyard_pending
+                && !prepare_neighbour_meals
+                && let Some(apron) = self.prepare_cooking_apron(i)
+                && self.begin(i, apron)
+            {
+                return;
+            }
             if self.begin(i, self.return_before_replacing_tool(i, task)) {
                 if i < 2 && matches!(task, Task::PorchBreak(_)) && let Some(state) = &mut self.village {
                     state.family_routines.porch_ready[i] = None;
@@ -4327,9 +4472,11 @@ impl LivingWorld {
 
         if self.story.housing.next_order(self.now_ms).is_some_and(|order| self.landscape_supports_housing(order))
             && let Some(task) = self.housing_task(i)
-            && self.begin(i, self.return_before_replacing_tool(i, task))
         {
-            return;
+            let task = self.maybe_survey_home(i, task);
+            if self.begin(i, self.return_before_replacing_tool(i, task)) {
+                return;
+            }
         }
 
         if let Some(task) = self.scenic_task(i)
@@ -4337,6 +4484,15 @@ impl LivingWorld {
         {
             return;
         }
+        if let Some(notice) = self.next_shift_notice_task(i) && self.begin(i, notice) {
+            return;
+        }
+        if let Some(task) = self.queued_soil_preparation(i)
+            && self.begin(i, self.return_before_replacing_tool(i, task))
+        {
+            return;
+        }
+        if let Some(task) = self.household_contact_task(i) && self.begin(i, task) { return; }
 
         let task = match self.actors[i].kind {
             ActorKind::Orange => Task::Rest,
@@ -4380,12 +4536,19 @@ impl LivingWorld {
                 .unwrap_or(Task::Rest),
         };
         if task == Task::Rest && self.maybe_change_for_porch(i) { return; }
+        if task == Task::Rest && let Some(detail) = self.startled_task(i) && self.begin(i, detail) { return; }
+        if task == Task::Rest && let Some(detail) = self.apron_return(i) && self.begin(i, detail) { return; }
+        if task == Task::Rest && let Some(detail) = self.mat_task(i) && self.begin(i, detail) { return; }
+        if task == Task::Rest && let Some(detail) = self.file_repair_task(i) && self.begin(i, detail) { return; }
+        if task == Task::Rest && let Some(detail) = self.harvest_register_task(i) && self.begin(i, detail) { return; }
+        if task == Task::Rest && let Some(detail) = self.notice_light(i) && self.begin(i, detail) { return; }
         if task == Task::Rest && let Some(visit) = self.quiet_visit(i)
             && self.begin(i, Task::QuietVisit(visit))
         {
             self.village.as_mut().expect("village habit").household_rules.quiet_visit_day[i] = Some(self.now_ms / DAY_MS);
             return;
         }
+        let task = self.maybe_survey_home(i, task);
         let task = if task == Task::Rest && self.actors[i].tool.is_some() {
             Task::ReturnTool
         } else {
@@ -4886,6 +5049,7 @@ impl LivingWorld {
         let available = self.actors[..2].iter().all(|actor| {
             !actor.outside
                 && actor.carried.is_none()
+                && !self.mat_in_hand(actor.kind.index())
                 && (actor.hunger >= 22 || reserved && actor.hunger >= 10)
                 && (actor.stage == Stage::Idle || reserved && actor.stage == Stage::Finish
                     || (actor.stage == Stage::Work && actor.task == Some(Task::Rest)))
@@ -5171,6 +5335,7 @@ impl LivingWorld {
                     return None;
                 }
                 let id = index as u8;
+                if self.soil_survey_plot == Some(id) { return None; }
                 let first_reclamation = self.first_reclaimed_harvest_pending(index);
                 let planting_limit = planting_limit + if first_reclamation { 8u16 } else { 0 };
                 if self
@@ -5209,7 +5374,10 @@ impl LivingWorld {
                     {
                         (2, Task::Sow(id))
                     }
-                    PlotStage::Cleared if crops < planting_limit => (3, Task::Till(id)),
+                    PlotStage::Cleared if crops < planting_limit => {
+                        let task = self.surveyed_soil_first_task(id).unwrap_or(Some(Task::Till(id)))?;
+                        (3, task)
+                    }
                     PlotStage::Grass if crops < planting_limit => (4, Task::Clear(id)),
                     _ => return None,
                 };
@@ -5594,6 +5762,7 @@ impl LivingWorld {
     fn input(&self, task: Task) -> Option<(Item, u16)> {
         match task {
             Task::Eat | Task::ServeCat => Some((Item::Food, 1)),
+            Task::SurveyHome(_) => Some((Item::Rope, 1)),
             Task::Sow(_) => Some((Item::Seeds, 1)),
             Task::Water(_) | Task::FillBowl | Task::PorchBreak(_) => Some((Item::Water, 1)),
             Task::Cook if self.stock.count(Item::Fish) > 0 && self.village.as_ref().is_some_and(|state| {
@@ -5752,8 +5921,8 @@ impl LivingWorld {
             Task::Scenic(_) | Task::StowLandscapeFibre | Task::TwistLandscapeFibre
             | Task::StoreAtReclaimed | Task::QuietVisit(_) | Task::CatNap(_)
             | Task::CatSleepInside(_) | Task::CatProbeSnow { .. } | Task::CatSmellMeal
-            | Task::PorchBreak(_) => unreachable!("activity is specific to the village"),
-            Task::UnpackHome | Task::RackRod | Task::ServeCat | Task::CatEat | Task::CookHomeHarvest | Task::EatSavedPortion
+            | Task::PorchBreak(_) | Task::Detail(_) | Task::Mat(_) | Task::SurveyHome(_) => unreachable!("activity is specific to the village"),
+            Task::UnpackHome | Task::RackRod | Task::ServeCat | Task::ServeCatFish | Task::CatEat | Task::CookHomeHarvest | Task::EatSavedPortion
             | Task::EatWhileDrying | Task::CourtyardBreak | Task::Grain(_) | Task::Soil(_) | Task::WorkshopStory(_)
             | Task::Preserve(_) | Task::Renovate(_) | Task::RoadStory(_) | Task::MarketStory(_) | Task::Memory(_) => {
                 unreachable!("opening tasks only exist in the village")
@@ -5818,9 +5987,12 @@ impl LivingWorld {
             Task::Garden => village::poi("commons_garden"),
             Task::UnpackHome => self.home_door(i),
             Task::RackRod => self.building_door(4),
-            Task::ServeCat | Task::CatSmellMeal | Task::CatEat => village::poi("cat_water"),
+            Task::ServeCat | Task::ServeCatFish | Task::CatSmellMeal | Task::CatEat => village::poi("cat_water"),
             Task::CatNap(at) | Task::CatSleepInside(at) | Task::CatProbeSnow { stand: at, .. }
             | Task::PorchBreak(at) => Cell::from(at),
+            Task::Detail(action) => Cell::from(action.stand()),
+            Task::Mat(work) => Cell::from(work.stand()),
+            Task::SurveyHome(visit) => Cell::from(visit.stand),
             Task::Preserve(preserves::Work::CookBatch) => self.building_door(2),
             Task::Preserve(_) => self.building_door(3),
             Task::RoadStory(work) => match work {
@@ -5861,7 +6033,8 @@ impl LivingWorld {
                 }
             }
             Task::Grain(work) => match work {
-                grain::Work::Sow | grain::Work::Cut | grain::Work::SowRoot | grain::Work::LiftRoot => {
+                grain::Work::Sow | grain::Work::Cut | grain::Work::SowRoot
+                | grain::Work::InspectRootShoulder | grain::Work::LiftRoot => {
                     Cell::from(WILLOW_VILLAGE.crops[usize::from(grain::FIELD)].work)
                 }
                 grain::Work::CarrySheaf | grain::Work::Thresh => self.building_door(4),
@@ -5965,6 +6138,7 @@ impl LivingWorld {
         i == ActorKind::Orange.index() && matches!(task, Task::CatSleepInside(_)) || i < 2
             && (matches!(task, Task::Sleep | Task::ChangeClothes(_))
                 || self.is_village() && matches!(task, Task::Cook | Task::CookHomeHarvest | Task::UnpackHome
+                    | Task::Detail(household_detail::Detail::DressApron(_) | household_detail::Detail::HangApron(_))
                     | Task::Grain(grain::Work::Cook | grain::Work::CookRoot | grain::Work::CookFlour | grain::Work::CookTraineeFlour)
                     | Task::Preserve(preserves::Work::CookBatch))
                 || self.is_village() && i == ActorKind::Ayu.index() && matches!(task, Task::Store | Task::Drink))
@@ -5990,7 +6164,11 @@ impl LivingWorld {
             return false;
         }
         let actor = &self.actors[i];
-        if task.is_cat_routine() && i != ActorKind::Orange.index() {
+        if task.is_cat_routine() && i != ActorKind::Orange.index()
+            || task == Task::ServeCatFish && (i >= 2 || !self.has_carry(i, Item::Fish, 1))
+            || matches!(task, Task::Mat(_)) && (i >= 2 || !self.is_village())
+            || matches!(task, Task::SurveyHome(visit) if i >= 2 || !visit.valid())
+            || matches!(task, Task::Detail(action) if !action.valid() || !action.actor_accepts(i)) {
             return false;
         }
         if matches!(task, Task::Scenic(_) | Task::TwistLandscapeFibre | Task::StowLandscapeFibre)
@@ -6043,6 +6221,7 @@ impl LivingWorld {
             if !self.valid_world_cell(actor.cell) || !self.valid_world_cell(target) {
                 return false;
             }
+            self.mark_patrol_resume(i, task);
             self.actors[i].task = Some(task);
         self.request_route(i, stage, target);
         if i == ActorKind::Orange.index() && matches!(task, Task::Explore(_)) && let Some(state) = &mut self.village {
@@ -6156,7 +6335,7 @@ impl LivingWorld {
                 self.now_ms,
                 pace,
                 movement::WalkConditions {
-                    loaded: actor.external_load || actor.moving_box || actor.carried.is_some()
+                        loaded: actor.external_load || actor.moving_box || actor.carried.is_some() || self.mat_in_hand(i)
                         || self.landscape_carried_fibre(actor.kind) != 0,
                     tired: actor.stamina < 35,
                     rough_weather: matches!(self.weather(), YardWeather::Rain | YardWeather::Snow),
@@ -6166,6 +6345,7 @@ impl LivingWorld {
             OLD_WALK_WORLD_MS[i]
         };
         let fibre = self.landscape_carried_fibre(self.actors[i].kind);
+        let has_mat = self.mat_in_hand(i);
         let actor = &mut self.actors[i];
         actor.waiting_edge = false;
         actor.waited_edges = 0;
@@ -6175,7 +6355,7 @@ impl LivingWorld {
             if cell.0 != actor.cell.0 {
                 actor.facing_left = cell.0 < actor.cell.0;
             }
-            actor.pose = if actor.carried.is_some() || actor.moving_box || actor.external_load || fibre > 0 {
+            actor.pose = if actor.carried.is_some() || actor.moving_box || actor.external_load || fibre > 0 || has_mat {
                 Pose::Carry
             } else {
                 Pose::Walk
@@ -6247,6 +6427,7 @@ impl LivingWorld {
                             if let Some(side) = sidestep {
                                 if let Some(other) = swap {
                                     self.remember_pass(i, other, side);
+                                    self.remember_cat_yield(i, other, side);
                                 }
                                 let passing = swap.filter(|&other| self.waits_at_other_goal(i, other))
                                     .map(|other| Passing {
@@ -6288,6 +6469,20 @@ impl LivingWorld {
                     self.actors[i].cell = cell;
                     self.actors[i].route_next += 1;
                     self.observe_pass_step(i, prior.tile(), cell.tile());
+                    self.see_cat_yield_edge(i, prior.tile(), cell.tile());
+                    if self.divert_patrol_to_eave(i, task) { return; }
+                    if kind == ActorKind::Orange && let Some(tap) = self.cat_window_tap_task(Some(task))
+                        && self.begin(i, tap) { return; }
+                    if kind == ActorKind::Orange && matches!(task, Task::Explore(_))
+                        && let Some(greet) = self.cat_apron_greeting_task() && self.begin(i, greet)
+                    {
+                        return;
+                    }
+                    if kind == ActorKind::Orange && matches!(task, Task::Explore(_))
+                        && let Some(retreat) = self.startled_task(i) && self.begin(i, retreat)
+                    {
+                        return;
+                    }
                 }
                 if self.actors[i].route_next < self.actors[i].route.len() {
                     self.next_edge(i);
@@ -6513,6 +6708,13 @@ impl LivingWorld {
                     Task::Explore(_) => Pose::Idle,
                     Task::Sleep | Task::CatNap(_) | Task::CatSleepInside(_) => Pose::Sleep,
                     Task::CatSmellMeal => Pose::Idle,
+                    Task::Detail(Detail::Shelter(_)) => Pose::Rest,
+                    Task::Detail(Detail::WaitUnderEave(_)) => Pose::Rest,
+                    Task::Detail(Detail::WatchHarvest { .. }) => Pose::Rest,
+                    Task::Detail(Detail::WatchEmptyHook { .. } | Detail::WaitAtRoadside(_)) => Pose::Rest,
+                    Task::Detail(Detail::NoticeLight { .. }) => Pose::Idle,
+                    Task::Detail(Detail::Startled { .. }) => Pose::Idle,
+                    Task::Detail(_) => Pose::Work,
                     Task::CatProbeSnow { snow, .. } => {
                         let actor = &mut self.actors[i];
                         if actor.cell.0 != snow.x { actor.facing_left = snow.x < actor.cell.0; }
@@ -6524,8 +6726,34 @@ impl LivingWorld {
                 };
                 self.actors[i].inside = self.work_is_indoors(i, task);
                 let mut duration = self.work_duration(i, task);
+                if let Task::Detail(Detail::WatchHarvest { farmer, plot, ends, .. }) = task {
+                    let Some(left) = self.begin_watch_harvest(farmer, plot, ends) else {
+                        self.idle(i, MINUTE);
+                        return;
+                    };
+                    duration = left;
+                }
+                if let Task::Detail(Detail::WatchEmptyHook { stand, fisher, ends }) = task {
+                    let Some(left) = self.begin_empty_hook_watch(fisher, ends, stand) else {
+                        self.idle(i, MINUTE);
+                        return;
+                    };
+                    duration = left;
+                }
                 if let Task::Water(plot) = task && self.start_dry_watering(i, plot) {
                     duration = 2 * MINUTE;
+                }
+                if let Task::Improve(order) = task && i < 2 && self.is_village()
+                    && order.phase == 1 && order.fixture == Fixture::GardenPlanter
+                    && self.actors[i].tool == Some(Tool::Hammer)
+                {
+                    duration /= 4;
+                    self.village.as_mut().unwrap().family_routines.detail.planter_joints[i] = Some((0, duration));
+                }
+                if matches!(task, Task::CatNap(at) if at == village::poi("cat_rest").tile()) && self.cat_mat_ready() {
+                    self.actors[i].activity = Activity::KneadMat;
+                    self.stage(i, Stage::Work, Pose::Work, 2 * MINUTE);
+                    return;
                 }
                 if task == Task::ReturnTool && i < 2
                     && self.village.as_ref().is_some_and(|state| state.household_rules.muddy_hoe[i])
@@ -6553,13 +6781,61 @@ impl LivingWorld {
             Stage::Meet => (),
             Stage::Work => {
                 if let Task::Water(plot) = task && self.advance_dry_watering(i, plot) { return; }
+                if i < 2 && let Some(state) = &mut self.village
+                    && let Some((parts, section)) = &mut state.family_routines.detail.planter_joints[i] && *parts < 3
+                {
+                    *parts += 1;
+                    let section = *section;
+                    self.stage(i, Stage::Work, Pose::Work, section);
+                    return;
+                }
+                if matches!(task, Task::CatNap(_)) && self.actors[i].activity == Activity::KneadMat {
+                    if self.redirect_wet_nap() { return; }
+                    if self.knead_mat(i) {
+                        self.actors[i].activity = Activity::CatNap;
+                        self.stage(i, Stage::Work, Pose::Sleep, task.duration());
+                        return;
+                    }
+                }
+                let awoke = matches!(task, Task::CatSleepInside(_))
+                    && (6..10).contains(&(self.minute_of_day() / 60))
+                    && self.now_ms.saturating_sub(self.actors[i].since) >= 3 * HOUR;
+                if awoke && let Some(state) = &mut self.village
+                {
+                    state.family_routines.detail.cat_awoke_at = Some(self.now_ms);
+                }
                 self.commit(i, task);
+                if let Task::Detail(Detail::Contact(work)) = task && self.resume_after_window_tap(i, work) {
+                    return;
+                }
+                if i < 2 && let Some(state) = &mut self.village {
+                    state.family_routines.detail.planter_joints[i] = None;
+                }
+                // A stretch at the door is the last part of waking up. It
+                // should not compete with a later discretionary patrol, and
+                // severe hunger or thirst still goes straight to normal care.
+                if awoke && self.actors[i].hunger < 82 && self.actors[i].thirst < 78
+                    && self.weather() != YardWeather::Rain
+                    && self.actors[i].cell == self.home_door(0)
+                {
+                    self.actors[i].inside = false;
+                    if self.begin(i, Task::Detail(Detail::Stretch(self.home_door(0).tile()))) { return; }
+                }
                 if i < 2 && matches!(task, Task::Water(_)) && let Some(state) = &mut self.village {
                     state.family_routines.dry_water[i] = None;
                 }
-                let recovery = if task == Task::Fish { MINUTE } else { 20_000 };
-                self.stage(i, Stage::Finish, Pose::Idle, recovery);
+                let companion = task == Task::Fish && self.leave_time_for_empty_hook(i);
+                let greeting = matches!(task, Task::Detail(Detail::DressApron(_))) && self.offer_apron_greeting(i);
+                let recovery = if greeting { family_contacts::APRON_GREETING_TIME }
+                    else if companion { 4 * MINUTE } else if task == Task::Fish { MINUTE } else { 20_000 };
+                self.stage(i, Stage::Finish, if companion { Pose::Rest } else { Pose::Idle }, recovery);
                 self.actors[i].inside = false;
+                if greeting {
+                    let cat = ActorKind::Orange.index();
+                    if self.actors[cat].stage != Stage::WalkToSite && let Some(greet) = self.cat_apron_greeting_task() {
+                        self.begin(cat, greet);
+                    }
+                }
             }
             Stage::Finish => self.idle(i, MINUTE),
             Stage::Idle => (),
@@ -6701,6 +6977,7 @@ impl LivingWorld {
             }
             if self.actors[i].carried == Some(Item::Crops) {
                 state.family_routines.split_seed_pouch[i] = false;
+                state.family_routines.detail.processed_harvest[i] = false;
             }
         }
         self.actors[i].carried = None;
@@ -6766,6 +7043,12 @@ impl LivingWorld {
             return;
         }
         if work.kind != WorkKind::Gather {
+            let object = &WILLOW_VILLAGE.scenic[index];
+            if work.kind == WorkKind::Cut && object.kind == crate::map_data::ScenicKind::Tree
+                && self.scenic_resource(index).is_some_and(|view| view.stage == ScenicStage::Cut)
+            {
+                self.note_timber_impact(i, object.tile);
+            }
             self.muddy_hoe_after_work(i, false);
             return;
         }
@@ -6908,6 +7191,7 @@ impl LivingWorld {
                         self.drinks = self.drinks.saturating_add(1);
                         if let Some(state) = &mut self.village {
                             state.cat_bowl_dirty = true;
+                            state.family_routines.detail.cat_water_at = Some(self.now_ms);
                         }
                     } else if let Some(state) = &mut self.village {
                         state.opening.consumed_break_water(i, self.now_ms);
@@ -6988,6 +7272,7 @@ impl LivingWorld {
                     self.stock.add(item, amount);
                     if item == Item::Crops {
                         self.record_crops_at(amount, actor.cell == self.initial_home_door(0));
+                        self.note_processed_crop_storage(i, amount);
                     }
                     if seeds {
                         self.store_recovered_seed();
@@ -7050,6 +7335,7 @@ impl LivingWorld {
                         }
                     });
                     self.carry(i, Item::Food, portions - u16::from(reserved));
+                    self.finish_apron_meal(i);
                     self.note_opening_shift(i, true);
                     if i < 2 && let Some(state) = &mut self.village
                         && let Some(source) = state.household_rules.empty_meal_source[i].take()
@@ -7094,6 +7380,19 @@ impl LivingWorld {
                     return;
                 }
                 use grain::Work;
+                if work == Work::InspectRootShoulder {
+                    let plot = &WILLOW_VILLAGE.crops[usize::from(grain::FIELD)];
+                    let weather = self.weather();
+                    if i < 2 && self.actors[i].cell.tile() == plot.work
+                        && self.village.as_mut().is_some_and(|state| {
+                            state.flooded_plots & (1 << grain::FIELD) == 0
+                                && state.grain.reveal_root_shoulder(weather)
+                        })
+                    {
+                        self.record_household_completion("H01-16", i, TilePos::new(plot.rect.x, plot.rect.y), LegacyPlace::Front);
+                    }
+                    return;
+                }
                 if matches!(work, Work::MountMill | Work::DemonstrateMill | Work::ObserveMill | Work::MillWheat
                     | Work::MillIndependently | Work::CookFlour | Work::CookTraineeFlour)
                 {
@@ -7168,6 +7467,9 @@ impl LivingWorld {
                 let tree = &mut self.trees[usize::from(id)];
                 if tree.stage == TreeStage::Standing && !tree.protected {
                     tree.stage = TreeStage::Felled;
+                    if let Some(origin) = Cell::at(tree.position) {
+                        self.note_timber_impact(i, origin.tile());
+                    }
                 }
             }
             Task::TakeTimber(id) => {
@@ -7235,6 +7537,11 @@ impl LivingWorld {
                         .find(|status| status.fixture.site() == order.fixture.site())
                         .map(|status| status.fixture);
                     self.story.improvements.commit(order, self.now_ms);
+                    if order.fixture == Fixture::GardenPlanter && order.phase == 1
+                        && self.village_planter_joint_count(self.actors[i].kind) == Some(3)
+                    {
+                        self.record_household_completion("H01-23", i, self.actors[i].cell.tile(), LegacyPlace::Expanded);
+                    }
                     if order.phase == 1 && let Some(state) = &mut self.village {
                         if existing == Some(order.fixture) {
                             if order.fixture == Fixture::WellRope {
@@ -7338,6 +7645,9 @@ impl LivingWorld {
                     return;
                 }
                 self.actors[i].harvest_processing = if phase < 4 { phase + 1 } else { 0 };
+                if i < 2 && phase == 4 && let Some(state) = &mut self.village {
+                    state.family_routines.detail.processed_harvest[i] = true;
+                }
                 if i < 2 && phase == 2 && self.actors[i].seeds_in_basket
                     && let Some(state) = &mut self.village && !state.family_routines.split_seed_pouch[i]
                 {
@@ -7443,6 +7753,7 @@ impl LivingWorld {
                     self.record_household_completion("H01-37", i, village::poi("cat_water").tile(), LegacyPlace::Front);
                 }
             }
+            Task::ServeCatFish => self.commit_cat_fish(i),
             Task::CatSmellMeal => {
                 if let Some(state) = &mut self.village && state.opening.cat_food {
                     state.family_routines.cat_meal_sniffed = true;
@@ -7451,6 +7762,7 @@ impl LivingWorld {
             Task::CatEat => {
                 let state = self.village.as_mut().expect("village cat meal");
                 if state.opening.cat_food {
+                    let fish = std::mem::take(&mut state.family_routines.detail.cat_fish_plate);
                     state.opening.cat_food = false;
                     state.opening.cat_ate = true;
                     state.family_routines.cat_last_meal = Some(self.now_ms);
@@ -7458,9 +7770,15 @@ impl LivingWorld {
                     if std::mem::take(&mut state.family_routines.cat_meal_sniffed) {
                         self.record_household_completion("A01-02", i, village::poi("cat_water").tile(), LegacyPlace::Front);
                     }
+                    if fish {
+                        self.record_household_completion("A01-06", i, village::poi("cat_water").tile(), LegacyPlace::Front);
+                    }
                 }
             }
             Task::CatNap(at) => self.cat_finish_nap(i, at),
+            Task::Detail(action) => self.commit_household_detail(i, action),
+            Task::Mat(work) => self.commit_mat(i, work),
+            Task::SurveyHome(visit) => self.commit_house_survey(i, visit),
             Task::CatProbeSnow { stand, snow } => self.cat_finish_snow_probe(i, stand, snow),
             Task::PorchBreak(at) => self.finish_porch_break(i, at),
             Task::ReturnTool => {
@@ -7482,8 +7800,10 @@ impl LivingWorld {
                 self.actors[i].tool = None;
             }
             Task::ChangeClothes(outfit) => {
-                let changed = self.actors[i].outfit != outfit;
+                let before = self.actors[i].outfit;
+                let changed = before != outfit;
                 self.actors[i].outfit = outfit;
+                self.register_change_of_clothes(i, before, outfit);
                 if i < 2 && changed && outfit == Outfit::Raincoat && self.weather() == YardWeather::Rain
                     && let Some(state) = &mut self.village
                 {
@@ -7498,8 +7818,12 @@ impl LivingWorld {
             }
             Task::QuietVisit(visit) => self.commit_quiet_visit(i, visit),
             Task::Explore(spot) => {
+                self.finish_sheltered_patrol(i, spot);
                 let count = if self.is_village() { village::VILLAGE_CAT_SPOTS } else { CAT_SPOTS.len() };
                 self.next_cat_spot = (spot + 1) % count as u8;
+                if i == ActorKind::Orange.index() && spot < 6 && let Some(state) = &mut self.village {
+                    state.family_routines.detail.full_patrol |= 1 << spot;
+                }
                 if i == ActorKind::Orange.index() && (4..=5).contains(&spot)
                     && let Some(state) = &mut self.village && state.opening.completed("Q01")
                 {
@@ -7534,6 +7858,7 @@ impl LivingWorld {
             | Task::ReturnHome
             | Task::ReturnTool
             | Task::QuietVisit(_)
+            | Task::Detail(_)
             | Task::ChangeClothes(_) => 0,
             Task::Explore(_) => 14,
             _ => 5,
@@ -7549,6 +7874,7 @@ impl LivingWorld {
                 let flooded = state.flooded_plots & bit != 0;
                 if flooded {
                     state.soil.drained(id as u8);
+                    state.family_routines.detail.repair_flood(id as u8, self.now_ms);
                 }
                 state.flooded_plots &= !bit;
                 if flooded {
@@ -7590,9 +7916,17 @@ impl LivingWorld {
                 }
                 self.muddy_hoe_after_work(i, false);
                 self.finish_rain_shift(i, self.actors[i].cell.tile());
+                self.note_garden_clothes_work(i, self.actors[i].cell.tile());
             }
-            (PlotStage::Cleared, Task::Till(_)) => {
+            (PlotStage::Cleared, Task::Water(_)) if self.before_sow_moisture_required(id as u8)
+                && self.has_carry(i, Item::Water, 1) => {
+                self.drop_carry(i);
+                self.note_measured_soil_water(id as u8);
+            }
+            (PlotStage::Cleared, Task::Till(_)) if !self.before_sow_moisture_required(id as u8)
+                && !self.surveyed_loam_ready_to_sow(id as u8) => {
                 self.plots[id].stage = PlotStage::Tilled;
+                self.finish_measured_soil_preparation(id as u8);
                 self.muddy_hoe_after_work(i, false);
                 let foot = self.actors[i].cell.tile();
                 if let Some(state) = &mut self.village
@@ -7603,16 +7937,20 @@ impl LivingWorld {
                     self.record_household_completion("H01-13", i, target, LegacyPlace::Expanded);
                 }
                 self.finish_rain_shift(i, foot);
+                self.note_garden_clothes_work(i, foot);
             }
-            (PlotStage::Tilled, Task::Sow(_)) if self.has_carry(i, Item::Seeds, 1) => {
+            (PlotStage::Tilled | PlotStage::Cleared, Task::Sow(_)) if self.has_carry(i, Item::Seeds, 1)
+                && (stage == PlotStage::Tilled || self.surveyed_loam_ready_to_sow(id as u8)) => {
                 self.drop_carry(i);
                 self.plots[id].stage = PlotStage::Seed;
+                self.finish_measured_soil_preparation(id as u8);
                 if let Some(state) = &mut self.village && id < village::ORIGINAL_VILLAGE_PLOTS {
                     state.opening.sown |= 1 << id;
                 }
                 if self.season() == YardSeason::Spring {
                     self.note_seasonal_work(YardSeason::Spring);
                 }
+                self.note_garden_clothes_work(i, self.actors[i].cell.tile());
             }
             (PlotStage::Seed | PlotStage::Growing, Task::Water(_))
                 if !self.plots[id].watered && (self.has_carry(i, Item::Water, 1) || self.last_dry_dose(i, id as u8)) =>
@@ -7640,6 +7978,7 @@ impl LivingWorld {
                 let target = self.available_plot_rect(id).map_or(foot, |rect| TilePos::new(rect.x, rect.y));
                 self.finish_watering_receipt(i, id as u8, target);
                 self.finish_rain_shift(i, target);
+                self.note_garden_clothes_work(i, target);
             }
             (PlotStage::Mature, Task::Harvest(_)) if self.actors[i].carried.is_none() => {
                 let must_reform_rows = self.is_village() && self.first_reclaimed_harvest_pending(id);
@@ -7995,6 +8334,9 @@ impl LivingWorld {
                             || tree.last_care_day > self.now_ms / DAY_MS
                             || tree.phase != OrchardPhase::Ripe && tree.fruit != 0
                             || tree.pending_pollination && !matches!(tree.phase, OrchardPhase::Flower | OrchardPhase::GreenFruit)
+                            || tree.flower_opened_day.is_some_and(|day| {
+                                day > self.now_ms / DAY_MS || tree.phase != OrchardPhase::Flower
+                            })
                     })
                     || state.freight_shifts != 0 && !state.freight_material_paid
                     || state.imported_pedestrian_bridge
@@ -8081,8 +8423,13 @@ impl LivingWorld {
                         matches!(other.task, Some(Task::Scenic(other)) if work.id == other.id)
                     })
                 })
-                || (i == 2 && matches!(actor.task, Some(Task::UnpackHome | Task::RackRod | Task::ServeCat | Task::CookHomeHarvest | Task::CourtyardBreak)))
+                || (i == 2 && matches!(actor.task, Some(Task::UnpackHome | Task::RackRod | Task::ServeCat | Task::ServeCatFish | Task::CookHomeHarvest | Task::CourtyardBreak)))
                 || (i < 2 && actor.task.is_some_and(Task::is_cat_routine))
+                || matches!(actor.task, Some(Task::Detail(action)) if !action.actor_accepts(i))
+                || (i >= 2 && matches!(actor.task, Some(Task::Mat(_))))
+                || (i >= 2 && matches!(actor.task, Some(Task::SurveyHome(_))))
+                || (actor.activity == Activity::KneadMat && (i != 2 || actor.stage != Stage::Work
+                    || !matches!(actor.task, Some(Task::CatNap(_)))))
                 || (i != ActorKind::Ayu.index() && actor.task == Some(Task::EatSavedPortion))
                 || (i == 2 && actor.task == Some(Task::EatWhileDrying))
                 || (!village
@@ -8549,6 +8896,10 @@ fn update_position(actor: &mut Actor, now: u64) {
 }
 
 #[cfg(test)]
+#[path = "legacy_household_variant_tests.rs"]
+mod legacy_household_variant_tests;
+
+#[cfg(test)]
 mod tests {
     use super::*;
 
@@ -8888,6 +9239,8 @@ mod tests {
         family_fixture_time(&mut world, start);
         world.plots[0] = Plot { stage: PlotStage::Seed, watered: false, due: 0, ..world.plots[0] };
         let task = Task::Water(0);
+        let fresh_witnesses = |world: &LivingWorld| world.legacy_behaviors().recent().iter()
+            .filter(|event| event.id().starts_with("H01-33") && event.now_ms >= start).count();
         move_worker_to_site(&mut world, 0, task);
         assert!(world.stock.add(Item::Water, 1));
         let old_water = world.stock.count(Item::Water);
@@ -8906,11 +9259,11 @@ mod tests {
         assert!(world.validate());
         world.advance_world_ms(2 * MINUTE);
         assert_eq!(world.field_water_work(ActorKind::Xiaohe).unwrap().phase, 2);
-        assert_eq!(legacy_witnesses(&world, "H01-33"), 0);
+        assert_eq!(fresh_witnesses(&world), 0);
         world.advance_world_ms(2 * MINUTE);
         assert!(world.plots[0].watered);
         assert_eq!(world.stock.count(Item::Water), old_water - 1);
-        assert_eq!(legacy_witnesses(&world, "H01-33"), 1);
+        assert_eq!(fresh_witnesses(&world), 1);
         assert!(world.validate());
     }
 
@@ -8933,6 +9286,10 @@ mod tests {
             world.plots[index].stage = PlotStage::Seed;
             let water = Task::Water(index as u8);
             move_worker_to_site(&mut world, 0, water);
+            if world.stock.count(Item::Water) == 0 {
+                // Give this isolated irrigation fixture one actual input.
+                assert!(world.stock.add(Item::Water, 1));
+            }
             assert!(world.take_stock(Item::Water, 1));
             world.carry(0, Item::Water, 1);
             world.commit(0, water);

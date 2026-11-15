@@ -1,0 +1,3417 @@
+{
+  "scope": [
+    "H01-01 through H01-60",
+    "A01-01 through A01-60",
+    "S01 through S24"
+  ],
+  "author_source": "docs/legacy-cast-rule-audit.tsv; design/cast-rules.tsv; design/cast-scenes.tsv",
+  "base_count": 144,
+  "supported_count": 56,
+  "blocked_count": 88,
+  "original_scoped_variants": 1905,
+  "supported": {
+    "A01-02": {
+      "status": "retained",
+      "producer": "living_world.rs::commit(CatSmellMeal,CatEat)",
+      "actors": "A01 orange",
+      "parcel": "Front",
+      "at_target": "actual paid bowl (15,20)",
+      "periods": "real cats eat at available/funded portion, including night",
+      "weather_and_seasons": "all weather",
+      "partner": "none",
+      "full_effect_and_limits": "Genuine smell stage before one actual funded meal is consumed.",
+      "emitted_mode": "Ongoing runtime completion emits mode 1; S08 uses actual track duration 1/2/3.",
+      "variant_context_policy": "Frozen whitelist matches only roles, exact context and actual effect.",
+      "author": {
+        "title": "先嗅餐盘再开动",
+        "trigger": "正餐第一次摆好",
+        "action": "鼻子贴近食盘，停两拍再低头",
+        "effect": "开始消耗这一餐的粮",
+        "author_partner": "-",
+        "legacy_effect": "Forage"
+      },
+      "candidate_variant_count": 6,
+      "registered_legacy_ids": [
+        "A01-02",
+        "A01-02~10241",
+        "A01-02~20141"
+      ],
+      "physically_compatible_mode1_candidates": []
+    },
+    "A01-04": {
+      "status": "new",
+      "producer": "household_detail.rs::commit_household_detail(Groom) after commit Drink",
+      "actors": "A01 orange",
+      "parcel": "Front",
+      "at_target": "same funded water bowl (15,20)",
+      "periods": "awake within 6 minutes of explicitly used water",
+      "weather_and_seasons": "all reachable bowl weather; routine ends within 8 minutes",
+      "partner": "none",
+      "full_effect_and_limits": "Only a real bowl debit can schedule a one-minute whisker motion, consumes no second water. Base only; no global rest marks.",
+      "emitted_mode": "Ongoing runtime completion emits mode 1; S08 uses actual track duration 1/2/3.",
+      "variant_context_policy": "Base-only unless generated environment and extra duration/effect are independently proven.",
+      "author": {
+        "title": "舔掉胡须上的水珠",
+        "trigger": "刚在水碗喝过水",
+        "action": "仰头舔鼻尖，落下一粒水光",
+        "effect": "饮水动作正常结束",
+        "author_partner": "-",
+        "legacy_effect": "Rest"
+      },
+      "candidate_variant_count": 8,
+      "registered_legacy_ids": [
+        "A01-04"
+      ],
+      "physically_compatible_mode1_candidates": [],
+      "native_completed_receipts": [
+        "household-main-contact-final-fresh-60h\\receipt-A01-04.json",
+        "household-main-contact-final-mature-36h\\receipt-A01-04.json",
+        "household-main-contact-fresh-60h\\receipt-A01-04.json",
+        "household-main-fresh-96h\\receipt-A01-04.json",
+        "household-main-house-survey-latest-24h\\receipt-A01-04.json",
+        "household-main-mature-96h\\receipt-A01-04.json",
+        "household-main-projects-180d-96h\\receipt-A01-04.json",
+        "household-main-projects-7d-48h\\receipt-A01-04.json",
+        "household-main-projects-90d-96h\\receipt-A01-04.json",
+        "household-main-reassess-fish-24h\\receipt-A01-04.json",
+        "household-main-reassess-fresh-40h\\receipt-A01-04.json",
+        "household-main-reassess-house-96h\\receipt-A01-04.json",
+        "household-main-reassess-house-before-120h\\receipt-A01-04.json",
+        "household-main-reassess-market-96h\\receipt-A01-04.json",
+        "household-main-reassess-notice-24h\\receipt-A01-04.json",
+        "household-main-reassess-planter-96h\\receipt-A01-04.json",
+        "household-main-reassess-root-12h\\receipt-A01-04.json",
+        "household-main-shift-open-first-30h\\receipt-A01-04.json",
+        "household-main-shift-post-latest-36h\\receipt-A01-04.json",
+        "household-main-soil-used-12h\\receipt-A01-04.json",
+        "household-main-well-recovery-5h\\receipt-A01-04.json"
+      ],
+      "native_stage_samples": [
+        "household-main-contact-final-fresh-60h/cat-groom.json",
+        "household-main-contact-final-mature-36h/cat-groom.json",
+        "household-main-contact-fresh-60h/cat-groom.json",
+        "household-main-fresh-96h/cat-groom.json",
+        "household-main-house-survey-latest-24h/cat-groom.json",
+        "household-main-mature-96h/cat-groom.json",
+        "household-main-projects-180d-96h/cat-groom.json",
+        "household-main-projects-7d-48h/cat-groom.json",
+        "household-main-projects-90d-96h/cat-groom.json",
+        "household-main-reassess-fish-24h/cat-groom.json",
+        "household-main-reassess-fresh-40h/cat-groom.json",
+        "household-main-reassess-house-96h/cat-groom.json",
+        "household-main-reassess-house-before-120h/cat-groom.json",
+        "household-main-reassess-market-96h/cat-groom.json",
+        "household-main-reassess-notice-24h/cat-groom.json",
+        "household-main-reassess-planter-96h/cat-groom.json",
+        "household-main-reassess-root-12h/cat-groom.json",
+        "household-main-shift-open-first-30h/cat-groom.json",
+        "household-main-shift-post-latest-36h/cat-groom.json",
+        "household-main-soil-used-12h/cat-groom.json",
+        "household-main-well-recovery-5h/cat-groom.json",
+        "household-native-fresh-96h/cat-groom.json",
+        "household-native-mature-48h/cat-groom.json",
+        "household-native-dawn-24h/cat-groom.json"
+      ],
+      "native_stage_proof_scope": "actual normal HomeHost snapshot; a work-stage capture does not independently prove its final receipt",
+      "targeted_causal_regression": "household_detail::tests::cat_grooms_only_after_a_real_drink_and_only_once"
+    },
+    "A01-06": {
+      "status": "new",
+      "producer": "household_detail.rs::commit_cat_fish and living_world.rs::commit(CatEat)",
+      "actors": "A01 orange",
+      "parcel": "Front",
+      "at_target": "the actual cat meal plate; exact fish originally caught and carried by family",
+      "periods": "after Q21 and real fish surplus, first due delivery every 7 days",
+      "weather_and_seasons": "matching family fishing availability",
+      "partner": "none",
+      "full_effect_and_limits": "One existing fish becomes the plate meal with persistent provenance and is actually consumed once. Live hunger and full plate guarded. Original fish family had no generated variants.",
+      "emitted_mode": "Ongoing runtime completion emits mode 1; S08 uses actual track duration 1/2/3.",
+      "variant_context_policy": "Base-only unless generated environment and extra duration/effect are independently proven.",
+      "author": {
+        "title": "吃掉园丁钓来的小鱼",
+        "trigger": "这次垂钓成功并摆上鱼碟",
+        "action": "从池边嗅到鱼，低头吃完",
+        "effect": "这一份鱼从盘里消耗",
+        "author_partner": "-",
+        "legacy_effect": "Forage"
+      },
+      "candidate_variant_count": 0,
+      "registered_legacy_ids": [
+        "A01-06"
+      ],
+      "physically_compatible_mode1_candidates": [],
+      "native_completed_receipts": [
+        "household-main-contact-final-mature-36h\\receipt-A01-06.json",
+        "household-main-reassess-house-96h\\receipt-A01-06.json",
+        "household-main-reassess-house-before-120h\\receipt-A01-06.json",
+        "household-main-reassess-market-96h\\receipt-A01-06.json",
+        "household-main-reassess-planter-96h\\receipt-A01-06.json"
+      ],
+      "targeted_causal_regression": "household_detail::tests::same_pond_fish_reaches_the_real_plate_only_once_through_reload"
+    },
+    "A01-07": {
+      "status": "new",
+      "producer": "yard_mat.rs::knead_mat, living_world.rs::step",
+      "actors": "A01 orange",
+      "parcel": "Front",
+      "at_target": "real rug at cat_rest (18,22), not rail or hands",
+      "periods": "after actual start of day nap",
+      "weather_and_seasons": "ordinary dry rug",
+      "partner": "none",
+      "full_effect_and_limits": "Two minutes of actual kneading before sleep imprint lasts one hour; cat does not knead the porch. Base only.",
+      "emitted_mode": "Ongoing runtime completion emits mode 1; S08 uses actual track duration 1/2/3.",
+      "variant_context_policy": "Base-only unless generated environment and extra duration/effect are independently proven.",
+      "author": {
+        "title": "踩奶把垫子踩出凹痕",
+        "trigger": "准备在自己的垫上入睡",
+        "action": "左右交替踩垫，垫面变凹",
+        "effect": "暂时留下软垫压痕",
+        "author_partner": "-",
+        "legacy_effect": "Rest"
+      },
+      "candidate_variant_count": 8,
+      "registered_legacy_ids": [
+        "A01-07"
+      ],
+      "physically_compatible_mode1_candidates": [],
+      "native_completed_receipts": [
+        "household-main-contact-final-fresh-60h\\receipt-A01-07.json",
+        "household-main-contact-fresh-60h\\receipt-A01-07.json",
+        "household-main-fresh-96h\\receipt-A01-07.json",
+        "household-main-projects-180d-96h\\receipt-A01-07.json",
+        "household-main-projects-7d-48h\\receipt-A01-07.json",
+        "household-main-projects-90d-96h\\receipt-A01-07.json",
+        "household-main-reassess-fish-24h\\receipt-A01-07.json",
+        "household-main-reassess-fresh-40h\\receipt-A01-07.json",
+        "household-main-reassess-house-96h\\receipt-A01-07.json",
+        "household-main-reassess-house-before-120h\\receipt-A01-07.json",
+        "household-main-reassess-market-96h\\receipt-A01-07.json",
+        "household-main-reassess-notice-24h\\receipt-A01-07.json",
+        "household-main-reassess-planter-96h\\receipt-A01-07.json",
+        "household-main-reassess-root-12h\\receipt-A01-07.json",
+        "household-main-shift-open-first-30h\\receipt-A01-07.json",
+        "household-main-shift-post-latest-36h\\receipt-A01-07.json",
+        "household-main-soil-used-12h\\receipt-A01-07.json"
+      ],
+      "native_stage_samples": [
+        "household-main-contact-final-fresh-60h/cat-kneads.json",
+        "household-main-contact-fresh-60h/cat-kneads.json",
+        "household-main-fresh-96h/cat-kneads.json",
+        "household-main-projects-180d-96h/cat-kneads.json",
+        "household-main-projects-7d-48h/cat-kneads.json",
+        "household-main-projects-90d-96h/cat-kneads.json",
+        "household-main-reassess-fish-24h/cat-kneads.json",
+        "household-main-reassess-fresh-40h/cat-kneads.json",
+        "household-main-reassess-house-96h/cat-kneads.json",
+        "household-main-reassess-house-before-120h/cat-kneads.json",
+        "household-main-reassess-market-96h/cat-kneads.json",
+        "household-main-reassess-notice-24h/cat-kneads.json",
+        "household-main-reassess-planter-96h/cat-kneads.json",
+        "household-main-reassess-root-12h/cat-kneads.json",
+        "household-main-shift-open-first-30h/cat-kneads.json",
+        "household-main-shift-post-latest-36h/cat-kneads.json",
+        "household-main-soil-used-12h/cat-kneads.json",
+        "household-native-fresh-96h/cat-kneads.json"
+      ],
+      "native_stage_proof_scope": "actual normal HomeHost snapshot; a work-stage capture does not independently prove its final receipt",
+      "targeted_causal_regression": "yard_mat::tests::one_mat_survives_double_pickup_rain_and_readback"
+    },
+    "A01-08": {
+      "status": "retained",
+      "producer": "household_routines.rs::cat_finish_nap",
+      "actors": "A01 orange",
+      "parcel": "Front",
+      "at_target": "actual rug or current home's covered door",
+      "periods": "11:00–15:00, recent actual meal",
+      "weather_and_seasons": "dry outdoors; wet/wet mat goes to cover",
+      "partner": "none",
+      "full_effect_and_limits": "Physical sleep and stamina change, rain wakes cat and redirects to cover.",
+      "emitted_mode": "Ongoing runtime completion emits mode 1; S08 uses actual track duration 1/2/3.",
+      "variant_context_policy": "Frozen whitelist matches only roles, exact context and actual effect.",
+      "author": {
+        "title": "午饭后在院子里打盹",
+        "trigger": "世界时间进入午睡段",
+        "action": "走到室外软垫，蜷成一团",
+        "effect": "在院里维持午睡，雨雪时在屋檐下",
+        "author_partner": "-",
+        "legacy_effect": "Rest"
+      },
+      "candidate_variant_count": 7,
+      "registered_legacy_ids": [
+        "A01-08"
+      ],
+      "physically_compatible_mode1_candidates": []
+    },
+    "A01-09": {
+      "status": "new",
+      "producer": "household_detail.rs::commit_household_detail(Stretch)",
+      "actors": "A01 orange",
+      "parcel": "Front",
+      "at_target": "actual home's same door frame after real 3h sleep",
+      "periods": "06:00–10:00, within 8 minutes of actual wake",
+      "weather_and_seasons": "clear/cloud/snow; rain avoids damp stretch",
+      "partner": "none",
+      "full_effect_and_limits": "Real timed two-minute stretch; does not interrupt urgent needs. Base only.",
+      "emitted_mode": "Ongoing runtime completion emits mode 1; S08 uses actual track duration 1/2/3.",
+      "variant_context_policy": "Base-only unless generated environment and extra duration/effect are independently proven.",
+      "author": {
+        "title": "在门框上伸长身体",
+        "trigger": "长睡醒来",
+        "action": "前爪搭门框，身体拉长再落下",
+        "effect": "从睡眠切到清醒",
+        "author_partner": "-",
+        "legacy_effect": "Rest"
+      },
+      "candidate_variant_count": 8,
+      "registered_legacy_ids": [
+        "A01-09"
+      ],
+      "physically_compatible_mode1_candidates": [],
+      "native_completed_receipts": [
+        "household-main-contact-final-fresh-60h\\receipt-A01-09.json",
+        "household-main-contact-fresh-60h\\receipt-A01-09.json",
+        "household-main-fresh-96h\\receipt-A01-09.json",
+        "household-main-mature-96h\\receipt-A01-09.json",
+        "household-main-projects-180d-96h\\receipt-A01-09.json",
+        "household-main-projects-7d-48h\\receipt-A01-09.json",
+        "household-main-projects-90d-96h\\receipt-A01-09.json",
+        "household-main-reassess-fish-24h\\receipt-A01-09.json",
+        "household-main-reassess-fresh-40h\\receipt-A01-09.json",
+        "household-main-reassess-house-96h\\receipt-A01-09.json",
+        "household-main-reassess-house-before-120h\\receipt-A01-09.json",
+        "household-main-reassess-market-96h\\receipt-A01-09.json",
+        "household-main-reassess-notice-24h\\receipt-A01-09.json",
+        "household-main-reassess-planter-96h\\receipt-A01-09.json",
+        "household-main-reassess-root-12h\\receipt-A01-09.json",
+        "household-main-shift-open-first-30h\\receipt-A01-09.json",
+        "household-main-shift-post-latest-36h\\receipt-A01-09.json",
+        "household-main-well-recovery-5h\\receipt-A01-09.json"
+      ],
+      "native_stage_samples": [
+        "household-main-contact-final-fresh-60h/cat-stretch.json",
+        "household-main-contact-fresh-60h/cat-stretch.json",
+        "household-main-fresh-96h/cat-stretch.json",
+        "household-main-mature-96h/cat-stretch.json",
+        "household-main-projects-180d-96h/cat-stretch.json",
+        "household-main-projects-7d-48h/cat-stretch.json",
+        "household-main-projects-90d-96h/cat-stretch.json",
+        "household-main-reassess-fish-24h/cat-stretch.json",
+        "household-main-reassess-fresh-40h/cat-stretch.json",
+        "household-main-reassess-house-96h/cat-stretch.json",
+        "household-main-reassess-house-before-120h/cat-stretch.json",
+        "household-main-reassess-market-96h/cat-stretch.json",
+        "household-main-reassess-notice-24h/cat-stretch.json",
+        "household-main-reassess-planter-96h/cat-stretch.json",
+        "household-main-reassess-root-12h/cat-stretch.json",
+        "household-main-shift-open-first-30h/cat-stretch.json",
+        "household-main-shift-post-latest-36h/cat-stretch.json",
+        "household-main-well-recovery-5h/cat-stretch.json",
+        "household-native-dawn-24h/cat-stretch.json"
+      ],
+      "native_stage_proof_scope": "actual normal HomeHost snapshot; a work-stage capture does not independently prove its final receipt",
+      "targeted_causal_regression": "household_detail::tests::a_full_real_morning_sleep_schedules_the_door_stretch_except_under_urgent_needs"
+    },
+    "A01-10": {
+      "status": "retained",
+      "producer": "household_routines.rs::see_indoor_sleep",
+      "actors": "A01 orange",
+      "parcel": "Front",
+      "at_target": "actual occupied house door",
+      "periods": "21:00–06:00",
+      "weather_and_seasons": "all",
+      "partner": "none",
+      "full_effect_and_limits": "Sleep only indoors after reaching actual door, one entry receipt per night.",
+      "emitted_mode": "Ongoing runtime completion emits mode 1; S08 uses actual track duration 1/2/3.",
+      "variant_context_policy": "Frozen whitelist matches only roles, exact context and actual effect.",
+      "author": {
+        "title": "天黑回屋睡觉",
+        "trigger": "世界时间进入夜间",
+        "action": "从庭院走向门口，屋窗旁出现睡意标记",
+        "effect": "夜间睡在屋内",
+        "author_partner": "-",
+        "legacy_effect": "Rest"
+      },
+      "candidate_variant_count": 7,
+      "registered_legacy_ids": [
+        "A01-10"
+      ],
+      "physically_compatible_mode1_candidates": []
+    },
+    "A01-12": {
+      "status": "new",
+      "producer": "living_world.rs::step(Fish Finish) and household_detail.rs::commit_household_detail(WatchEmptyHook)",
+      "actors": "A01 orange",
+      "parcel": "Front",
+      "at_target": "actual fish bank and cardinal reachable matching cat shoulder",
+      "periods": "awake cat near when named real fish attempt returns empty",
+      "weather_and_seasons": "ordinary legal fishing, excludes Rain cat pause",
+      "partner": "H01 contextual witness, original base does not require registered partner",
+      "full_effect_and_limits": "Fisher briefly really waits with empty line only when cat can approach. Orange physically arrives and delays until same event ends, both restore normal decisions. No successful fish or unobserved bank counts.",
+      "emitted_mode": "Ongoing runtime completion emits mode 1; S08 uses actual track duration 1/2/3.",
+      "variant_context_policy": "Base-only unless generated environment and extra duration/effect are independently proven.",
+      "author": {
+        "title": "坐在空钩旁陪园丁",
+        "trigger": "园丁这次钓鱼没钓到",
+        "action": "靠近池边坐下，向空钩偏头",
+        "effect": "园丁的短暂失落结束后一起散开",
+        "author_partner": "-",
+        "legacy_effect": "Bond"
+      },
+      "candidate_variant_count": 0,
+      "registered_legacy_ids": [
+        "A01-12"
+      ],
+      "physically_compatible_mode1_candidates": [],
+      "native_completed_receipts": [
+        "household-main-contact-final-mature-36h\\receipt-A01-12.json",
+        "household-main-mature-96h\\receipt-A01-12.json",
+        "household-main-reassess-house-96h\\receipt-A01-12.json",
+        "household-main-reassess-house-before-120h\\receipt-A01-12.json",
+        "household-main-reassess-market-96h\\receipt-A01-12.json"
+      ],
+      "native_stage_samples": [
+        "household-main-contact-final-mature-36h/cat-watches-empty-hook.json",
+        "household-main-mature-96h/cat-watches-empty-hook.json",
+        "household-main-reassess-house-96h/cat-watches-empty-hook.json",
+        "household-main-reassess-house-before-120h/cat-watches-empty-hook.json",
+        "household-main-reassess-market-96h/cat-watches-empty-hook.json",
+        "household-native-mature-48h/cat-watches-empty-hook.json"
+      ],
+      "native_stage_proof_scope": "actual normal HomeHost snapshot; a work-stage capture does not independently prove its final receipt"
+    },
+    "A01-13": {
+      "status": "retained",
+      "producer": "living_world.rs::record_footstep",
+      "actors": "A01 orange",
+      "parcel": "Front",
+      "at_target": "completed adjacent patrol edge on actually soft ground",
+      "periods": "actual ground patrol",
+      "weather_and_seasons": "soft mud and snow contexts",
+      "partner": "none",
+      "full_effect_and_limits": "One patrolled soft step at a time; decaying paw print, no claim of territorial rights.",
+      "emitted_mode": "Ongoing runtime completion emits mode 1; S08 uses actual track duration 1/2/3.",
+      "variant_context_policy": "Frozen whitelist matches only roles, exact context and actual effect.",
+      "author": {
+        "title": "给自己的地盘留下爪印",
+        "trigger": "在柔软土边巡路",
+        "action": "后腿轻踩，出现小橘猫爪印",
+        "effect": "脚印留到下一场雨或清扫",
+        "author_partner": "-",
+        "legacy_effect": "Trail"
+      },
+      "candidate_variant_count": 7,
+      "registered_legacy_ids": [
+        "A01-13",
+        "A01-13~01051",
+        "A01-13~21131"
+      ],
+      "physically_compatible_mode1_candidates": []
+    },
+    "A01-15": {
+      "status": "new",
+      "producer": "living_world.rs::commit(Explore) and household_detail.rs::commit_household_detail(RubDoor)",
+      "actors": "A01 orange",
+      "parcel": "Front",
+      "at_target": "actual home's familiar owned door column; all six real patrol waypoints observed first",
+      "periods": "healthy and able to visit door after a complete cycle",
+      "weather_and_seasons": "clear/cloud",
+      "partner": "none",
+      "full_effect_and_limits": "A short body rub only after actual full patrol and approach. One bounded fur mark at the door during same day.",
+      "emitted_mode": "Ongoing runtime completion emits mode 1; S08 uses actual track duration 1/2/3.",
+      "variant_context_policy": "Base-only unless generated environment and extra duration/effect are independently proven.",
+      "author": {
+        "title": "用脸蹭过熟悉的门柱",
+        "trigger": "完成一圈日常巡视",
+        "action": "在固定门柱左右蹭一下",
+        "effect": "门柱留一小撮橘色绒毛",
+        "author_partner": "-",
+        "legacy_effect": "Trail"
+      },
+      "candidate_variant_count": 7,
+      "registered_legacy_ids": [
+        "A01-15"
+      ],
+      "physically_compatible_mode1_candidates": [],
+      "native_completed_receipts": [
+        "household-main-contact-final-fresh-60h\\receipt-A01-15.json",
+        "household-main-contact-final-mature-36h\\receipt-A01-15.json",
+        "household-main-contact-fresh-60h\\receipt-A01-15.json",
+        "household-main-fresh-96h\\receipt-A01-15.json",
+        "household-main-house-survey-latest-24h\\receipt-A01-15.json",
+        "household-main-mature-96h\\receipt-A01-15.json",
+        "household-main-projects-180d-96h\\receipt-A01-15.json",
+        "household-main-projects-7d-48h\\receipt-A01-15.json",
+        "household-main-projects-90d-96h\\receipt-A01-15.json",
+        "household-main-reassess-fish-24h\\receipt-A01-15.json",
+        "household-main-reassess-fresh-40h\\receipt-A01-15.json",
+        "household-main-reassess-house-96h\\receipt-A01-15.json",
+        "household-main-reassess-house-before-120h\\receipt-A01-15.json",
+        "household-main-reassess-market-96h\\receipt-A01-15.json",
+        "household-main-reassess-notice-24h\\receipt-A01-15.json",
+        "household-main-reassess-planter-96h\\receipt-A01-15.json",
+        "household-main-reassess-root-12h\\receipt-A01-15.json",
+        "household-main-shift-open-first-30h\\receipt-A01-15.json",
+        "household-main-shift-post-latest-36h\\receipt-A01-15.json",
+        "household-main-soil-used-12h\\receipt-A01-15.json",
+        "household-main-well-recovery-5h\\receipt-A01-15.json"
+      ],
+      "native_stage_samples": [
+        "household-main-contact-final-fresh-60h/cat-rubs-door.json",
+        "household-main-contact-final-mature-36h/cat-rubs-door.json",
+        "household-main-contact-fresh-60h/cat-rubs-door.json",
+        "household-main-fresh-96h/cat-rubs-door.json",
+        "household-main-house-survey-latest-24h/cat-rubs-door.json",
+        "household-main-mature-96h/cat-rubs-door.json",
+        "household-main-projects-180d-96h/cat-rubs-door.json",
+        "household-main-projects-7d-48h/cat-rubs-door.json",
+        "household-main-projects-90d-96h/cat-rubs-door.json",
+        "household-main-reassess-fish-24h/cat-rubs-door.json",
+        "household-main-reassess-fresh-40h/cat-rubs-door.json",
+        "household-main-reassess-house-96h/cat-rubs-door.json",
+        "household-main-reassess-house-before-120h/cat-rubs-door.json",
+        "household-main-reassess-market-96h/cat-rubs-door.json",
+        "household-main-reassess-notice-24h/cat-rubs-door.json",
+        "household-main-reassess-planter-96h/cat-rubs-door.json",
+        "household-main-reassess-root-12h/cat-rubs-door.json",
+        "household-main-shift-open-first-30h/cat-rubs-door.json",
+        "household-main-shift-post-latest-36h/cat-rubs-door.json",
+        "household-main-soil-used-12h/cat-rubs-door.json",
+        "household-main-well-recovery-5h/cat-rubs-door.json",
+        "household-native-fresh-96h/cat-rubs-door.json",
+        "household-native-mature-48h/cat-rubs-door.json",
+        "household-native-dawn-24h/cat-rubs-door.json"
+      ],
+      "native_stage_proof_scope": "actual normal HomeHost snapshot; a work-stage capture does not independently prove its final receipt"
+    },
+    "A01-25": {
+      "status": "new",
+      "producer": "world_layout.rs::advance_orchard and household_detail.rs::commit_household_detail(SmellBloom)",
+      "actors": "A01 Orange",
+      "parcel": "Expanded",
+      "at_target": "same genuinely new blooming orchard tree indices 8–11, cat reaches one legal cardinal neighbor",
+      "periods": "actual same calendar day as first Flower transition, propose 07:00–15:00",
+      "weather_and_seasons": "dry spring only; weather is rechecked at arrival",
+      "partner": "none",
+      "full_effect_and_limits": "Newly opened flower inspected from true reached edge. Plant remains intact, zero fruit used, one bounded latest observation per actual flowering day.",
+      "emitted_mode": "Ongoing runtime completion emits mode 1; S08 uses actual track duration 1/2/3.",
+      "variant_context_policy": "Base-only unless generated environment and extra duration/effect are independently proven.",
+      "author": {
+        "title": "闻当天新开的花",
+        "trigger": "花朵第一次进入成熟",
+        "action": "头贴近花心，花梗轻弯",
+        "effect": "花朵不脱落，留下本次观察记录",
+        "author_partner": "-",
+        "legacy_effect": "Survey"
+      },
+      "candidate_variant_count": 7,
+      "registered_legacy_ids": [
+        "A01-25"
+      ],
+      "physically_compatible_mode1_candidates": [],
+      "native_stage_samples": [
+        "household-main-contact-final-fresh-60h/cat-smells-new-bloom.json",
+        "household-main-contact-final-mature-36h/cat-smells-new-bloom.json",
+        "household-main-contact-fresh-60h/cat-smells-new-bloom.json",
+        "household-main-house-survey-latest-24h/cat-smells-new-bloom.json",
+        "household-main-reassess-fresh-40h/cat-smells-new-bloom.json",
+        "household-main-reassess-house-96h/cat-smells-new-bloom.json",
+        "household-main-reassess-house-before-120h/cat-smells-new-bloom.json",
+        "household-main-reassess-market-96h/cat-smells-new-bloom.json",
+        "household-main-reassess-notice-24h/cat-smells-new-bloom.json",
+        "household-main-reassess-planter-96h/cat-smells-new-bloom.json",
+        "household-main-reassess-root-12h/cat-smells-new-bloom.json",
+        "household-main-shift-open-first-30h/cat-smells-new-bloom.json",
+        "household-main-shift-post-latest-36h/cat-smells-new-bloom.json"
+      ],
+      "native_stage_proof_scope": "actual normal HomeHost snapshot; a work-stage capture does not independently prove its final receipt",
+      "targeted_causal_regression": "household_detail::tests::first_bloom_visit_keeps_that_flower_alive_and_is_once_per_new_day"
+    },
+    "A01-31": {
+      "status": "new",
+      "producer": "living_world.rs::step(WatchHarvest) and household_detail.rs::commit_household_detail",
+      "actors": "A01 orange",
+      "parcel": "Front",
+      "at_target": "actual neighbour tile next to farmer’s foot, outside same active crop rect",
+      "periods": "same watched harvest remains active through its commit and cat stays at stand",
+      "weather_and_seasons": "clear/cloud",
+      "partner": "H01 contextual participant; base has no required old partner code",
+      "full_effect_and_limits": "Tracks exact farmer, same plot and due edge; cat watches from outside seedlings and receipt requires delivery of true new Crop by that same harvesting work. Saves only the recent observed plot and day.",
+      "emitted_mode": "Ongoing runtime completion emits mode 1; S08 uses actual track duration 1/2/3.",
+      "variant_context_policy": "Base-only unless generated environment and extra duration/effect are independently proven.",
+      "author": {
+        "title": "在菜畦外排队看收获",
+        "trigger": "管理员开始收菜",
+        "action": "沿畦埂坐下，盯着篮子移动",
+        "effect": "不踩菜苗，停到采收完成",
+        "author_partner": "-",
+        "legacy_effect": "Survey"
+      },
+      "candidate_variant_count": 7,
+      "registered_legacy_ids": [
+        "A01-31",
+        "A01-31~10101"
+      ],
+      "physically_compatible_mode1_candidates": [
+        "A01-31~10101"
+      ],
+      "native_completed_receipts": [
+        "household-main-contact-final-mature-36h\\receipt-A01-31.json",
+        "household-main-fresh-96h\\receipt-A01-31.json",
+        "household-main-projects-90d-96h\\receipt-A01-31.json",
+        "household-main-reassess-fish-24h\\receipt-A01-31.json",
+        "household-main-reassess-fresh-40h\\receipt-A01-31.json",
+        "household-main-reassess-house-96h\\receipt-A01-31.json",
+        "household-main-reassess-house-before-120h\\receipt-A01-31.json",
+        "household-main-reassess-notice-24h\\receipt-A01-31.json",
+        "household-main-reassess-root-12h\\receipt-A01-31.json",
+        "household-main-shift-open-first-30h\\receipt-A01-31.json",
+        "household-main-shift-post-latest-36h\\receipt-A01-31.json",
+        "household-main-soil-used-12h\\receipt-A01-31.json"
+      ],
+      "native_stage_samples": [
+        "household-main-contact-final-mature-36h/cat-watches-harvest.json",
+        "household-main-fresh-96h/cat-watches-harvest.json",
+        "household-main-projects-90d-96h/cat-watches-harvest.json",
+        "household-main-reassess-fish-24h/cat-watches-harvest.json",
+        "household-main-reassess-fresh-40h/cat-watches-harvest.json",
+        "household-main-reassess-house-96h/cat-watches-harvest.json",
+        "household-main-reassess-house-before-120h/cat-watches-harvest.json",
+        "household-main-reassess-notice-24h/cat-watches-harvest.json",
+        "household-main-reassess-root-12h/cat-watches-harvest.json",
+        "household-main-shift-open-first-30h/cat-watches-harvest.json",
+        "household-main-shift-post-latest-36h/cat-watches-harvest.json",
+        "household-main-soil-used-12h/cat-watches-harvest.json",
+        "household-native-fresh-96h/cat-watches-harvest.json"
+      ],
+      "native_stage_proof_scope": "actual normal HomeHost snapshot; a work-stage capture does not independently prove its final receipt"
+    },
+    "A01-37": {
+      "status": "new",
+      "producer": "living_world.rs::step(WalkToSite) and household_detail.rs::commit_household_detail(ReturnFromYield)",
+      "actors": "A01 orange",
+      "parcel": "Front",
+      "at_target": "actual reciprocal cat/carrier encounter, legal shoulder and original return foot",
+      "periods": "during genuinely loaded movement and before 20-minute witness expiry",
+      "weather_and_seasons": "any legal actual ground",
+      "partner": "H01 real carrier as witness, old source no required pair code",
+      "full_effect_and_limits": "The cat yields one actual edge, waits while same carried Stock/box leaves the contested foot, then walks back to original cell before recording. Goods remain owned.",
+      "emitted_mode": "Ongoing runtime completion emits mode 1; S08 uses actual track duration 1/2/3.",
+      "variant_context_policy": "Base-only unless generated environment and extra duration/effect are independently proven.",
+      "author": {
+        "title": "给草帽女孩让开小路",
+        "trigger": "管理员抱东西经过",
+        "action": "站起来侧移后回原位",
+        "effect": "清空这一小段通道",
+        "author_partner": "-",
+        "legacy_effect": "Bond"
+      },
+      "candidate_variant_count": 7,
+      "registered_legacy_ids": [
+        "A01-37"
+      ],
+      "physically_compatible_mode1_candidates": [],
+      "native_completed_receipts": [
+        "household-main-contact-final-fresh-60h\\receipt-A01-37.json",
+        "household-main-contact-final-mature-36h\\receipt-A01-37.json",
+        "household-main-contact-fresh-60h\\receipt-A01-37.json",
+        "household-main-fresh-96h\\receipt-A01-37.json",
+        "household-main-house-survey-latest-24h\\receipt-A01-37.json",
+        "household-main-mature-96h\\receipt-A01-37.json",
+        "household-main-projects-180d-96h\\receipt-A01-37.json",
+        "household-main-projects-7d-48h\\receipt-A01-37.json",
+        "household-main-projects-90d-96h\\receipt-A01-37.json",
+        "household-main-reassess-fish-24h\\receipt-A01-37.json",
+        "household-main-reassess-fresh-40h\\receipt-A01-37.json",
+        "household-main-reassess-house-96h\\receipt-A01-37.json",
+        "household-main-reassess-house-before-120h\\receipt-A01-37.json",
+        "household-main-reassess-market-96h\\receipt-A01-37.json",
+        "household-main-reassess-notice-24h\\receipt-A01-37.json",
+        "household-main-reassess-planter-96h\\receipt-A01-37.json",
+        "household-main-shift-open-first-30h\\receipt-A01-37.json",
+        "household-main-shift-post-latest-36h\\receipt-A01-37.json",
+        "household-main-soil-used-12h\\receipt-A01-37.json"
+      ],
+      "native_stage_samples": [
+        "household-main-contact-final-fresh-60h/cat-yield.json",
+        "household-main-contact-final-mature-36h/cat-yield.json",
+        "household-main-contact-fresh-60h/cat-yield.json",
+        "household-main-fresh-96h/cat-yield.json",
+        "household-main-house-survey-latest-24h/cat-yield.json",
+        "household-main-mature-96h/cat-yield.json",
+        "household-main-projects-180d-96h/cat-yield.json",
+        "household-main-projects-7d-48h/cat-yield.json",
+        "household-main-projects-90d-96h/cat-yield.json",
+        "household-main-reassess-fish-24h/cat-yield.json",
+        "household-main-reassess-fresh-40h/cat-yield.json",
+        "household-main-reassess-house-96h/cat-yield.json",
+        "household-main-reassess-house-before-120h/cat-yield.json",
+        "household-main-reassess-market-96h/cat-yield.json",
+        "household-main-reassess-notice-24h/cat-yield.json",
+        "household-main-reassess-planter-96h/cat-yield.json",
+        "household-main-reassess-root-12h/cat-yield.json",
+        "household-main-shift-open-first-30h/cat-yield.json",
+        "household-main-shift-post-latest-36h/cat-yield.json",
+        "household-main-soil-used-12h/cat-yield.json",
+        "household-main-well-recovery-5h/cat-yield.json",
+        "household-native-fresh-96h/cat-yield.json",
+        "household-native-mature-48h/cat-yield.json",
+        "household-native-dawn-24h/cat-yield.json"
+      ],
+      "native_stage_proof_scope": "actual normal HomeHost snapshot; a work-stage capture does not independently prove its final receipt",
+      "targeted_causal_regression": "household_detail::tests::cat_waits_at_shoulder_for_the_loaded_pass_and_reoccupies_origin"
+    },
+    "A01-38": {
+      "status": "new",
+      "producer": "family_contacts.rs::commit_family_contact(RubApron)",
+      "actors": "A01 Orange",
+      "parcel": "Front",
+      "at_target": "physically adjacent free side of actual apron owner's door",
+      "periods": "during real apron dressing exit; bounded 14 game minutes and cat already in home courtyard",
+      "weather_and_seasons": "lawful dry daytime initial apron pickup",
+      "partner": "actual H01 wearer as witness",
+      "full_effect_and_limits": "Same orange cat approaches actual previous cook, rubs and records short fondness for that specific person. This increases eligibility by one tile for a later physically observed genuine harvest for two hours; ends the owner's wait promptly.",
+      "emitted_mode": "Ongoing runtime completion emits mode 1; S08 uses actual track duration 1/2/3.",
+      "variant_context_policy": "Base-only unless generated environment and extra duration/effect are independently proven.",
+      "author": {
+        "title": "隔着围裙蹭腿打招呼",
+        "trigger": "管理员换围裙后从屋里出来",
+        "action": "在围裙边转半圈蹭一下",
+        "effect": "短暂增加亲近状态",
+        "author_partner": "-",
+        "legacy_effect": "Bond"
+      },
+      "candidate_variant_count": 7,
+      "registered_legacy_ids": [
+        "A01-38"
+      ],
+      "physically_compatible_mode1_candidates": [],
+      "native_stage_samples": [
+        "household-main-contact-final-fresh-60h/cat-greets-owner-apron.json",
+        "household-main-contact-final-fresh-60h/apron-familiarity.json"
+      ],
+      "native_stage_proof_scope": "actual normal HomeHost snapshot; a work-stage capture does not independently prove its final receipt",
+      "targeted_causal_regression": "family_contacts::tests::apron_greeting_matches_the_same_quiet_door_and_affinity_expires"
+    },
+    "A01-49": {
+      "status": "retained",
+      "producer": "household_routines.rs::cat_finish_snow_probe",
+      "actors": "A01 orange",
+      "parcel": "Front",
+      "at_target": "actual dry legal path foot and cardinal soft snow tile",
+      "periods": "awake exploration, no urgent needs",
+      "weather_and_seasons": "Snow/winter only",
+      "partner": "none",
+      "full_effect_and_limits": "One brief probe/snow imprint per real simulated winter.",
+      "emitted_mode": "Ongoing runtime completion emits mode 1; S08 uses actual track duration 1/2/3.",
+      "variant_context_policy": "Frozen whitelist matches only roles, exact context and actual effect.",
+      "author": {
+        "title": "试一试初雪边缘",
+        "trigger": "第一次见到薄雪且猫清醒",
+        "action": "前爪沾雪马上缩回",
+        "effect": "留一个雪爪印",
+        "author_partner": "-",
+        "legacy_effect": "Trail"
+      },
+      "candidate_variant_count": 5,
+      "registered_legacy_ids": [
+        "A01-49",
+        "A01-49~03241"
+      ],
+      "physically_compatible_mode1_candidates": []
+    },
+    "A01-50": {
+      "status": "new",
+      "producer": "household_detail.rs::commit_household_detail(Shelter)",
+      "actors": "A01 orange",
+      "parcel": "Front",
+      "at_target": "real own door eaves, started at actual nearby uncovered route after getting wet",
+      "periods": "awake after outdoor rain, bounded once per block",
+      "weather_and_seasons": "Rain (nonwinter only)",
+      "partner": "none",
+      "full_effect_and_limits": "Walk to covered own entrance, stop under eaves six minutes. No interrupted-goal resumption is attributed to this single-actor original. Base only.",
+      "emitted_mode": "Ongoing runtime completion emits mode 1; S08 uses actual track duration 1/2/3.",
+      "variant_context_policy": "Base-only unless generated environment and extra duration/effect are independently proven.",
+      "author": {
+        "title": "沿屋檐躲开连续落雨",
+        "trigger": "小雨开始且猫在露天",
+        "action": "贴着屋檐一路小跑",
+        "effect": "移动到干燥路径",
+        "author_partner": "-",
+        "legacy_effect": "Shelter"
+      },
+      "candidate_variant_count": 5,
+      "registered_legacy_ids": [
+        "A01-50"
+      ],
+      "physically_compatible_mode1_candidates": [],
+      "native_completed_receipts": [
+        "household-main-contact-final-fresh-60h\\receipt-A01-50.json",
+        "household-main-contact-fresh-60h\\receipt-A01-50.json",
+        "household-main-fresh-96h\\receipt-A01-50.json",
+        "household-main-projects-180d-96h\\receipt-A01-50.json",
+        "household-main-projects-7d-48h\\receipt-A01-50.json",
+        "household-main-projects-90d-96h\\receipt-A01-50.json",
+        "household-main-reassess-fish-24h\\receipt-A01-50.json",
+        "household-main-reassess-fresh-40h\\receipt-A01-50.json",
+        "household-main-reassess-notice-24h\\receipt-A01-50.json",
+        "household-main-reassess-root-12h\\receipt-A01-50.json",
+        "household-main-shift-open-first-30h\\receipt-A01-50.json",
+        "household-main-shift-post-latest-36h\\receipt-A01-50.json",
+        "household-main-soil-used-12h\\receipt-A01-50.json"
+      ],
+      "native_stage_samples": [
+        "household-main-contact-final-fresh-60h/actual-eaves.json",
+        "household-main-contact-fresh-60h/actual-eaves.json",
+        "household-main-fresh-96h/actual-eaves.json",
+        "household-main-projects-180d-96h/actual-eaves.json",
+        "household-main-projects-7d-48h/actual-eaves.json",
+        "household-main-projects-90d-96h/actual-eaves.json",
+        "household-main-reassess-fish-24h/actual-eaves.json",
+        "household-main-reassess-fresh-40h/actual-eaves.json",
+        "household-main-reassess-notice-24h/actual-eaves.json",
+        "household-main-reassess-root-12h/actual-eaves.json",
+        "household-main-shift-open-first-30h/actual-eaves.json",
+        "household-main-shift-post-latest-36h/actual-eaves.json",
+        "household-main-soil-used-12h/actual-eaves.json",
+        "household-native-fresh-96h/actual-eaves.json",
+        "household-native-dawn-24h/actual-eaves.json"
+      ],
+      "native_stage_proof_scope": "actual normal HomeHost snapshot; a work-stage capture does not independently prove its final receipt",
+      "targeted_causal_regression": "household_detail::tests::cat_pressing_shelter_and_drying_need_real_rain_and_a_lit_authored_lamp"
+    },
+    "A01-51": {
+      "status": "new",
+      "producer": "household_detail.rs::commit_household_detail(DryCoat)",
+      "actors": "A01 orange",
+      "parcel": "Front",
+      "at_target": "legal cardinal foot of actual authored lamp (20,17)",
+      "periods": "eligible 18:00–21:00 evening planning",
+      "weather_and_seasons": "now dry after real wet coat, no receipt for expiration",
+      "partner": "none",
+      "full_effect_and_limits": "Actual wetness consumed by a work shake beside active lamp. No claimant where decorative lights are unavailable. Base only.",
+      "emitted_mode": "Ongoing runtime completion emits mode 1; S08 uses actual track duration 1/2/3.",
+      "variant_context_policy": "Base-only unless generated environment and extra duration/effect are independently proven.",
+      "author": {
+        "title": "在暖灯下抖干毛尖",
+        "trigger": "雨停且猫被打湿",
+        "action": "身子抖一下，甩出几粒小水点",
+        "effect": "湿毛状态清除",
+        "author_partner": "-",
+        "legacy_effect": "Tidy"
+      },
+      "candidate_variant_count": 5,
+      "registered_legacy_ids": [
+        "A01-51"
+      ],
+      "physically_compatible_mode1_candidates": [],
+      "native_completed_receipts": [
+        "household-main-contact-final-fresh-60h\\receipt-A01-51.json",
+        "household-main-contact-final-mature-36h\\receipt-A01-51.json",
+        "household-main-contact-fresh-60h\\receipt-A01-51.json",
+        "household-main-fresh-96h\\receipt-A01-51.json",
+        "household-main-house-survey-latest-24h\\receipt-A01-51.json",
+        "household-main-mature-96h\\receipt-A01-51.json",
+        "household-main-projects-180d-96h\\receipt-A01-51.json",
+        "household-main-projects-7d-48h\\receipt-A01-51.json",
+        "household-main-projects-90d-96h\\receipt-A01-51.json",
+        "household-main-reassess-fish-24h\\receipt-A01-51.json",
+        "household-main-reassess-fresh-40h\\receipt-A01-51.json",
+        "household-main-reassess-house-96h\\receipt-A01-51.json",
+        "household-main-reassess-house-before-120h\\receipt-A01-51.json",
+        "household-main-reassess-market-96h\\receipt-A01-51.json",
+        "household-main-reassess-notice-24h\\receipt-A01-51.json",
+        "household-main-reassess-planter-96h\\receipt-A01-51.json",
+        "household-main-reassess-root-12h\\receipt-A01-51.json",
+        "household-main-shift-open-first-30h\\receipt-A01-51.json",
+        "household-main-shift-post-latest-36h\\receipt-A01-51.json",
+        "household-main-soil-used-12h\\receipt-A01-51.json",
+        "household-main-well-recovery-5h\\receipt-A01-51.json"
+      ],
+      "native_stage_samples": [
+        "household-main-contact-final-fresh-60h/cat-dry.json",
+        "household-main-contact-final-mature-36h/cat-dry.json",
+        "household-main-contact-fresh-60h/cat-dry.json",
+        "household-main-fresh-96h/cat-dry.json",
+        "household-main-house-survey-latest-24h/cat-dry.json",
+        "household-main-mature-96h/cat-dry.json",
+        "household-main-projects-180d-96h/cat-dry.json",
+        "household-main-projects-7d-48h/cat-dry.json",
+        "household-main-projects-90d-96h/cat-dry.json",
+        "household-main-reassess-fish-24h/cat-dry.json",
+        "household-main-reassess-fresh-40h/cat-dry.json",
+        "household-main-reassess-house-96h/cat-dry.json",
+        "household-main-reassess-house-before-120h/cat-dry.json",
+        "household-main-reassess-market-96h/cat-dry.json",
+        "household-main-reassess-notice-24h/cat-dry.json",
+        "household-main-reassess-planter-96h/cat-dry.json",
+        "household-main-reassess-root-12h/cat-dry.json",
+        "household-main-shift-open-first-30h/cat-dry.json",
+        "household-main-shift-post-latest-36h/cat-dry.json",
+        "household-main-soil-used-12h/cat-dry.json",
+        "household-main-well-recovery-5h/cat-dry.json",
+        "household-native-fresh-96h/cat-dry.json",
+        "household-native-mature-48h/cat-dry.json",
+        "household-native-dawn-24h/cat-dry.json"
+      ],
+      "native_stage_proof_scope": "actual normal HomeHost snapshot; a work-stage capture does not independently prove its final receipt",
+      "targeted_causal_regression": "household_detail::tests::cat_pressing_shelter_and_drying_need_real_rain_and_a_lit_authored_lamp"
+    },
+    "A01-55": {
+      "status": "new",
+      "producer": "family_contacts.rs::request_cat_window_tap and commit_family_contact(HearTap)",
+      "actors": "A01 Orange",
+      "parcel": "Front",
+      "at_target": "cat currently within three navigated tiles of owner's actual front wall window",
+      "periods": "explicit foreground user input only; awake cat before urgent or committed work",
+      "weather_and_seasons": "all dry or wet legal settings at owner's actual facade",
+      "partner": "none",
+      "full_effect_and_limits": "Two actual time beats ears then gaze, preserves exact patrol destination or remaining optional rest, queue expires in four game minutes. Normal replay needs actual API input; no ingredient or background fabricated interaction.",
+      "emitted_mode": "Ongoing runtime completion emits mode 1; S08 uses actual track duration 1/2/3.",
+      "variant_context_policy": "Base-only unless generated environment and extra duration/effect are independently proven.",
+      "author": {
+        "title": "轻敲窗时转过耳朵",
+        "trigger": "玩家敲窗且猫清醒",
+        "action": "耳朵先转、再回头看一眼",
+        "effect": "短暂响应后续原动作",
+        "author_partner": "-",
+        "legacy_effect": "Signal"
+      },
+      "candidate_variant_count": 5,
+      "registered_legacy_ids": [
+        "A01-55"
+      ],
+      "physically_compatible_mode1_candidates": [],
+      "native_stage_samples": [
+        "household-main-contact-final-fresh-60h/window-tap-real-input.json",
+        "household-main-contact-final-fresh-60h/window-ears.json",
+        "household-main-contact-final-fresh-60h/window-turn.json",
+        "household-main-contact-final-mature-36h/window-tap-real-input.json",
+        "household-main-contact-final-mature-36h/window-ears.json",
+        "household-main-contact-final-mature-36h/window-turn.json",
+        "household-main-contact-fresh-60h/window-tap-real-input.json",
+        "household-main-contact-fresh-60h/window-ears.json",
+        "household-main-contact-fresh-60h/window-turn.json"
+      ],
+      "native_stage_proof_scope": "actual normal HomeHost snapshot; a work-stage capture does not independently prove its final receipt",
+      "targeted_causal_regression": "family_contacts::tests::real_tap_near_the_window_is_two_beats_and_resumes_the_same_patrol + the_same_pause_resumes_without_extending_the_original_rest"
+    },
+    "H01-07": {
+      "status": "new",
+      "producer": "family_contacts.rs::commit_family_contact(PackSapling)",
+      "actors": "H01 Xiaohe",
+      "parcel": "Expanded",
+      "at_target": "legal cardinal foot of actual young orchard tree 11 versus that root",
+      "periods": "07:00–17:00 while still young; three world minutes barehanded",
+      "weather_and_seasons": "clear or clouds",
+      "partner": "none",
+      "full_effect_and_limits": "A real sapling work creates the packed root ring, persisted on the same sapling until growth or 12 days. No material or yield generated.",
+      "emitted_mode": "Ongoing runtime completion emits mode 1; S08 uses actual track duration 1/2/3.",
+      "variant_context_policy": "Base-only unless generated environment and extra duration/effect are independently proven.",
+      "author": {
+        "title": "压实树苗根土",
+        "trigger": "树苗地块刚发芽",
+        "action": "用手掌拍紧树根的松土",
+        "effect": "树苗底部出现压实土圈",
+        "author_partner": "-",
+        "legacy_effect": "TendPlant"
+      },
+      "candidate_variant_count": 9,
+      "registered_legacy_ids": [
+        "H01-07"
+      ],
+      "physically_compatible_mode1_candidates": [],
+      "native_stage_samples": [
+        "household-main-contact-final-fresh-60h/actual-soft-root-soil.json",
+        "household-main-contact-final-fresh-60h/packed-young-tree-soil.json",
+        "household-main-contact-fresh-60h/actual-soft-root-soil.json",
+        "household-main-contact-fresh-60h/packed-young-tree-soil.json"
+      ],
+      "native_stage_proof_scope": "actual normal HomeHost snapshot; a work-stage capture does not independently prove its final receipt",
+      "targeted_causal_regression": "family_contacts::tests::packed_ring_requires_physical_sapling_and_stops_when_it_grows"
+    },
+    "H01-13": {
+      "status": "retained",
+      "producer": "living_world.rs::commit_plot(Till)",
+      "actors": "H01 0/1",
+      "parcel": "Expanded",
+      "at_target": "reclaimed plot (22,55) or (49,56); actual work foot versus plot origin",
+      "periods": "daylight; lawful outdoor farm",
+      "weather_and_seasons": "all available weather/soil phases",
+      "partner": "none",
+      "full_effect_and_limits": "First reclaimed harvest returns the same bed to cleared soil and real hoeing enables next sowing. Only two reclaimed fields; hoe instead of small rake.",
+      "emitted_mode": "Ongoing runtime completion emits mode 1; S08 uses actual track duration 1/2/3.",
+      "variant_context_policy": "Frozen whitelist matches only roles, exact context and actual effect.",
+      "author": {
+        "title": "把菜畦划成行",
+        "trigger": "收获后土面腾空",
+        "action": "用小耙划出细直沟",
+        "effect": "地块进入下一次轮作准备",
+        "author_partner": "-",
+        "legacy_effect": "TendPlant"
+      },
+      "candidate_variant_count": 9,
+      "registered_legacy_ids": [
+        "H01-13"
+      ],
+      "physically_compatible_mode1_candidates": []
+    },
+    "H01-16": {
+      "status": "new",
+      "producer": "grain.rs::reveal_root_shoulder and living_world.rs::commit(Grain InspectRootShoulder)",
+      "actors": "H01 0/1",
+      "parcel": "Front",
+      "at_target": "grain FIELD 8 legal outdoor work foot vs its actual bed origin",
+      "periods": "07:00–19:00, living root growth day 3/4 before actual lifting",
+      "weather_and_seasons": "dry weather only with unflooded root batch",
+      "partner": "none",
+      "full_effect_and_limits": "One timed action exposes the near-mature root profile. Size depends on actual growth and successful watering; the same reveal persists through reload and clears when the real root is lifted. No free root units.",
+      "emitted_mode": "Ongoing runtime completion emits mode 1; S08 uses actual track duration 1/2/3.",
+      "variant_context_policy": "Base-only unless generated environment and extra duration/effect are independently proven.",
+      "author": {
+        "title": "翻看萝卜肩",
+        "trigger": "根菜将成熟",
+        "action": "拨开顶部一圈土",
+        "effect": "露出根部颜色和大小",
+        "author_partner": "-",
+        "legacy_effect": "Survey"
+      },
+      "candidate_variant_count": 14,
+      "registered_legacy_ids": [
+        "H01-16"
+      ],
+      "physically_compatible_mode1_candidates": [],
+      "native_stage_samples": [
+        "household-main-reassess-root-12h/root-shoulder-newly-visible.json",
+        "household-main-shift-post-latest-36h/root-shoulder-newly-visible.json"
+      ],
+      "native_stage_proof_scope": "actual normal HomeHost snapshot; a work-stage capture does not independently prove its final receipt",
+      "targeted_causal_regression": "grain::tests::inspecting_a_living_root_reveals_size_and_clears_on_lifting"
+    },
+    "H01-17": {
+      "status": "retained",
+      "producer": "living_world.rs::commit(ProcessHarvest(2),Store)",
+      "actors": "H01 0/1",
+      "parcel": "Front",
+      "at_target": "actual household pantry or reclaimed store; same spot at tally",
+      "periods": "daylight and drying windows",
+      "weather_and_seasons": "all seasons",
+      "partner": "none",
+      "full_effect_and_limits": "A real harvest basket is sorted into food and a single seed pouch, later credited to the same household. Pouch instead of second full basket.",
+      "emitted_mode": "Ongoing runtime completion emits mode 1; S08 uses actual track duration 1/2/3.",
+      "variant_context_policy": "Frozen whitelist matches only roles, exact context and actual effect.",
+      "author": {
+        "title": "把菜分成两篮",
+        "trigger": "进入收获阶段",
+        "action": "将收获物分进食用篮和留种篮",
+        "effect": "刷新固定数量的菜篮位置",
+        "author_partner": "-",
+        "legacy_effect": "Harvest"
+      },
+      "candidate_variant_count": 11,
+      "registered_legacy_ids": [
+        "H01-17"
+      ],
+      "physically_compatible_mode1_candidates": []
+    },
+    "H01-19": {
+      "status": "new",
+      "producer": "yard_survey.rs::commit_house_survey",
+      "actors": "H01 Ayu",
+      "parcel": "Expanded",
+      "at_target": "four legal real corners around actual approved home lot, target lot origin; foundation outline persists through base work",
+      "periods": "optional current approved Clear plan before 16:00 proposal",
+      "weather_and_seasons": "clear/cloud, valid chosen geometry; canceled/paid rope stays in one hand",
+      "partner": "none",
+      "full_effect_and_limits": "Actual one rope picked from pantry, same actor uses it around all four corners and stows it before normal work. A partial survey shows only visited corners and never emits.",
+      "emitted_mode": "Ongoing runtime completion emits mode 1; S08 uses actual track duration 1/2/3.",
+      "variant_context_policy": "Base-only unless generated environment and extra duration/effect are independently proven.",
+      "author": {
+        "title": "绕着工地放线",
+        "trigger": "新工位首次露出",
+        "action": "用细绳围出四角",
+        "effect": "工地显示地基边界",
+        "author_partner": "-",
+        "legacy_effect": "Build"
+      },
+      "candidate_variant_count": 9,
+      "registered_legacy_ids": [
+        "H01-19"
+      ],
+      "physically_compatible_mode1_candidates": [],
+      "native_completed_receipts": [
+        "household-main-house-survey-latest-24h\\receipt-H01-19.json"
+      ],
+      "targeted_causal_regression": "yard_survey::tests::reusable_line_marks_four_real_corners_and_keeps_rope_custody"
+    },
+    "H01-20": {
+      "status": "retained",
+      "producer": "living_world.rs::commit(BuildHome Frame)",
+      "actors": "H01 0/1",
+      "parcel": "Front",
+      "at_target": "paid Frame work at house stand; target actual frame footprint",
+      "periods": "day, dusk while project is live",
+      "weather_and_seasons": "clear/cloud/rain only where actual project evidence allows; not Snow",
+      "partner": "none",
+      "full_effect_and_limits": "True paid housing construction advances Foundation to Frame. Whole-frame visual, no separately tracked beam shape.",
+      "emitted_mode": "Ongoing runtime completion emits mode 1; S08 uses actual track duration 1/2/3.",
+      "variant_context_policy": "Frozen whitelist matches only roles, exact context and actual effect.",
+      "author": {
+        "title": "放平第一根横梁",
+        "trigger": "施工班次且地基完成",
+        "action": "来回搬梁，卡进两根立柱",
+        "effect": "工程进入框架阶段",
+        "author_partner": "-",
+        "legacy_effect": "Build"
+      },
+      "candidate_variant_count": 9,
+      "registered_legacy_ids": [
+        "H01-20",
+        "H01-20~11141",
+        "H01-20~12041"
+      ],
+      "physically_compatible_mode1_candidates": []
+    },
+    "H01-23": {
+      "status": "new",
+      "producer": "living_world.rs::step(Improve GardenPlanter) and successful commit",
+      "actors": "H01 0/1",
+      "parcel": "Expanded",
+      "at_target": "actual public garden planter work stand and its real installed fixture",
+      "periods": "paid existing improvement stage, full original shift",
+      "weather_and_seasons": "weather allowed by original build plan",
+      "partner": "none",
+      "full_effect_and_limits": "One existing paid timber input and held hammer, in four persisted chunks of the same base shift. Only stage 1 actual commissioning emits. The existing planter shares modern geometry and does not track four independent items in stock.",
+      "emitted_mode": "Ongoing runtime completion emits mode 1; S08 uses actual track duration 1/2/3.",
+      "variant_context_policy": "Base-only unless generated environment and extra duration/effect are independently proven.",
+      "author": {
+        "title": "敲紧花槽角",
+        "trigger": "花槽框架还没完成",
+        "action": "逐角敲一次，亮出木楔",
+        "effect": "花槽从散板变为可种植",
+        "author_partner": "-",
+        "legacy_effect": "Build"
+      },
+      "candidate_variant_count": 9,
+      "registered_legacy_ids": [
+        "H01-23",
+        "H01-23~10001",
+        "H01-23~20221"
+      ],
+      "physically_compatible_mode1_candidates": [
+        "H01-23~10001",
+        "H01-23~20221"
+      ],
+      "targeted_causal_regression": "household_detail::tests::paid_garden_planter_keeps_the_original_shift_and_cannot_install_early"
+    },
+    "H01-27": {
+      "status": "retained",
+      "producer": "living_world.rs::commit(ReturnTool)",
+      "actors": "H01 0/1",
+      "parcel": "Front",
+      "at_target": "actual returning tool rack",
+      "periods": "any return time",
+      "weather_and_seasons": "after genuinely dirty wet hoe work",
+      "partner": "none",
+      "full_effect_and_limits": "Physical muddy hoe is brushed clean before return; hoe adapts old spade.",
+      "emitted_mode": "Ongoing runtime completion emits mode 1; S08 uses actual track duration 1/2/3.",
+      "variant_context_policy": "Frozen whitelist matches only roles, exact context and actual effect.",
+      "author": {
+        "title": "给铲子刷泥",
+        "trigger": "泥地作业结束",
+        "action": "刷掉铲面土块，挂回架上",
+        "effect": "工具架状态由脏转净",
+        "author_partner": "-",
+        "legacy_effect": "Tidy"
+      },
+      "candidate_variant_count": 8,
+      "registered_legacy_ids": [
+        "H01-27"
+      ],
+      "physically_compatible_mode1_candidates": []
+    },
+    "H01-29": {
+      "status": "retained",
+      "producer": "living_world.rs::step(Prepare Fish)",
+      "actors": "H01 0/1",
+      "parcel": "Nearby",
+      "at_target": "actual pond standing tile and cardinal adjacent Water tile",
+      "periods": "actual fishing shifts",
+      "weather_and_seasons": "existing fishing weather restrictions",
+      "partner": "none",
+      "full_effect_and_limits": "Held rod, actual pool, time-bounded cast, float in qualifying water. The original generator excludes H01 fishing variants.",
+      "emitted_mode": "Ongoing runtime completion emits mode 1; S08 uses actual track duration 1/2/3.",
+      "variant_context_policy": "Frozen whitelist matches only roles, exact context and actual effect.",
+      "author": {
+        "title": "在池边放下鱼线",
+        "trigger": "遇到合适的休闲时段且鱼塘可见",
+        "action": "坐到池沿甩出钓线，浮标停在水面",
+        "effect": "开始本次限时垂钓",
+        "author_partner": "-",
+        "legacy_effect": "Survey"
+      },
+      "candidate_variant_count": 14,
+      "registered_legacy_ids": [
+        "H01-29"
+      ],
+      "physically_compatible_mode1_candidates": []
+    },
+    "H01-30": {
+      "status": "retained",
+      "producer": "living_world.rs::commit(Store/ServeCatFish/ReturnTool)",
+      "actors": "H01 0/1",
+      "parcel": "Front",
+      "at_target": "actual warehouse, fish plate or return rack versus home_fishing",
+      "periods": "actual late return may cross dusk",
+      "weather_and_seasons": "ordinary catch/return cadence",
+      "partner": "none",
+      "full_effect_and_limits": "Same caught one fish physically stowed or delivered to cat, or actual empty rod returned. No invented food or decorative loss.",
+      "emitted_mode": "Ongoing runtime completion emits mode 1; S08 uses actual track duration 1/2/3.",
+      "variant_context_policy": "Frozen whitelist matches only roles, exact context and actual effect.",
+      "author": {
+        "title": "收起鱼竿或带回鱼",
+        "trigger": "这一轮垂钓结束",
+        "action": "钓到时举起小鱼，空钩时垂下肩膀",
+        "effect": "有鱼时摆到鱼碟，空钩时短暂失落",
+        "author_partner": "-",
+        "legacy_effect": "Forage"
+      },
+      "candidate_variant_count": 0,
+      "registered_legacy_ids": [
+        "H01-30"
+      ],
+      "physically_compatible_mode1_candidates": []
+    },
+    "H01-33": {
+      "status": "retained",
+      "producer": "household_routines.rs::finish_watering_receipt",
+      "actors": "H01 0/1",
+      "parcel": "Front",
+      "at_target": "actual valid plot work foot versus target bed origin",
+      "periods": "farm daylight",
+      "weather_and_seasons": "clear summer, two previous dry weather blocks, six-minute dry commitment",
+      "partner": "none",
+      "full_effect_and_limits": "One real bucket consumed across three physical pours; work/ownership survives load. Legacy catalogue summer contexts absent.",
+      "emitted_mode": "Ongoing runtime completion emits mode 1; S08 uses actual track duration 1/2/3.",
+      "variant_context_policy": "Frozen whitelist matches only roles, exact context and actual effect.",
+      "author": {
+        "title": "给干裂地慢慢补水",
+        "trigger": "旱灾且水桶可用",
+        "action": "沿裂缝分三次倒水",
+        "effect": "土地转为湿润待恢复",
+        "author_partner": "-",
+        "legacy_effect": "Water"
+      },
+      "candidate_variant_count": 9,
+      "registered_legacy_ids": [
+        "H01-33"
+      ],
+      "physically_compatible_mode1_candidates": []
+    },
+    "H01-34": {
+      "status": "retained",
+      "producer": "living_world.rs::commit_plot(Drain)",
+      "actors": "H01 0/1",
+      "parcel": "Front",
+      "at_target": "actual plot edge versus disturbed bed origin",
+      "periods": "bounded productive day",
+      "weather_and_seasons": "when actual earlier flood remains",
+      "partner": "none",
+      "full_effect_and_limits": "Three rendered drainage sections over timed work remove the actual field flood. No separate roadside debris system.",
+      "emitted_mode": "Ongoing runtime completion emits mode 1; S08 uses actual track duration 1/2/3.",
+      "variant_context_policy": "Frozen whitelist matches only roles, exact context and actual effect.",
+      "author": {
+        "title": "挖一道临时排水沟",
+        "trigger": "积涝后水位过高",
+        "action": "掘浅沟让水绕开菜畦",
+        "effect": "受灾格水面逐步下降",
+        "author_partner": "-",
+        "legacy_effect": "Drain"
+      },
+      "candidate_variant_count": 7,
+      "registered_legacy_ids": [
+        "H01-34",
+        "H01-34~00001"
+      ],
+      "physically_compatible_mode1_candidates": []
+    },
+    "H01-37": {
+      "status": "retained",
+      "producer": "living_world.rs::commit(ServeCat)",
+      "actors": "H01 0/1",
+      "parcel": "Front",
+      "at_target": "actual cat bowl tile (15,20)",
+      "periods": "ordinary meal windows; original allowed scene day/dusk",
+      "weather_and_seasons": "all reachable regular weather",
+      "partner": "none",
+      "full_effect_and_limits": "One prepared meal withdrew from inventory, carries then leaves food in bowl.",
+      "emitted_mode": "Ongoing runtime completion emits mode 1; S08 uses actual track duration 1/2/3.",
+      "variant_context_policy": "Frozen whitelist matches only roles, exact context and actual effect.",
+      "author": {
+        "title": "按餐点称一份猫粮",
+        "trigger": "临近正餐且食盘空",
+        "action": "系围裙，用小勺量进盘里",
+        "effect": "生成这一餐的有粮状态",
+        "author_partner": "-",
+        "legacy_effect": "Food"
+      },
+      "candidate_variant_count": 11,
+      "registered_legacy_ids": [
+        "H01-37",
+        "H01-37~13241"
+      ],
+      "physically_compatible_mode1_candidates": []
+    },
+    "H01-38": {
+      "status": "retained",
+      "producer": "living_world.rs::commit(FillBowl)",
+      "actors": "H01 0/1",
+      "parcel": "Front",
+      "at_target": "actual bowl/left work foot (15,20)",
+      "periods": "between real supply tasks",
+      "weather_and_seasons": "ordinary weather",
+      "partner": "none",
+      "full_effect_and_limits": "Existing dirty bowl reset after real use, with actual carried water debit and finite capacity.",
+      "emitted_mode": "Ongoing runtime completion emits mode 1; S08 uses actual track duration 1/2/3.",
+      "variant_context_policy": "Frozen whitelist matches only roles, exact context and actual effect.",
+      "author": {
+        "title": "给饮水碗换清水",
+        "trigger": "水碗在场且水面变暗",
+        "action": "用小壶倒水，擦亮碗缘",
+        "effect": "水碗状态恢复清洁",
+        "author_partner": "-",
+        "legacy_effect": "Water"
+      },
+      "candidate_variant_count": 9,
+      "registered_legacy_ids": [
+        "H01-38"
+      ],
+      "physically_compatible_mode1_candidates": []
+    },
+    "H01-39": {
+      "status": "new",
+      "producer": "yard_mat.rs::commit_mat(Return)",
+      "actors": "H01 0/1",
+      "parcel": "Front",
+      "at_target": "actual mat bed (18,22) to rail (17,16) via stand (17,17) and back",
+      "periods": "healthy optional after Q07, maintenance once per 7 days",
+      "weather_and_seasons": "after actual rain, at least 30 dry minutes",
+      "partner": "none",
+      "full_effect_and_limits": "Same bounded mat carried, hung, physically retrieved dry; if rained on again it really stays damp. Does not demand extra material. Base only.",
+      "emitted_mode": "Ongoing runtime completion emits mode 1; S08 uses actual track duration 1/2/3.",
+      "variant_context_policy": "Base-only unless generated environment and extra duration/effect are independently proven.",
+      "author": {
+        "title": "晒干淋湿的猫垫",
+        "trigger": "雨停且垫子受潮",
+        "action": "把软垫挂到栏杆，晚些取回",
+        "effect": "垫子重新可供睡觉",
+        "author_partner": "-",
+        "legacy_effect": "Shelter"
+      },
+      "candidate_variant_count": 10,
+      "registered_legacy_ids": [
+        "H01-39"
+      ],
+      "physically_compatible_mode1_candidates": [],
+      "native_completed_receipts": [
+        "household-main-contact-final-fresh-60h\\receipt-H01-39.json",
+        "household-main-contact-fresh-60h\\receipt-H01-39.json",
+        "household-main-fresh-96h\\receipt-H01-39.json",
+        "household-main-mature-96h\\receipt-H01-39.json",
+        "household-main-projects-180d-96h\\receipt-H01-39.json",
+        "household-main-projects-7d-48h\\receipt-H01-39.json",
+        "household-main-projects-90d-96h\\receipt-H01-39.json",
+        "household-main-reassess-fish-24h\\receipt-H01-39.json",
+        "household-main-reassess-fresh-40h\\receipt-H01-39.json",
+        "household-main-reassess-house-96h\\receipt-H01-39.json",
+        "household-main-reassess-house-before-120h\\receipt-H01-39.json",
+        "household-main-reassess-market-96h\\receipt-H01-39.json",
+        "household-main-reassess-notice-24h\\receipt-H01-39.json",
+        "household-main-reassess-planter-96h\\receipt-H01-39.json",
+        "household-main-reassess-root-12h\\receipt-H01-39.json",
+        "household-main-shift-open-first-30h\\receipt-H01-39.json",
+        "household-main-shift-post-latest-36h\\receipt-H01-39.json",
+        "household-main-soil-used-12h\\receipt-H01-39.json"
+      ],
+      "native_stage_samples": [
+        "household-main-contact-final-fresh-60h/mat-on-rail.json",
+        "household-main-contact-final-fresh-60h/same-dry-mat-in-hands.json",
+        "household-main-contact-final-mature-36h/mat-on-rail.json",
+        "household-main-contact-fresh-60h/mat-on-rail.json",
+        "household-main-contact-fresh-60h/same-dry-mat-in-hands.json",
+        "household-main-fresh-96h/mat-on-rail.json",
+        "household-main-fresh-96h/same-dry-mat-in-hands.json",
+        "household-main-mature-96h/mat-on-rail.json",
+        "household-main-mature-96h/same-dry-mat-in-hands.json",
+        "household-main-projects-180d-96h/mat-on-rail.json",
+        "household-main-projects-180d-96h/same-dry-mat-in-hands.json",
+        "household-main-projects-7d-48h/mat-on-rail.json",
+        "household-main-projects-7d-48h/same-dry-mat-in-hands.json",
+        "household-main-projects-90d-96h/mat-on-rail.json",
+        "household-main-projects-90d-96h/same-dry-mat-in-hands.json",
+        "household-main-reassess-fish-24h/mat-on-rail.json",
+        "household-main-reassess-fish-24h/same-dry-mat-in-hands.json",
+        "household-main-reassess-fresh-40h/mat-on-rail.json",
+        "household-main-reassess-fresh-40h/same-dry-mat-in-hands.json",
+        "household-main-reassess-house-96h/mat-on-rail.json",
+        "household-main-reassess-house-96h/same-dry-mat-in-hands.json",
+        "household-main-reassess-house-before-120h/mat-on-rail.json",
+        "household-main-reassess-house-before-120h/same-dry-mat-in-hands.json",
+        "household-main-reassess-market-96h/mat-on-rail.json",
+        "household-main-reassess-market-96h/same-dry-mat-in-hands.json",
+        "household-main-reassess-notice-24h/mat-on-rail.json",
+        "household-main-reassess-notice-24h/same-dry-mat-in-hands.json",
+        "household-main-reassess-planter-96h/mat-on-rail.json",
+        "household-main-reassess-planter-96h/same-dry-mat-in-hands.json",
+        "household-main-reassess-root-12h/mat-on-rail.json",
+        "household-main-reassess-root-12h/same-dry-mat-in-hands.json",
+        "household-main-shift-open-first-30h/mat-on-rail.json",
+        "household-main-shift-open-first-30h/same-dry-mat-in-hands.json",
+        "household-main-shift-post-latest-36h/mat-on-rail.json",
+        "household-main-shift-post-latest-36h/same-dry-mat-in-hands.json",
+        "household-main-soil-used-12h/mat-on-rail.json",
+        "household-main-soil-used-12h/same-dry-mat-in-hands.json",
+        "household-main-well-recovery-5h/mat-on-rail.json",
+        "household-native-fresh-96h/mat-on-rail.json",
+        "household-native-fresh-96h/same-dry-mat-in-hands.json",
+        "household-native-mature-48h/mat-on-rail.json",
+        "household-native-mature-48h/same-dry-mat-in-hands.json",
+        "household-native-dawn-24h/mat-on-rail.json",
+        "household-native-dawn-24h/same-dry-mat-in-hands.json"
+      ],
+      "native_stage_proof_scope": "actual normal HomeHost snapshot; a work-stage capture does not independently prove its final receipt",
+      "targeted_causal_regression": "yard_mat::tests::one_mat_survives_double_pickup_rain_and_readback"
+    },
+    "H01-40": {
+      "status": "new",
+      "producer": "yard_mat.rs::commit_mat(Flip)",
+      "actors": "H01 0/1",
+      "parcel": "Front",
+      "at_target": "at empty actual dry mat",
+      "periods": "7:00–19:00 planning, actual prior kneading/use",
+      "weather_and_seasons": "clear/cloud",
+      "partner": "none",
+      "full_effect_and_limits": "Single existing rug reverses its healthy side and loses old creases only when cat leaves. No doubled mat.",
+      "emitted_mode": "Ongoing runtime completion emits mode 1; S08 uses actual track duration 1/2/3.",
+      "variant_context_policy": "Base-only unless generated environment and extra duration/effect are independently proven.",
+      "author": {
+        "title": "把猫垫翻到干净面",
+        "trigger": "猫离开常睡的垫子",
+        "action": "翻出另一侧的条纹",
+        "effect": "软垫图案切换",
+        "author_partner": "-",
+        "legacy_effect": "Tidy"
+      },
+      "candidate_variant_count": 7,
+      "registered_legacy_ids": [
+        "H01-40"
+      ],
+      "physically_compatible_mode1_candidates": [],
+      "native_completed_receipts": [
+        "household-main-contact-final-fresh-60h\\receipt-H01-40.json",
+        "household-main-contact-fresh-60h\\receipt-H01-40.json",
+        "household-main-fresh-96h\\receipt-H01-40.json",
+        "household-main-projects-180d-96h\\receipt-H01-40.json",
+        "household-main-projects-7d-48h\\receipt-H01-40.json",
+        "household-main-projects-90d-96h\\receipt-H01-40.json",
+        "household-main-reassess-fish-24h\\receipt-H01-40.json",
+        "household-main-reassess-fresh-40h\\receipt-H01-40.json",
+        "household-main-reassess-house-96h\\receipt-H01-40.json",
+        "household-main-reassess-root-12h\\receipt-H01-40.json",
+        "household-main-shift-post-latest-36h\\receipt-H01-40.json",
+        "household-main-soil-used-12h\\receipt-H01-40.json"
+      ],
+      "native_stage_samples": [
+        "household-main-contact-final-fresh-60h/mat-reversed-at-bed.json",
+        "household-main-contact-final-mature-36h/mat-reversed-at-bed.json",
+        "household-main-contact-fresh-60h/mat-reversed-at-bed.json",
+        "household-main-fresh-96h/mat-reversed-at-bed.json",
+        "household-main-mature-96h/mat-reversed-at-bed.json",
+        "household-main-projects-180d-96h/mat-reversed-at-bed.json",
+        "household-main-projects-7d-48h/mat-reversed-at-bed.json",
+        "household-main-projects-90d-96h/mat-reversed-at-bed.json",
+        "household-main-reassess-fish-24h/mat-reversed-at-bed.json",
+        "household-main-reassess-fresh-40h/mat-reversed-at-bed.json",
+        "household-main-reassess-house-96h/mat-reversed-at-bed.json",
+        "household-main-reassess-root-12h/mat-reversed-at-bed.json",
+        "household-main-shift-post-latest-36h/mat-reversed-at-bed.json",
+        "household-main-soil-used-12h/mat-reversed-at-bed.json",
+        "household-native-fresh-96h/mat-reversed-at-bed.json",
+        "household-native-mature-48h/mat-reversed-at-bed.json"
+      ],
+      "native_stage_proof_scope": "actual normal HomeHost snapshot; a work-stage capture does not independently prove its final receipt",
+      "targeted_causal_regression": "yard_mat::tests::one_mat_survives_double_pickup_rain_and_readback"
+    },
+    "H01-48": {
+      "status": "retained",
+      "producer": "residents_legacy.rs::actual household letter handoff",
+      "actors": "H01 0/1",
+      "parcel": "Nearby",
+      "at_target": "actual family recipient position versus same courier peer",
+      "periods": "when booked original letter can be handed off",
+      "weather_and_seasons": "real mail schedule",
+      "partner": "H07 resident 0",
+      "full_effect_and_limits": "Courier transfers the actual original letter to actual family holder. Same source, no duplicate flag.",
+      "emitted_mode": "Ongoing runtime completion emits mode 1; S08 uses actual track duration 1/2/3.",
+      "variant_context_policy": "Frozen whitelist matches only roles, exact context and actual effect.",
+      "author": {
+        "title": "从送信员手里接便笺",
+        "trigger": "有到访通知且管理员在院里",
+        "action": "收下小信封放进固定槽",
+        "effect": "手记通知用最新一条替换旧条",
+        "author_partner": "-",
+        "legacy_effect": "Deliver"
+      },
+      "candidate_variant_count": 7,
+      "registered_legacy_ids": [
+        "H01-48"
+      ],
+      "physically_compatible_mode1_candidates": []
+    },
+    "H01-49": {
+      "status": "new",
+      "producer": "household_detail.rs::note_garden_clothes_work",
+      "actors": "H01 Xiaohe",
+      "parcel": "Front",
+      "at_target": "actual garden plot edge after previously changing at own home",
+      "periods": "lawful daytime gardening",
+      "weather_and_seasons": "same changed outfit, dry planning",
+      "partner": "none",
+      "full_effect_and_limits": "Existing gardener clothes (hat/overalls) are physically donned before first completed gardening job; no claim separately simulated muddy pants.",
+      "emitted_mode": "Ongoing runtime completion emits mode 1; S08 uses actual track duration 1/2/3.",
+      "variant_context_policy": "Base-only unless generated environment and extra duration/effect are independently proven.",
+      "author": {
+        "title": "换上带泥脚印的园丁裤",
+        "trigger": "从屋里出来做种植或日常养护",
+        "action": "进屋后再出来，草帽和背带裤一起出现",
+        "effect": "本轮养护保持这套衣服",
+        "author_partner": "-",
+        "legacy_effect": "Tidy"
+      },
+      "candidate_variant_count": 7,
+      "registered_legacy_ids": [
+        "H01-49"
+      ],
+      "physically_compatible_mode1_candidates": [],
+      "native_completed_receipts": [
+        "household-main-contact-final-fresh-60h\\receipt-H01-49.json",
+        "household-main-contact-final-mature-36h\\receipt-H01-49.json",
+        "household-main-contact-fresh-60h\\receipt-H01-49.json",
+        "household-main-fresh-96h\\receipt-H01-49.json",
+        "household-main-house-survey-latest-24h\\receipt-H01-49.json",
+        "household-main-mature-96h\\receipt-H01-49.json",
+        "household-main-projects-180d-96h\\receipt-H01-49.json",
+        "household-main-projects-7d-48h\\receipt-H01-49.json",
+        "household-main-projects-90d-96h\\receipt-H01-49.json",
+        "household-main-reassess-fish-24h\\receipt-H01-49.json",
+        "household-main-reassess-fresh-40h\\receipt-H01-49.json",
+        "household-main-reassess-house-96h\\receipt-H01-49.json",
+        "household-main-reassess-house-before-120h\\receipt-H01-49.json",
+        "household-main-reassess-market-96h\\receipt-H01-49.json",
+        "household-main-reassess-notice-24h\\receipt-H01-49.json",
+        "household-main-reassess-planter-96h\\receipt-H01-49.json",
+        "household-main-reassess-root-12h\\receipt-H01-49.json",
+        "household-main-shift-open-first-30h\\receipt-H01-49.json",
+        "household-main-shift-post-latest-36h\\receipt-H01-49.json",
+        "household-main-soil-used-12h\\receipt-H01-49.json",
+        "household-main-well-recovery-5h\\receipt-H01-49.json"
+      ]
+    },
+    "H01-50": {
+      "status": "new",
+      "producer": "household_detail.rs::commit_household_detail(DressApron) then living_world.rs::commit(Cook)",
+      "actors": "H01 0/1",
+      "parcel": "Front",
+      "at_target": "actual occupied own wardrobe, then installed kitchen door and actual carried cooked portions",
+      "periods": "only ordinary daytime cooking at healthy needs, once per seven game days; queued guest and neighbour meals take the same immediate Cook path",
+      "weather_and_seasons": "dressing requires dry daylight; recipe uses real legal pantry inventory",
+      "partner": "none",
+      "full_effect_and_limits": "Actual apron custody remains on the same wearer through one whole real Cook recipe and the original output; accessory returns to the same wardrobe when free. Modern installed shared kitchen substitutes for old cook's own stove.",
+      "emitted_mode": "Ongoing runtime completion emits mode 1; S08 uses actual track duration 1/2/3.",
+      "variant_context_policy": "Base-only unless generated environment and extra duration/effect are independently proven.",
+      "author": {
+        "title": "系好厨房围裙",
+        "trigger": "开始准备一整餐",
+        "action": "回屋换好围裙，开门时端着碗",
+        "effect": "本轮备餐使用围裙",
+        "author_partner": "-",
+        "legacy_effect": "Tidy"
+      },
+      "candidate_variant_count": 7,
+      "registered_legacy_ids": [
+        "H01-50"
+      ],
+      "physically_compatible_mode1_candidates": [],
+      "native_stage_samples": [
+        "household-main-contact-final-fresh-60h/wearing-apron-during-cooked-batch.json",
+        "household-main-contact-fresh-60h/wearing-apron-during-cooked-batch.json",
+        "household-main-reassess-fish-24h/wearing-apron-during-cooked-batch.json",
+        "household-main-reassess-fresh-40h/wearing-apron-during-cooked-batch.json",
+        "household-main-reassess-house-96h/wearing-apron-during-cooked-batch.json",
+        "household-main-reassess-house-before-120h/wearing-apron-during-cooked-batch.json",
+        "household-main-reassess-market-96h/wearing-apron-during-cooked-batch.json",
+        "household-main-reassess-notice-24h/wearing-apron-during-cooked-batch.json",
+        "household-main-reassess-planter-96h/wearing-apron-during-cooked-batch.json",
+        "household-main-reassess-root-12h/wearing-apron-during-cooked-batch.json",
+        "household-main-shift-open-first-30h/wearing-apron-during-cooked-batch.json",
+        "household-main-shift-post-latest-36h/wearing-apron-during-cooked-batch.json",
+        "household-main-soil-used-12h/wearing-apron-during-cooked-batch.json"
+      ],
+      "native_stage_proof_scope": "actual normal HomeHost snapshot; a work-stage capture does not independently prove its final receipt",
+      "targeted_causal_regression": "household_detail::tests::apron_belongs_to_actual_dressing_and_stays_on_through_a_paid_recipe"
+    },
+    "H01-52": {
+      "status": "retained",
+      "producer": "household_routines.rs::finish_rain_shift",
+      "actors": "H01 0/1",
+      "parcel": "Front",
+      "at_target": "actual wet field work tile versus selected plot",
+      "periods": "wet productive shifts",
+      "weather_and_seasons": "rain in same weather block as true indoor coat exchange",
+      "partner": "none",
+      "full_effect_and_limits": "Raincoat with actual work completion, conventional rain clothing for old coat and boots.",
+      "emitted_mode": "Ongoing runtime completion emits mode 1; S08 uses actual track duration 1/2/3.",
+      "variant_context_policy": "Frozen whitelist matches only roles, exact context and actual effect.",
+      "author": {
+        "title": "穿雨衣踩进湿地",
+        "trigger": "需要在持续雨天做户外工作",
+        "action": "进屋穿雨披和雨靴，再踏到雨里",
+        "effect": "这一轮湿地作业保持雨衣",
+        "author_partner": "-",
+        "legacy_effect": "Shelter"
+      },
+      "candidate_variant_count": 10,
+      "registered_legacy_ids": [
+        "H01-52"
+      ],
+      "physically_compatible_mode1_candidates": []
+    },
+    "H01-53": {
+      "status": "retained",
+      "producer": "household_routines.rs::finish_porch_break",
+      "actors": "H01 0/1",
+      "parcel": "Front",
+      "at_target": "actor's real porch and own current door",
+      "periods": "16:00 to 19:00 proposals",
+      "weather_and_seasons": "autumn/winter dry clear/cloud",
+      "partner": "none",
+      "full_effect_and_limits": "Actual water transported and consumed with home outfit after real change. Existing knit-like home clothes rather than bespoke old texture.",
+      "emitted_mode": "Ongoing runtime completion emits mode 1; S08 uses actual track duration 1/2/3.",
+      "variant_context_policy": "Frozen whitelist matches only roles, exact context and actual effect.",
+      "author": {
+        "title": "套针织外套歇一会儿",
+        "trigger": "准备结束一段工作并休息",
+        "action": "进屋换外套，再走到门廊坐下喝水",
+        "effect": "休息期间保持针织外套",
+        "author_partner": "-",
+        "legacy_effect": "Rest"
+      },
+      "candidate_variant_count": 9,
+      "registered_legacy_ids": [
+        "H01-53"
+      ],
+      "physically_compatible_mode1_candidates": []
+    },
+    "H01-54": {
+      "status": "new",
+      "producer": "household_detail.rs::register_change_of_clothes",
+      "actors": "H01 0/1",
+      "parcel": "Front",
+      "at_target": "actual home side hook/owned door",
+      "periods": "actual indoor outfit switch after completed rain work",
+      "weather_and_seasons": "after genuine rain work; may be dry or evening",
+      "partner": "none",
+      "full_effect_and_limits": "Moves own raincoat to one persisted hook, subsequent coat pickup removes it. Own face/clothing visual reuses already authored assets.",
+      "emitted_mode": "Ongoing runtime completion emits mode 1; S08 uses actual track duration 1/2/3.",
+      "variant_context_policy": "Base-only unless generated environment and extra duration/effect are independently proven.",
+      "author": {
+        "title": "把雨衣挂回门廊",
+        "trigger": "湿地任务结束且准备回屋",
+        "action": "把雨衣挂在门侧的单一挂钩",
+        "effect": "衣物状态换到下一项工作所需款式",
+        "author_partner": "-",
+        "legacy_effect": "Tidy"
+      },
+      "candidate_variant_count": 7,
+      "registered_legacy_ids": [
+        "H01-54"
+      ],
+      "physically_compatible_mode1_candidates": [],
+      "native_completed_receipts": [
+        "household-main-projects-90d-96h\\receipt-H01-54.json",
+        "household-main-reassess-fresh-40h\\receipt-H01-54.json",
+        "household-main-reassess-market-96h\\receipt-H01-54.json",
+        "household-main-reassess-notice-24h\\receipt-H01-54.json",
+        "household-main-reassess-root-12h\\receipt-H01-54.json",
+        "household-main-shift-open-first-30h\\receipt-H01-54.json",
+        "household-main-shift-post-latest-36h\\receipt-H01-54.json",
+        "household-main-soil-used-12h\\receipt-H01-54.json"
+      ],
+      "native_stage_samples": [
+        "household-main-projects-90d-96h/raincoat-on-hook.json",
+        "household-main-reassess-fresh-40h/raincoat-on-hook.json",
+        "household-main-reassess-market-96h/raincoat-on-hook.json",
+        "household-main-reassess-notice-24h/raincoat-on-hook.json",
+        "household-main-reassess-root-12h/raincoat-on-hook.json",
+        "household-main-shift-open-first-30h/raincoat-on-hook.json",
+        "household-main-shift-post-latest-36h/raincoat-on-hook.json",
+        "household-main-soil-used-12h/raincoat-on-hook.json",
+        "household-native-fresh-96h/raincoat-on-hook.json"
+      ],
+      "native_stage_proof_scope": "actual normal HomeHost snapshot; a work-stage capture does not independently prove its final receipt"
+    },
+    "H01-55": {
+      "status": "new",
+      "producer": "family_contacts.rs::commit_family_contact(SeeApple, WriteApple)",
+      "actors": "H01 Xiaohe",
+      "parcel": "Front",
+      "at_target": "at real cardinal orchard tree first, then occupied courtyard writing table vs same tree",
+      "periods": "07:00–17:00 first real same-species blooming day; same day or next to write",
+      "weather_and_seasons": "clear or clouds during inspection and writing",
+      "partner": "none",
+      "full_effect_and_limits": "First active apple bud opens on actual tree. Visit the tree before writing the named apple and glyph with the original opening day in one save slot. No virtual row without its physical first sight.",
+      "emitted_mode": "Ongoing runtime completion emits mode 1; S08 uses actual track duration 1/2/3.",
+      "variant_context_policy": "Base-only unless generated environment and extra duration/effect are independently proven.",
+      "author": {
+        "title": "记下当天第一朵花",
+        "trigger": "新物种在任一地块首次开花",
+        "action": "在手记写一个花名，画花朵小记号",
+        "effect": "固定手记槽更新最近发现",
+        "author_partner": "-",
+        "legacy_effect": "Survey"
+      },
+      "candidate_variant_count": 10,
+      "registered_legacy_ids": [
+        "H01-55"
+      ],
+      "physically_compatible_mode1_candidates": [],
+      "native_stage_samples": [
+        "household-main-contact-final-fresh-60h/observes-first-flower.json",
+        "household-main-contact-final-fresh-60h/writes-first-flower.json",
+        "household-main-contact-final-fresh-60h/first-apple-written.json",
+        "household-main-contact-fresh-60h/observes-first-flower.json",
+        "household-main-contact-fresh-60h/writes-first-flower.json",
+        "household-main-contact-fresh-60h/first-apple-written.json"
+      ],
+      "native_stage_proof_scope": "actual normal HomeHost snapshot; a work-stage capture does not independently prove its final receipt",
+      "targeted_causal_regression": "family_contacts::tests::flower_notebook_requires_the_same_new_apple_seen_before_writing"
+    },
+    "H01-56": {
+      "status": "new",
+      "producer": "household_detail.rs::commit_household_detail(PostShift)",
+      "actors": "H01 0/1",
+      "parcel": "Expanded",
+      "at_target": "real compiled market_notice board, a genuine currently resting public project",
+      "periods": "08:00–18:00 booking while a paid partly completed project's next eligibility remains past",
+      "weather_and_seasons": "clear/cloud",
+      "partner": "none",
+      "full_effect_and_limits": "Attach the latest exact scheduled earliest work time to the board only if the carried estimate still belongs to that same project. Single pinned notice; removes from view once stale. Existing reusable board rather than inventing wood stock.",
+      "emitted_mode": "Ongoing runtime completion emits mode 1; S08 uses actual track duration 1/2/3.",
+      "variant_context_policy": "Base-only unless generated environment and extra duration/effect are independently proven.",
+      "author": {
+        "title": "估计下一次施工班",
+        "trigger": "在建工程停班",
+        "action": "把一根短签插到施工板上",
+        "effect": "状态面板标出预计再动工时间",
+        "author_partner": "-",
+        "legacy_effect": "Survey"
+      },
+      "candidate_variant_count": 10,
+      "registered_legacy_ids": [
+        "H01-56",
+        "H01-56~10021"
+      ],
+      "physically_compatible_mode1_candidates": [
+        "H01-56~10021"
+      ],
+      "targeted_causal_regression": "household_detail::tests::notice_sign_reports_only_the_actual_paused_public_shift"
+    },
+    "H01-57": {
+      "status": "new",
+      "producer": "household_detail.rs::commit_household_detail(RegisterHarvest)",
+      "actors": "H01 0/1",
+      "parcel": "Front",
+      "at_target": "real home table (17,20), goods came from actual pantry or farm shed",
+      "periods": "14:00–20:00 proposals and no current carried harvest",
+      "weather_and_seasons": "clear/cloud; all seasons",
+      "partner": "none",
+      "full_effect_and_limits": "Actual processed produce only counts after successful stow, pending tally goes to one capped seasonal notebook slot. Modern table stands in for old chalkboard.",
+      "emitted_mode": "Ongoing runtime completion emits mode 1; S08 uses actual track duration 1/2/3.",
+      "variant_context_policy": "Base-only unless generated environment and extra duration/effect are independently proven.",
+      "author": {
+        "title": "记一笔今天的采收量",
+        "trigger": "回收最后一只采收篮",
+        "action": "在板上画几道短线",
+        "effect": "累加当季有上限的计数",
+        "author_partner": "-",
+        "legacy_effect": "Survey"
+      },
+      "candidate_variant_count": 10,
+      "registered_legacy_ids": [
+        "H01-57",
+        "H01-57~20201",
+        "H01-57~21011"
+      ],
+      "physically_compatible_mode1_candidates": [
+        "H01-57~20201",
+        "H01-57~21011"
+      ],
+      "native_completed_receipts": [
+        "household-main-contact-final-fresh-60h\\receipt-H01-57.json",
+        "household-main-contact-final-mature-36h\\receipt-H01-57.json",
+        "household-main-contact-fresh-60h\\receipt-H01-57.json",
+        "household-main-fresh-96h\\receipt-H01-57.json",
+        "household-main-house-survey-latest-24h\\receipt-H01-57.json",
+        "household-main-mature-96h\\receipt-H01-57.json",
+        "household-main-projects-180d-96h\\receipt-H01-57.json",
+        "household-main-projects-7d-48h\\receipt-H01-57.json",
+        "household-main-projects-90d-96h\\receipt-H01-57.json",
+        "household-main-reassess-fish-24h\\receipt-H01-57.json",
+        "household-main-reassess-fresh-40h\\receipt-H01-57.json",
+        "household-main-reassess-house-96h\\receipt-H01-57.json",
+        "household-main-reassess-house-before-120h\\receipt-H01-57.json",
+        "household-main-reassess-market-96h\\receipt-H01-57.json",
+        "household-main-reassess-notice-24h\\receipt-H01-57.json",
+        "household-main-reassess-planter-96h\\receipt-H01-57.json",
+        "household-main-reassess-root-12h\\receipt-H01-57.json",
+        "household-main-shift-open-first-30h\\receipt-H01-57.json",
+        "household-main-shift-post-latest-36h\\receipt-H01-57.json",
+        "household-main-soil-used-12h\\receipt-H01-57.json",
+        "household-main-well-recovery-5h\\receipt-H01-57.json"
+      ],
+      "native_stage_samples": [
+        "household-main-contact-final-fresh-60h/harvest-tally.json",
+        "household-main-contact-final-mature-36h/harvest-tally.json",
+        "household-main-contact-fresh-60h/harvest-tally.json",
+        "household-main-fresh-96h/harvest-tally.json",
+        "household-main-house-survey-latest-24h/harvest-tally.json",
+        "household-main-mature-96h/harvest-tally.json",
+        "household-main-projects-180d-96h/harvest-tally.json",
+        "household-main-projects-7d-48h/harvest-tally.json",
+        "household-main-projects-90d-96h/harvest-tally.json",
+        "household-main-reassess-fish-24h/harvest-tally.json",
+        "household-main-reassess-fresh-40h/harvest-tally.json",
+        "household-main-reassess-house-96h/harvest-tally.json",
+        "household-main-reassess-house-before-120h/harvest-tally.json",
+        "household-main-reassess-market-96h/harvest-tally.json",
+        "household-main-reassess-notice-24h/harvest-tally.json",
+        "household-main-reassess-planter-96h/harvest-tally.json",
+        "household-main-reassess-root-12h/harvest-tally.json",
+        "household-main-shift-open-first-30h/harvest-tally.json",
+        "household-main-shift-post-latest-36h/harvest-tally.json",
+        "household-main-soil-used-12h/harvest-tally.json",
+        "household-main-well-recovery-5h/harvest-tally.json",
+        "household-native-fresh-96h/harvest-tally.json",
+        "household-native-mature-48h/harvest-tally.json",
+        "household-native-dawn-24h/harvest-tally.json"
+      ],
+      "native_stage_proof_scope": "actual normal HomeHost snapshot; a work-stage capture does not independently prove its final receipt",
+      "targeted_causal_regression": "household_detail::tests::notebook_tally_requires_the_batch_to_be_processed_and_stowed"
+    },
+    "H01-58": {
+      "status": "new",
+      "producer": "household_detail.rs::commit_household_detail(FileRepair)",
+      "actors": "H01 0/1",
+      "parcel": "Front",
+      "at_target": "home table, target latest actual original crop flood footprint",
+      "periods": "08:00–19:00 proposals",
+      "weather_and_seasons": "real recovery can be followed by dry weather",
+      "partner": "none",
+      "full_effect_and_limits": "One pending flood report must match actual drainage and original plot; strong rain re-flooding supersedes it. Modern table stands in for old board.",
+      "emitted_mode": "Ongoing runtime completion emits mode 1; S08 uses actual track duration 1/2/3.",
+      "variant_context_policy": "Base-only unless generated environment and extra duration/effect are independently proven.",
+      "author": {
+        "title": "把旧报告换成修复记录",
+        "trigger": "一个受灾地块已恢复",
+        "action": "擦去木板上的受损记号",
+        "effect": "最新恢复情况覆盖旧条目",
+        "author_partner": "-",
+        "legacy_effect": "Survey"
+      },
+      "candidate_variant_count": 10,
+      "registered_legacy_ids": [
+        "H01-58"
+      ],
+      "physically_compatible_mode1_candidates": [],
+      "native_completed_receipts": [
+        "household-main-house-survey-latest-24h\\receipt-H01-58.json",
+        "household-main-mature-96h\\receipt-H01-58.json",
+        "household-main-projects-180d-96h\\receipt-H01-58.json",
+        "household-main-projects-90d-96h\\receipt-H01-58.json",
+        "household-main-reassess-planter-96h\\receipt-H01-58.json",
+        "household-main-shift-post-latest-36h\\receipt-H01-58.json"
+      ]
+    },
+    "H01-60": {
+      "status": "retained",
+      "producer": "household_routines.rs::see_indoor_sleep",
+      "actors": "H01 0/1",
+      "parcel": "Front",
+      "at_target": "same owned home door; really indoors",
+      "periods": "21:00–06:00",
+      "weather_and_seasons": "all weather; once per night",
+      "partner": "none",
+      "full_effect_and_limits": "Walk to current owned residence then indoor sleep hides actor. No separate stool carried.",
+      "emitted_mode": "Ongoing runtime completion emits mode 1; S08 uses actual track duration 1/2/3.",
+      "variant_context_policy": "Frozen whitelist matches only roles, exact context and actual effect.",
+      "author": {
+        "title": "走回屋里结束一天",
+        "trigger": "夜深且照料工作都停下",
+        "action": "收门口小凳，进入屋内",
+        "effect": "直到新任务前角色退出画面",
+        "author_partner": "-",
+        "legacy_effect": "Rest"
+      },
+      "candidate_variant_count": 7,
+      "registered_legacy_ids": [
+        "H01-60"
+      ],
+      "physically_compatible_mode1_candidates": []
+    },
+    "S01": {
+      "status": "retained",
+      "producer": "household_routines.rs::observe_pass_step",
+      "actors": "H01 0/1",
+      "parcel": "Nearby",
+      "at_target": "actual opposing path; event at original reached goal, original obstruction target",
+      "periods": "both travelling",
+      "weather_and_seasons": "all usable paths/weather",
+      "partner": "same household other actor",
+      "full_effect_and_limits": "Legal sidestep, true departure from obstructed edge, both original goals reached, tasks and goods preserved.",
+      "emitted_mode": "Ongoing runtime completion emits mode 1; S08 uses actual track duration 1/2/3.",
+      "variant_context_policy": "Frozen whitelist matches only roles, exact context and actual effect.",
+      "author": {
+        "title": "窄路互让",
+        "trigger": "两个在地面移动的角色从相反方向进入同一段石径",
+        "action": "先到的角色退到路肩，另一只经过后它再回到路面",
+        "effect": "本次会车释放路权，双方维持各自原来的目的地",
+        "author_partner": "-",
+        "legacy_effect": "Trail"
+      },
+      "candidate_variant_count": 45,
+      "registered_legacy_ids": [
+        "S01"
+      ],
+      "physically_compatible_mode1_candidates": []
+    },
+    "S02": {
+      "status": "retained",
+      "producer": "living_world.rs::commit_quiet_visit",
+      "actors": "H01 0/1",
+      "parcel": "Front",
+      "at_target": "one remembered real successful rest position",
+      "periods": "optional daylight",
+      "weather_and_seasons": "safe empty location",
+      "partner": "none",
+      "full_effect_and_limits": "Actual timed return and departure; one remembered location per human.",
+      "emitted_mode": "Ongoing runtime completion emits mode 1; S08 uses actual track duration 1/2/3.",
+      "variant_context_policy": "Frozen whitelist matches only roles, exact context and actual effect.",
+      "author": {
+        "title": "在熟悉的位置短停",
+        "trigger": "最近一次停靠点仍空闲，角色完成当前动作后没有紧急目标",
+        "action": "角色折回熟悉的落脚点，停一会儿后再离开",
+        "effect": "仅保留每个角色最近一个成功停靠点，可被下一次停靠覆盖",
+        "author_partner": "-",
+        "legacy_effect": "Rest"
+      },
+      "candidate_variant_count": 45,
+      "registered_legacy_ids": [
+        "S02",
+        "S02~10141",
+        "S02~11041",
+        "S02~20041"
+      ],
+      "physically_compatible_mode1_candidates": []
+    },
+    "S04": {
+      "status": "new",
+      "producer": "living_world.rs::step(Explore) and household_detail.rs::finish_sheltered_patrol",
+      "actors": "A01 orange",
+      "parcel": "Front",
+      "at_target": "actual own doorway eaves; actor ends at the original interrupted outdoor target",
+      "periods": "first five minutes of real rain onset; resumes once dry within 6h",
+      "weather_and_seasons": "begins during Rain, positive receipt upon dry resumed arrival",
+      "partner": "none",
+      "full_effect_and_limits": "Pauses only discretionary original patrol at a completed edge, physically visits eave, then visits exact same original continuing target. Adaptation uses real onset as first precipitation step, not a separate rain-intensity model. Old Rain-at-completion contexts withheld.",
+      "emitted_mode": "Ongoing runtime completion emits mode 1; S08 uses actual track duration 1/2/3.",
+      "variant_context_policy": "Base-only unless generated environment and extra duration/effect are independently proven.",
+      "author": {
+        "title": "在檐影下等雨",
+        "trigger": "降雨突然增强且近处有未占用的避雨处",
+        "action": "角色从露天位置退到檐影，雨滴继续落在它外侧",
+        "effect": "雨停后恢复被打断的目标，只记住本次最近的避雨处",
+        "author_partner": "-",
+        "legacy_effect": "Shelter"
+      },
+      "candidate_variant_count": 45,
+      "registered_legacy_ids": [
+        "S04"
+      ],
+      "physically_compatible_mode1_candidates": [],
+      "native_completed_receipts": [
+        "household-main-contact-final-fresh-60h\\receipt-S04.json",
+        "household-main-contact-fresh-60h\\receipt-S04.json",
+        "household-main-fresh-96h\\receipt-S04.json",
+        "household-main-projects-7d-48h\\receipt-S04.json",
+        "household-main-reassess-fish-24h\\receipt-S04.json",
+        "household-main-reassess-notice-24h\\receipt-S04.json",
+        "household-main-reassess-root-12h\\receipt-S04.json",
+        "household-main-shift-open-first-30h\\receipt-S04.json",
+        "household-main-shift-post-latest-36h\\receipt-S04.json"
+      ],
+      "targeted_causal_regression": "household_detail::tests::interrupted_patrol_waits_at_its_eave_then_finishes_its_original_leg"
+    },
+    "S05": {
+      "status": "coowned",
+      "producer": "residents_wildlife_routes.rs::Proof::SharedLanding",
+      "actors": "A09 swallow / A04 sparrow",
+      "parcel": "Front",
+      "at_target": "physical landing rail (18,16) and alternate point (17,16), authorized flight loop",
+      "periods": "actual jointly eligible natural daylight",
+      "weather_and_seasons": "only when both real flight paths approach and reach their separately spaced perches",
+      "partner": "A04 logical witness, source shared family partner not hardcoded",
+      "full_effect_and_limits": "Swallow yields shared rail to actual sparrow and flies own real second legal perch. Preserve in-flight edges and avoid visible overlap hacks. Wildlife owner maintains exact pair verification.",
+      "emitted_mode": "Ongoing runtime completion emits mode 1; S08 uses actual track duration 1/2/3.",
+      "variant_context_policy": "Base-only unless generated environment and extra duration/effect are independently proven.",
+      "author": {
+        "title": "给下行者让出落点",
+        "trigger": "两个会飞的角色同时瞄准同一个枝头或栏杆",
+        "action": "较高的角色在侧面绕一小圈，先落地的角色停稳后它另选一处",
+        "effect": "同一落点在一次停留期间只分给一名角色",
+        "author_partner": "-",
+        "legacy_effect": "Trail"
+      },
+      "candidate_variant_count": 45,
+      "registered_legacy_ids": [
+        "S05"
+      ],
+      "physically_compatible_mode1_candidates": []
+    },
+    "S08": {
+      "status": "retained",
+      "producer": "living_world.rs::record_footstep",
+      "actors": "H01 0/1 or A01",
+      "parcel": "Front or Expanded",
+      "at_target": "successive real cardinal walking edges on actual shallow/muddy/saturated ground",
+      "periods": "actual walking, no unproven dusk age contexts",
+      "weather_and_seasons": "rain, individual snow details handled by base rules",
+      "partner": "none",
+      "full_effect_and_limits": "Modes 1/2/3 have physical 30/60/90 game minutes; actual run of three consecutive prints. Pre-existing excluded S08~22033. Weather clears prints.",
+      "emitted_mode": "Ongoing runtime completion emits mode 1; S08 uses actual track duration 1/2/3.",
+      "variant_context_policy": "Frozen whitelist matches only roles, exact context and actual effect.",
+      "author": {
+        "title": "在湿地边留下足印",
+        "trigger": "脚下是雨后软泥或未硬结的浅雪",
+        "action": "角色经过后留下一小串随体型变化的足印",
+        "effect": "足印只保留最近一段，下一场雨或化雪将其抹去",
+        "author_partner": "-",
+        "legacy_effect": "Trail"
+      },
+      "candidate_variant_count": 45,
+      "registered_legacy_ids": [
+        "S08",
+        "S08~02031",
+        "S08~02043",
+        "S08~02052",
+        "S08~02131",
+        "S08~02143",
+        "S08~02152",
+        "S08~02133",
+        "S08~02142",
+        "S08~12031",
+        "S08~12043",
+        "S08~12052",
+        "S08~12033",
+        "S08~12152",
+        "S08~12133",
+        "S08~12142",
+        "S08~12151",
+        "S08~22052",
+        "S08~22042",
+        "S08~22051",
+        "S08~22142",
+        "S08~22151",
+        "S08~22132",
+        "S08~32042",
+        "S08~32051",
+        "S08~32032",
+        "S08~32151",
+        "S08~32132",
+        "S08~32141",
+        "S08~32153"
+      ],
+      "physically_compatible_mode1_candidates": []
+    },
+    "S09": {
+      "status": "retained",
+      "producer": "living_world.rs::finish_ground_cleanup",
+      "actors": "H01 0/1",
+      "parcel": "Expanded",
+      "at_target": "reclaimed work-site material source and actual store arrival",
+      "periods": "after physically storing batch",
+      "weather_and_seasons": "ordinary natural resource work",
+      "partner": "none",
+      "full_effect_and_limits": "Clear target and store same bounded real surplus; only cleared reclaimed sites count, no generic wilderness credit.",
+      "emitted_mode": "Ongoing runtime completion emits mode 1; S08 uses actual track duration 1/2/3.",
+      "variant_context_policy": "Frozen whitelist matches only roles, exact context and actual effect.",
+      "author": {
+        "title": "清理用完的工作点",
+        "trigger": "当前建造或维护动作完成且附近有剩余材料",
+        "action": "角色把碎料从路径移到工作区，原位置重新露出地面",
+        "effect": "该工作点腾空供下一次使用，散落物数量同步减少",
+        "author_partner": "-",
+        "legacy_effect": "Tidy"
+      },
+      "candidate_variant_count": 45,
+      "registered_legacy_ids": [
+        "S09"
+      ],
+      "physically_compatible_mode1_candidates": []
+    },
+    "S12": {
+      "status": "new",
+      "producer": "household_detail.rs::commit_household_detail(NoticeLight)",
+      "actors": "H01 0/1 or A01",
+      "parcel": "Front",
+      "at_target": "actual outdoor current safe foot",
+      "periods": "6:00–18:00 only within nine minutes of the transition",
+      "weather_and_seasons": "fully modeled Clouds→Clear weather transition",
+      "partner": "none",
+      "full_effect_and_limits": "Real pause then subsequent planner restores ordinary schedule. This is the runtime cloud-strength step; no multiple wind/light physics modes and no fabricated signal trail.",
+      "emitted_mode": "Ongoing runtime completion emits mode 1; S08 uses actual track duration 1/2/3.",
+      "variant_context_policy": "Base-only unless generated environment and extra duration/effect are independently proven.",
+      "author": {
+        "title": "对庭院突然变亮作出反应",
+        "trigger": "厚云散开使全场光照跨过一个亮度阶段",
+        "action": "角色或枝叶从阴影轮廓变得清楚，随后出现对应的停顿、朝向或舒展",
+        "effect": "每个角色仅记录本次亮度阶段，后续亮度变化可覆盖",
+        "author_partner": "-",
+        "legacy_effect": "Signal"
+      },
+      "candidate_variant_count": 45,
+      "registered_legacy_ids": [
+        "S12"
+      ],
+      "physically_compatible_mode1_candidates": [],
+      "native_completed_receipts": [
+        "household-main-contact-final-fresh-60h\\receipt-S12.json",
+        "household-main-contact-final-mature-36h\\receipt-S12.json",
+        "household-main-contact-fresh-60h\\receipt-S12.json",
+        "household-main-fresh-96h\\receipt-S12.json",
+        "household-main-house-survey-latest-24h\\receipt-S12.json",
+        "household-main-mature-96h\\receipt-S12.json",
+        "household-main-projects-180d-96h\\receipt-S12.json",
+        "household-main-projects-7d-48h\\receipt-S12.json",
+        "household-main-projects-90d-96h\\receipt-S12.json",
+        "household-main-reassess-fish-24h\\receipt-S12.json",
+        "household-main-reassess-fresh-40h\\receipt-S12.json",
+        "household-main-reassess-house-96h\\receipt-S12.json",
+        "household-main-reassess-house-before-120h\\receipt-S12.json",
+        "household-main-reassess-market-96h\\receipt-S12.json",
+        "household-main-reassess-notice-24h\\receipt-S12.json",
+        "household-main-reassess-planter-96h\\receipt-S12.json",
+        "household-main-reassess-root-12h\\receipt-S12.json",
+        "household-main-shift-open-first-30h\\receipt-S12.json",
+        "household-main-shift-post-latest-36h\\receipt-S12.json",
+        "household-main-soil-used-12h\\receipt-S12.json",
+        "household-main-well-recovery-5h\\receipt-S12.json"
+      ],
+      "native_stage_samples": [
+        "household-main-contact-final-fresh-60h/cloud-break.json",
+        "household-main-contact-final-mature-36h/cloud-break.json",
+        "household-main-contact-fresh-60h/cloud-break.json",
+        "household-main-fresh-96h/cloud-break.json",
+        "household-main-house-survey-latest-24h/cloud-break.json",
+        "household-main-mature-96h/cloud-break.json",
+        "household-main-projects-180d-96h/cloud-break.json",
+        "household-main-projects-7d-48h/cloud-break.json",
+        "household-main-projects-90d-96h/cloud-break.json",
+        "household-main-reassess-fish-24h/cloud-break.json",
+        "household-main-reassess-fresh-40h/cloud-break.json",
+        "household-main-reassess-house-96h/cloud-break.json",
+        "household-main-reassess-house-before-120h/cloud-break.json",
+        "household-main-reassess-market-96h/cloud-break.json",
+        "household-main-reassess-notice-24h/cloud-break.json",
+        "household-main-reassess-planter-96h/cloud-break.json",
+        "household-main-reassess-root-12h/cloud-break.json",
+        "household-main-shift-open-first-30h/cloud-break.json",
+        "household-main-shift-post-latest-36h/cloud-break.json",
+        "household-main-soil-used-12h/cloud-break.json",
+        "household-main-well-recovery-5h/cloud-break.json",
+        "household-native-fresh-96h/cloud-break.json",
+        "household-native-mature-48h/cloud-break.json",
+        "household-native-dawn-24h/cloud-break.json"
+      ],
+      "native_stage_proof_scope": "actual normal HomeHost snapshot; a work-stage capture does not independently prove its final receipt",
+      "targeted_causal_regression": "household_detail::tests::brightness_notice_belongs_to_one_real_cloud_break_per_actor"
+    },
+    "S13": {
+      "status": "retained",
+      "producer": "living_world.rs::commit_quiet_visit(Inspect)",
+      "actors": "H01 0/1",
+      "parcel": "Front",
+      "at_target": "actual safe stand beside installed fixture, serialized version",
+      "periods": "discretionary daylight",
+      "weather_and_seasons": "empty and reachable",
+      "partner": "none",
+      "full_effect_and_limits": "First inspection physically completes near actual new fixture, not merely a timestamp side effect.",
+      "emitted_mode": "Ongoing runtime completion emits mode 1; S08 uses actual track duration 1/2/3.",
+      "variant_context_policy": "Frozen whitelist matches only roles, exact context and actual effect.",
+      "author": {
+        "title": "隔着安全距离打量陌生物",
+        "trigger": "日常路线边第一次出现一个小道具或新设施",
+        "action": "角色放慢，转头朝物件停一下，再从侧面绕过去",
+        "effect": "该物件进入角色最近一次见过的记录，同一个体下次缩短打量",
+        "author_partner": "-",
+        "legacy_effect": "Survey"
+      },
+      "candidate_variant_count": 45,
+      "registered_legacy_ids": [
+        "S13",
+        "S13~10231",
+        "S13~11041",
+        "S13~11131",
+        "S13~20041",
+        "S13~20131"
+      ],
+      "physically_compatible_mode1_candidates": []
+    },
+    "S14": {
+      "status": "retained",
+      "producer": "living_world.rs::commit(Cook)",
+      "actors": "H01 0/1",
+      "parcel": "Front",
+      "at_target": "real depleted meal source and physically reached alternative kitchen",
+      "periods": "actual work after short empty-point wait",
+      "weather_and_seasons": "ordinary meals",
+      "partner": "none",
+      "full_effect_and_limits": "A truly available food source is used after the first point is empty. No trail variant.",
+      "emitted_mode": "Ongoing runtime completion emits mode 1; S08 uses actual track duration 1/2/3.",
+      "variant_context_policy": "Frozen whitelist matches only roles, exact context and actual effect.",
+      "author": {
+        "title": "空等后换去别处",
+        "trigger": "常去的资源点已空且角色抵达后等待了一会儿",
+        "action": "角色检查空盘、空枝或空工作点，转向旁边的可用点",
+        "effect": "当前目标替换为下一可用位置，空点暂时降低选择优先级",
+        "author_partner": "-",
+        "legacy_effect": "Trail"
+      },
+      "candidate_variant_count": 45,
+      "registered_legacy_ids": [
+        "S14"
+      ],
+      "physically_compatible_mode1_candidates": []
+    },
+    "S18": {
+      "status": "retained",
+      "producer": "living_world.rs::commit(GetWater)",
+      "actors": "H01 0/1",
+      "parcel": "Expanded",
+      "at_target": "actual expanded public well",
+      "periods": "ordinary day work shift",
+      "weather_and_seasons": "reachable public well, supplies available",
+      "partner": "none",
+      "full_effect_and_limits": "Actually operates repaired working pulley, records next authorized trial once.",
+      "emitted_mode": "Ongoing runtime completion emits mode 1; S08 uses actual track duration 1/2/3.",
+      "variant_context_policy": "Frozen whitelist matches only roles, exact context and actual effect.",
+      "author": {
+        "title": "先试一件再继续",
+        "trigger": "一个刚修好的装置或设施还没有被正常使用过",
+        "action": "角色小幅拨动、踩踏或查看，设施短暂活动一次",
+        "effect": "记录一次通过或待修结果，待修点进入下一次维护选择",
+        "author_partner": "-",
+        "legacy_effect": "Survey"
+      },
+      "candidate_variant_count": 45,
+      "registered_legacy_ids": [
+        "S18",
+        "S18~00001",
+        "S18~01221",
+        "S18~10221",
+        "S18~11121",
+        "S18~12121",
+        "S18~20121",
+        "S18~21121",
+        "S18~22021",
+        "S18~23201",
+        "S18~30021",
+        "S18~31021",
+        "S18~31201"
+      ],
+      "physically_compatible_mode1_candidates": []
+    },
+    "S22": {
+      "status": "new",
+      "producer": "living_world.rs::commit(FellTree/Scenic final Cut) and household_detail.rs::commit_household_detail(Startled)",
+      "actors": "H01 0/1 or A01",
+      "parcel": "Front",
+      "at_target": "two legal feet away from actual tree landing seen within five tiles, target the same fallen tree",
+      "periods": "before 4 game minutes to start, holds alert for at most 8, voluntary daytime/outdoors activity",
+      "weather_and_seasons": "actual lawful tree-felling conditions",
+      "partner": "not the tree worker, no legacy required partner",
+      "full_effect_and_limits": "Only real standing→fall event can create one current spatial signal. A nearby empty-handed bystander physically backs away two clear tiles, each at most once; normal destinations resume, no ambient sounds or added loot.",
+      "emitted_mode": "Ongoing runtime completion emits mode 1; S08 uses actual track duration 1/2/3.",
+      "variant_context_policy": "Base-only unless generated environment and extra duration/effect are independently proven.",
+      "author": {
+        "title": "回避惊响的来源",
+        "trigger": "附近突然有硬物落地，角色未参与该事件",
+        "action": "角色先停住，再避开落点换向走几步",
+        "effect": "落点短暂提高警戒，动静平息后自动解除",
+        "author_partner": "-",
+        "legacy_effect": "Signal"
+      },
+      "candidate_variant_count": 44,
+      "registered_legacy_ids": [
+        "S22"
+      ],
+      "physically_compatible_mode1_candidates": [],
+      "targeted_causal_regression": "household_detail::tests::real_felled_tree_alert_reacts_once_only_after_leaving_the_landing"
+    }
+  },
+  "blocked": {
+    "A01-01": {
+      "status": "blocked_by_named_missing_mechanism",
+      "reason": "Real plate and food come into existence after actual care, but there is no ringing bell signal that the cat can really hear and follow first.",
+      "author": {
+        "title": "听到自己的开饭铃",
+        "trigger": "管理员端来正餐",
+        "action": "竖耳后沿熟悉路线跑到食盘",
+        "effect": "转到进餐状态",
+        "author_partner": "-",
+        "legacy_effect": "Signal"
+      },
+      "unbound_variant_count": 6
+    },
+    "A01-03": {
+      "status": "blocked_by_named_missing_mechanism",
+      "reason": "No loose leaf physically capable of occupying the bowl station and moving to a real path tile from two paw pushes.",
+      "author": {
+        "title": "用爪拨开碗边落叶",
+        "trigger": "饭边落叶影响站位",
+        "action": "短拍两下，把叶拨到石径",
+        "effect": "餐位旁的落叶换位置",
+        "author_partner": "-",
+        "legacy_effect": "Tidy"
+      },
+      "unbound_variant_count": 6
+    },
+    "A01-05": {
+      "status": "blocked_by_named_missing_mechanism",
+      "reason": "No player-fed and orally carried snack custody from player hand to mat, with consequence distinct from normal hunger.",
+      "author": {
+        "title": "叼着零食去软垫",
+        "trigger": "玩家给零食且垫子可用",
+        "action": "叼起一小块，走到垫边再吃",
+        "effect": "零食消耗并短暂心情上升",
+        "author_partner": "-",
+        "legacy_effect": "Forage"
+      },
+      "unbound_variant_count": 6
+    },
+    "A01-11": {
+      "status": "blocked_by_named_missing_mechanism",
+      "reason": "Existing night Sleep has a real duration. No persisted short dream event and rendered bubble/paw movement within deep sleep.",
+      "author": {
+        "title": "梦里小跑几步",
+        "trigger": "夜间深睡中的偶发片段",
+        "action": "爪尖小动，冒出浅色梦泡",
+        "effect": "梦泡随本段睡眠结束消失",
+        "author_partner": "-",
+        "legacy_effect": "Rest"
+      },
+      "unbound_variant_count": 7
+    },
+    "A01-14": {
+      "status": "blocked_by_named_missing_mechanism",
+      "reason": "No paper entity with actual directional wind motion and persistent relocation from a side path into cover.",
+      "author": {
+        "title": "贴墙巡查风吹来的纸片",
+        "trigger": "纸片滚进左侧小路",
+        "action": "压低身体侧步追踪纸片",
+        "effect": "纸片被推到路边",
+        "author_partner": "-",
+        "legacy_effect": "Trail"
+      },
+      "unbound_variant_count": 7
+    },
+    "A01-16": {
+      "status": "blocked_by_named_missing_mechanism",
+      "reason": "No occupancy-changing courtyard gate latch paired with an actual audible approach or climbing-on-wall station.",
+      "author": {
+        "title": "从矮墙探头确认外面",
+        "trigger": "听到院外访客而门还没开",
+        "action": "前爪扒墙只露耳朵和眼睛",
+        "effect": "短暂进入等客状态",
+        "author_partner": "-",
+        "legacy_effect": "Survey"
+      },
+      "unbound_variant_count": 7
+    },
+    "A01-17": {
+      "status": "blocked_by_named_missing_mechanism",
+      "reason": "Stone is collected at resource tiles. No physically pushable loose pebble with two sides or final path object occupancy.",
+      "author": {
+        "title": "把石子拨过石径接缝",
+        "trigger": "巡路碰到一颗小石子",
+        "action": "先推一下，再扑到石子另一侧",
+        "effect": "可移动石子留到下一次整理",
+        "author_partner": "-",
+        "legacy_effect": "MoveObject"
+      },
+      "unbound_variant_count": 6
+    },
+    "A01-18": {
+      "status": "blocked_by_named_missing_mechanism",
+      "reason": "Map density, regions and estate phase changes exist; original resize exposes a boundary of the playable yard and requires inspecting it, which the current viewport resize does not do.",
+      "author": {
+        "title": "沿新露出的边界走一圈",
+        "trigger": "拉宽或拉高后首次探索",
+        "action": "沿新边走完再折回原来的垫子",
+        "effect": "记录本次扩建的探索标记",
+        "author_partner": "-",
+        "legacy_effect": "Trail"
+      },
+      "unbound_variant_count": 7
+    },
+    "A01-19": {
+      "status": "blocked_by_named_missing_mechanism",
+      "reason": "No tarped end-of-shift work site closure with a real outer safety rope and remaining timber to smell.",
+      "author": {
+        "title": "等工地收工后验一验",
+        "trigger": "管理员刚盖好工料",
+        "action": "绕安全绳外一圈嗅木料",
+        "effect": "手记出现该工位的探看痕迹",
+        "author_partner": "-",
+        "legacy_effect": "Survey"
+      },
+      "unbound_variant_count": 7
+    },
+    "A01-20": {
+      "status": "blocked_by_named_missing_mechanism",
+      "reason": "Workshop has a closed border and actual bench fixtures. No cat-perch support above outer edge of the workbench, movement/occupation or shared clearance ledger there.",
+      "author": {
+        "title": "跳上已经封边的工作台",
+        "trigger": "工作台完工且无人干活",
+        "action": "轻跳到一角坐下，尾巴垂边",
+        "effect": "临时占用台角",
+        "author_partner": "-",
+        "legacy_effect": "Survey"
+      },
+      "unbound_variant_count": 7
+    },
+    "A01-21": {
+      "status": "blocked_by_named_missing_mechanism",
+      "reason": "No corresponding gazebo construction/roofed sleep foot. A home shelter cannot be renamed as the new gazebo.",
+      "author": {
+        "title": "趴在凉亭看雨",
+        "trigger": "凉亭完工且下雨",
+        "action": "从石径跑到亭里卧下",
+        "effect": "睡眠点切换到凉亭",
+        "author_partner": "-",
+        "legacy_effect": "Rest"
+      },
+      "unbound_variant_count": 8
+    },
+    "A01-22": {
+      "status": "blocked_by_named_missing_mechanism",
+      "reason": "Timber and ground logs are real resources. No individual wood chip pieces temporarily strewn beside paid work or pushable by cat.",
+      "author": {
+        "title": "把玩掉在工位外的木屑",
+        "trigger": "施工结束且边缘有木屑",
+        "action": "用爪拍出一道短木屑轨迹",
+        "effect": "碎木屑换到路边",
+        "author_partner": "-",
+        "legacy_effect": "MoveObject"
+      },
+      "unbound_variant_count": 6
+    },
+    "A01-23": {
+      "status": "blocked_by_named_missing_mechanism",
+      "reason": "Fences don't record freshly painted/repaired time and use a single static state. New fixture curiosity is not proof of freshly brushed fence.",
+      "author": {
+        "title": "闻一闻刚刷好的篱笆",
+        "trigger": "篱笆修复后有新木色",
+        "action": "贴近闻两下再后退",
+        "effect": "短暂关注已修复的设施",
+        "author_partner": "-",
+        "legacy_effect": "Survey"
+      },
+      "unbound_variant_count": 7
+    },
+    "A01-24": {
+      "status": "blocked_by_named_missing_mechanism",
+      "reason": "No physically reserved small cat-only shoebox-height space exposed by a completed flower box; generic garden seating does not qualify.",
+      "author": {
+        "title": "认领花槽旁的窄角",
+        "trigger": "花槽完工且边上有空位",
+        "action": "试坐、转身、蜷起尾巴",
+        "effect": "解锁临时小憩位置",
+        "author_partner": "-",
+        "legacy_effect": "Rest"
+      },
+      "unbound_variant_count": 8
+    },
+    "A01-26": {
+      "status": "blocked_by_named_missing_mechanism",
+      "reason": "A17 flies. The original requires an actual same encounter and an interruption/repath of that specific airborne partner from one cat leap.",
+      "author": {
+        "title": "扑一下飞到叶背的影子",
+        "trigger": "蝴蝶或飞虫经过树旁",
+        "action": "原地小跳，扑空后抬头看",
+        "effect": "短暂惊动访客",
+        "author_partner": "A17",
+        "legacy_effect": "Forage"
+      },
+      "unbound_variant_count": 0
+    },
+    "A01-27": {
+      "status": "blocked_by_named_missing_mechanism",
+      "reason": "Plants are formed by sprites with no individual dropped movable petals or wind-driven transport.",
+      "author": {
+        "title": "追落花到石径尽头",
+        "trigger": "花期结束且风吹落花瓣",
+        "action": "跳过两块石头追一片花瓣",
+        "effect": "花瓣滚到院边",
+        "author_partner": "-",
+        "legacy_effect": "MoveObject"
+      },
+      "unbound_variant_count": 6
+    },
+    "A01-28": {
+      "status": "blocked_by_named_missing_mechanism",
+      "reason": "Scenic shrubs are solid except after actual clear. No under-canopy traversable shelter interior or shading path through a particular bush.",
+      "author": {
+        "title": "钻进灌木捉投下的影",
+        "trigger": "树冠旁有日照和阴影",
+        "action": "从前面钻进，从树另一侧探头",
+        "effect": "临时改走遮阴路径",
+        "author_partner": "-",
+        "legacy_effect": "Trail"
+      },
+      "unbound_variant_count": 7
+    },
+    "A01-29": {
+      "status": "blocked_by_named_missing_mechanism",
+      "reason": "Sparrows perch, but no actual visible occupied nest on a low close tree and no cat-to-bark vertical pose.",
+      "author": {
+        "title": "扒着矮树看雀巢",
+        "trigger": "燕子或麻雀在高位休息",
+        "action": "前爪搭树皮向上看",
+        "effect": "不接触巢位，停留一小段",
+        "author_partner": "A04",
+        "legacy_effect": "Survey"
+      },
+      "unbound_variant_count": 0
+    },
+    "A01-30": {
+      "status": "blocked_by_named_missing_mechanism",
+      "reason": "Tree visuals and solar cycles exist; no local wind replacement and physically available shade waiting seat tied to that wind.",
+      "author": {
+        "title": "坐在树影里等风停",
+        "trigger": "大树成熟且有风",
+        "action": "缩在树荫的动影里",
+        "effect": "临时占用乘凉点",
+        "author_partner": "-",
+        "legacy_effect": "Rest"
+      },
+      "unbound_variant_count": 8
+    },
+    "A01-32": {
+      "status": "blocked_by_named_missing_mechanism",
+      "reason": "Harvest basket only exists when held or full; no persistent unowned partly open empty basket with capacity to hold a cat and prevent worker pickup.",
+      "author": {
+        "title": "守住萝卜旁的空篮",
+        "trigger": "菜篮放下且没装满",
+        "action": "钻进空篮，仅露耳尖",
+        "effect": "篮子被占用到猫离开",
+        "author_partner": "-",
+        "legacy_effect": "Rest"
+      },
+      "unbound_variant_count": 8
+    },
+    "A01-33": {
+      "status": "blocked_by_named_missing_mechanism",
+      "reason": "No actual large identifiable mature pumpkin physically obscures a cat and remains a saved hide point.",
+      "author": {
+        "title": "从南瓜后突然探头",
+        "trigger": "南瓜长大可遮住身体",
+        "action": "绕到瓜背，隔一拍露头",
+        "effect": "把瓜背加入藏身点",
+        "author_partner": "-",
+        "legacy_effect": "Trail"
+      },
+      "unbound_variant_count": 7
+    },
+    "A01-34": {
+      "status": "blocked_by_named_missing_mechanism",
+      "reason": "Tilled plots differ visually. No owned movable loose soil chunk and gardener task returning that same chunk to its field.",
+      "author": {
+        "title": "把爪子伸向松动的土块",
+        "trigger": "新翻的土且地块空闲",
+        "action": "在畦外拨一小块土",
+        "effect": "土块留到养护时归位",
+        "author_partner": "-",
+        "legacy_effect": "MoveObject"
+      },
+      "unbound_variant_count": 5
+    },
+    "A01-35": {
+      "status": "blocked_by_named_missing_mechanism",
+      "reason": "Beds do not expose navigable interior crop row lanes; author specifically requires safe pass between rows without trampling the seedlings.",
+      "author": {
+        "title": "从两行菜之间悄悄穿过",
+        "trigger": "菜行成形且通道足够",
+        "action": "踩干净的行间绕过嫩苗",
+        "effect": "使用限时通行路径",
+        "author_partner": "-",
+        "legacy_effect": "Trail"
+      },
+      "unbound_variant_count": 6
+    },
+    "A01-36": {
+      "status": "blocked_by_named_missing_mechanism",
+      "reason": "Harvest basket and stocks exist, not a physically open movable paper grocery bag or half-tile positional object.",
+      "author": {
+        "title": "闻闻装菜的纸袋",
+        "trigger": "收获结束且袋口打开",
+        "action": "伸头进去，袋子轻晃",
+        "effect": "纸袋挪半格并保持片刻",
+        "author_partner": "-",
+        "legacy_effect": "Survey"
+      },
+      "unbound_variant_count": 6
+    },
+    "A01-39": {
+      "status": "blocked_by_named_missing_mechanism",
+      "reason": "Wet footprints exist. There is no linked waypoint-by-waypoint companion route requiring those same preceding dry stones while still raining.",
+      "author": {
+        "title": "跟着雨靴走过干石",
+        "trigger": "管理员雨天回屋",
+        "action": "只踩她刚踏过的干石",
+        "effect": "走一条避湿路线",
+        "author_partner": "-",
+        "legacy_effect": "Trail"
+      },
+      "unbound_variant_count": 6
+    },
+    "A01-40": {
+      "status": "blocked_by_named_missing_mechanism",
+      "reason": "Human porch rest exists. No cat lap/tail occupancy or release on real human standing transition.",
+      "author": {
+        "title": "把搭在膝上的尾巴收回来",
+        "trigger": "管理员在门廊休息并要起身",
+        "action": "慢慢撤掉尾巴，换到台阶",
+        "effect": "释放管理员身边的休息点",
+        "author_partner": "-",
+        "legacy_effect": "Rest"
+      },
+      "unbound_variant_count": 7
+    },
+    "A01-41": {
+      "status": "blocked_by_named_missing_mechanism",
+      "reason": "Resident artist boards exist. No painting of the named live cat with board-side inspection changing its pose during that actual work.",
+      "author": {
+        "title": "在画师的画板后偷看",
+        "trigger": "画师画猫且光线稳定",
+        "action": "绕到板后看一眼再坐回",
+        "effect": "更改当前写生姿势",
+        "author_partner": "H09",
+        "legacy_effect": "Survey"
+      },
+      "unbound_variant_count": 0
+    },
+    "A01-42": {
+      "status": "blocked_by_named_missing_mechanism",
+      "reason": "Mail is real escrow/recipient ownership. No cat observation, sniff callback, and fixed letter-box encounter on the same delivered note.",
+      "author": {
+        "title": "闻送信员放下的便笺",
+        "trigger": "新便笺刚进信槽",
+        "action": "抬爪够信槽，再闻一下手",
+        "effect": "访客手记出现一次猫到场",
+        "author_partner": "-",
+        "legacy_effect": "Survey"
+      },
+      "unbound_variant_count": 6
+    },
+    "A01-43": {
+      "status": "blocked_by_named_missing_mechanism",
+      "reason": "The historical gray cat is a distinct A02; no shared two-state social eye-contact with Orange and persisted friendly distance.",
+      "author": {
+        "title": "和灰猫同步眨眼",
+        "trigger": "灰猫在身旁静坐",
+        "action": "两只猫隔一拍各眨一次",
+        "effect": "建立本次访客的友好距离",
+        "author_partner": "A02",
+        "legacy_effect": "Bond"
+      },
+      "unbound_variant_count": 1
+    },
+    "A01-44": {
+      "status": "blocked_by_named_missing_mechanism",
+      "reason": "Black cat visuals alone don't reserve two physical yard mat corners for existing Orange and A03 or keep them both using it.",
+      "author": {
+        "title": "把半块软垫让给黑猫",
+        "trigger": "黑猫在傍晚坐到垫边",
+        "action": "橘猫往另一角挪出空位",
+        "effect": "两只猫共享垫子到一方离开",
+        "author_partner": "A03",
+        "legacy_effect": "Bond"
+      },
+      "unbound_variant_count": 0
+    },
+    "A01-45": {
+      "status": "blocked_by_named_missing_mechanism",
+      "reason": "Squirrel visuals alone do not bury one durable shell and expose a named observed location to Orange.",
+      "author": {
+        "title": "看松鼠把果壳塞进缝",
+        "trigger": "松鼠藏果时橘猫在近处",
+        "action": "趴着看，耳朵对着藏果点",
+        "effect": "获得短时查看藏果点的动作",
+        "author_partner": "A05",
+        "legacy_effect": "Survey"
+      },
+      "unbound_variant_count": 0
+    },
+    "A01-46": {
+      "status": "blocked_by_named_missing_mechanism",
+      "reason": "No actual just-in-time cat/hedgehog coordination and shared safe distance on the same regular corridor.",
+      "author": {
+        "title": "用尾巴尖招呼刺猬",
+        "trigger": "刺猬沿石径靠近",
+        "action": "保持距离摆一下尾尖",
+        "effect": "维持礼让，不遮挡刺猬路线",
+        "author_partner": "A06",
+        "legacy_effect": "Bond"
+      },
+      "unbound_variant_count": 0
+    },
+    "A01-47": {
+      "status": "blocked_by_named_missing_mechanism",
+      "reason": "Rabbit and cat render their own movement. No exact paired rabbit stepping stone event leading to cat's extra outward arc with the same route choice.",
+      "author": {
+        "title": "在兔子跳过后试跳",
+        "trigger": "兔子刚走过踏石",
+        "action": "模仿短跳，落地甩尾",
+        "effect": "临时改走踏石一侧",
+        "author_partner": "A07",
+        "legacy_effect": "Trail"
+      },
+      "unbound_variant_count": 0
+    },
+    "A01-48": {
+      "status": "blocked_by_named_missing_mechanism",
+      "reason": "No real frog source audible to Orange, timestamped specific bank call and actual Orange orient/stop reaction; random halt is insufficient.",
+      "author": {
+        "title": "听见青蛙叫就偏头",
+        "trigger": "雨后青蛙在水边叫",
+        "action": "耳朵转向水洼，停下半拍",
+        "effect": "从步行切到驻足",
+        "author_partner": "A08",
+        "legacy_effect": "Signal"
+      },
+      "unbound_variant_count": 0
+    },
+    "A01-52": {
+      "status": "blocked_by_named_missing_mechanism",
+      "reason": "World can drain but does not produce an actual disaster replacement planting event or a cat's later paired inspection of that specific renewed bed.",
+      "author": {
+        "title": "检查灾后那块新土",
+        "trigger": "灾害恢复并完成补种",
+        "action": "凑过去嗅土，留在边缘",
+        "effect": "手记更新恢复后首次巡视",
+        "author_partner": "-",
+        "legacy_effect": "Survey"
+      },
+      "unbound_variant_count": 5
+    },
+    "A01-53": {
+      "status": "blocked_by_named_missing_mechanism",
+      "reason": "No residual moving pond surface state tied to the end of a specific flood and slowed wave decay at actual water edge.",
+      "author": {
+        "title": "等池边水面重新平静",
+        "trigger": "积涝退去且有细波",
+        "action": "前爪缩在池岸，看波纹变平",
+        "effect": "离开受灾地块旁的观察点",
+        "author_partner": "-",
+        "legacy_effect": "Survey"
+      },
+      "unbound_variant_count": 5
+    },
+    "A01-54": {
+      "status": "blocked_by_named_missing_mechanism",
+      "reason": "No transferable wind-driven paper ball and actual mouth carry, retained identity or placement at sheltered door.",
+      "author": {
+        "title": "把怕风的纸团叼回门边",
+        "trigger": "风吹纸团接近边界",
+        "action": "叼起送到门前背风处",
+        "effect": "纸团从院边移回固定位置",
+        "author_partner": "-",
+        "legacy_effect": "MoveObject"
+      },
+      "unbound_variant_count": 5
+    },
+    "A01-56": {
+      "status": "blocked_by_named_missing_mechanism",
+      "reason": "The bowl is fixed and filled, not player-movable/replaced and then individually registered as a new accessible spot.",
+      "author": {
+        "title": "认出刚放回的水碗",
+        "trigger": "玩家重新摆好水碗",
+        "action": "沿垫边走来，停在新水光前",
+        "effect": "把水碗加入当前可去地点",
+        "author_partner": "-",
+        "legacy_effect": "Survey"
+      },
+      "unbound_variant_count": 5
+    },
+    "A01-57": {
+      "status": "blocked_by_named_missing_mechanism",
+      "reason": "No explicit player light toggle with actual outgoing visual stimulus to respond to; dusk coat shading is a different trigger.",
+      "author": {
+        "title": "注意突然熄掉的灯",
+        "trigger": "玩家熄灯且猫在门廊",
+        "action": "暂停，眼睛从暖色光里转向窗",
+        "effect": "回到当时的昼夜姿态",
+        "author_partner": "-",
+        "legacy_effect": "Signal"
+      },
+      "unbound_variant_count": 5
+    },
+    "A01-58": {
+      "status": "blocked_by_named_missing_mechanism",
+      "reason": "Window UI does not have recorded in-world player clicks and an interaction cooldown at a persisted physical station.",
+      "author": {
+        "title": "为熟悉的点击位置等一会儿",
+        "trigger": "同一轮主动互动结束",
+        "action": "走到附近坐几拍，眨一次眼",
+        "effect": "给玩家下一次互动留出冷却",
+        "author_partner": "-",
+        "legacy_effect": "Rest"
+      },
+      "unbound_variant_count": 5
+    },
+    "A01-59": {
+      "status": "blocked_by_named_missing_mechanism",
+      "reason": "Wall-clock resume is real, but there is no user presence signal linked to long absence and physically acknowledged door greeting; forward offline simulation cannot prove an open event.",
+      "author": {
+        "title": "给久未打开的小屋做标记",
+        "trigger": "玩家隔了较久再次打开且猫醒着",
+        "action": "从当前位置走到门旁打招呼",
+        "effect": "覆盖最近一次欢迎记录",
+        "author_partner": "-",
+        "legacy_effect": "Bond"
+      },
+      "unbound_variant_count": 5
+    },
+    "A01-60": {
+      "status": "blocked_by_named_missing_mechanism",
+      "reason": "Viewport zoom/resize changes the portrayed scene only; it does not expose new physical margins for cat pathfinding or a session-scoped preference.",
+      "author": {
+        "title": "挑自己喜欢的观察角度",
+        "trigger": "窗口改形后有新高低边界",
+        "action": "绕两处边缘，最后选一块前景坐下",
+        "effect": "本轮在场时优先去该观察点",
+        "author_partner": "-",
+        "legacy_effect": "Survey"
+      },
+      "unbound_variant_count": 5
+    },
+    "H01-01": {
+      "status": "blocked_by_named_missing_mechanism",
+      "reason": "There are ordinary crop Seeds but no flower-species inventory, flower bed lifecycle or authored two flower sowing rows.",
+      "author": {
+        "title": "挑好第一包花籽",
+        "trigger": "空花畦进入播种期",
+        "action": "草帽女孩从木盒里挑籽，撒进两道浅沟",
+        "effect": "记录当前地块的物种和播种时刻",
+        "author_partner": "-",
+        "legacy_effect": "Sow"
+      },
+      "unbound_variant_count": 11
+    },
+    "H01-02": {
+      "status": "blocked_by_named_missing_mechanism",
+      "reason": "Missing named per-variety tags tied to a flower sowing cycle; generic crops have no cultivar ID.",
+      "author": {
+        "title": "用木签写花名",
+        "trigger": "新品种首次播种",
+        "action": "在畦角插一块小签",
+        "effect": "木签保留到这轮换种",
+        "author_partner": "-",
+        "legacy_effect": "Survey"
+      },
+      "unbound_variant_count": 15
+    },
+    "H01-03": {
+      "status": "blocked_by_named_missing_mechanism",
+      "reason": "No actual seedling cover paper object or visual state waiting for removal.",
+      "author": {
+        "title": "揭去育苗纸",
+        "trigger": "幼苗刚冒头",
+        "action": "卷起覆纸，露出第一对嫩叶",
+        "effect": "地块的视觉从覆种变为发芽",
+        "author_partner": "-",
+        "legacy_effect": "TendPlant"
+      },
+      "unbound_variant_count": 9
+    },
+    "H01-04": {
+      "status": "blocked_by_named_missing_mechanism",
+      "reason": "No individual sunflower lifecycle or retained safety ring tied to its stem; ordinary growth cannot represent it.",
+      "author": {
+        "title": "给长高的花搭环",
+        "trigger": "向日葵长到生长期",
+        "action": "扶直花茎，套上细支架",
+        "effect": "支架保留至采收",
+        "author_partner": "-",
+        "legacy_effect": "TendPlant"
+      },
+      "unbound_variant_count": 9
+    },
+    "H01-05": {
+      "status": "blocked_by_named_missing_mechanism",
+      "reason": "No harvested ornamental flower lifecycle with dead heads versus surviving shoots.",
+      "author": {
+        "title": "剪掉凋花",
+        "trigger": "一茬花的花期尾声",
+        "action": "摘掉暗色残花，留下一圈新芽",
+        "effect": "该轮残花消失",
+        "author_partner": "-",
+        "legacy_effect": "TendPlant"
+      },
+      "unbound_variant_count": 9
+    },
+    "H01-06": {
+      "status": "blocked_by_named_missing_mechanism",
+      "reason": "There is no cut-flower inventory and no actual flower harvesting into a portable bunch.",
+      "author": {
+        "title": "收下一小束花",
+        "trigger": "花卉进入采收期",
+        "action": "剪下一束装进篮里",
+        "effect": "采收后地块进入清理",
+        "author_partner": "-",
+        "legacy_effect": "Harvest"
+      },
+      "unbound_variant_count": 11
+    },
+    "H01-08": {
+      "status": "blocked_by_named_missing_mechanism",
+      "reason": "No directional recorded wind exposure, stake custody or attachment to a single sapling.",
+      "author": {
+        "title": "立迎风支柱",
+        "trigger": "幼树遇上一段大风",
+        "action": "把木桩插到树的迎风面",
+        "effect": "树干旁保留一根支柱",
+        "author_partner": "-",
+        "legacy_effect": "TendPlant"
+      },
+      "unbound_variant_count": 9
+    },
+    "H01-09": {
+      "status": "blocked_by_named_missing_mechanism",
+      "reason": "Tree canopy is whole baked art, with no individually removable low branch or boundary segment.",
+      "author": {
+        "title": "疏理低枝",
+        "trigger": "树冠开始长密",
+        "action": "剪去一根靠近石径的低枝",
+        "effect": "小径旁枝叶的轮廓改变",
+        "author_partner": "-",
+        "legacy_effect": "TendPlant"
+      },
+      "unbound_variant_count": 9
+    },
+    "H01-10": {
+      "status": "blocked_by_named_missing_mechanism",
+      "reason": "No local autumn leaf ring physically tied to a juvenile tree and erased by the next actual rain. Compost stock alone is insufficient.",
+      "author": {
+        "title": "铺落叶护根",
+        "trigger": "秋天幼树边积叶",
+        "action": "把落叶拨成浅浅一圈",
+        "effect": "树脚保留覆盖层到下一场雨",
+        "author_partner": "-",
+        "legacy_effect": "TendPlant"
+      },
+      "unbound_variant_count": 9
+    },
+    "H01-11": {
+      "status": "blocked_by_named_missing_mechanism",
+      "reason": "Existing fruit counted as generic crops and recovered seeds for vegetable plots. No fallen original fruit object or apple-seed custody slot for a future tree.",
+      "author": {
+        "title": "拾落果留种",
+        "trigger": "苹果树进入收获",
+        "action": "拣起地上的果实，单独装种",
+        "effect": "留下下一轮的种子格",
+        "author_partner": "-",
+        "legacy_effect": "SeedTrade"
+      },
+      "unbound_variant_count": 8
+    },
+    "H01-12": {
+      "status": "blocked_by_named_missing_mechanism",
+      "reason": "Existing orchards mature from sapling to full tree; no juvenile dormant-bud observations, visible bud size or durable per-tree hand record.",
+      "author": {
+        "title": "检查树芽越冬",
+        "trigger": "冬季晴天且幼树休眠",
+        "action": "把手套放到树芽旁比大小",
+        "effect": "手记更新这棵树的状态",
+        "author_partner": "-",
+        "legacy_effect": "Survey"
+      },
+      "unbound_variant_count": 14
+    },
+    "H01-14": {
+      "status": "blocked_by_named_missing_mechanism",
+      "reason": "No density or individual seedling identities within a fixed crop square. Standard tilling does not move seedlings.",
+      "author": {
+        "title": "疏开密苗",
+        "trigger": "菜苗刚进入生长期",
+        "action": "挪出两株靠得太近的苗",
+        "effect": "保留稀疏的苗行外观",
+        "author_partner": "-",
+        "legacy_effect": "TendPlant"
+      },
+      "unbound_variant_count": 9
+    },
+    "H01-15": {
+      "status": "blocked_by_named_missing_mechanism",
+      "reason": "No pumpkin crop identity with an independent wet contact surface and placeable wood shim.",
+      "author": {
+        "title": "给南瓜垫木片",
+        "trigger": "南瓜快成熟且土面潮",
+        "action": "将薄木片推到瓜底",
+        "effect": "木片保留至收瓜",
+        "author_partner": "-",
+        "legacy_effect": "TendPlant"
+      },
+      "unbound_variant_count": 9
+    },
+    "H01-18": {
+      "status": "blocked_by_named_missing_mechanism",
+      "reason": "Harvest and re-tilling are real, but empty-bed fabric custody, cover collision and subsequent removal are missing.",
+      "author": {
+        "title": "盖空畦准备轮作",
+        "trigger": "采完且当晚有雨",
+        "action": "把旧覆布拉平压住两角",
+        "effect": "覆布留到下轮播种",
+        "author_partner": "-",
+        "legacy_effect": "TendPlant"
+      },
+      "unbound_variant_count": 9
+    },
+    "H01-21": {
+      "status": "blocked_by_named_missing_mechanism",
+      "reason": "There is no buildable greenhouse or a window-frame job at an installed-enclosure phase.",
+      "author": {
+        "title": "立温室窗框",
+        "trigger": "温室施工后段",
+        "action": "把青色窗框扶正卡紧",
+        "effect": "温室从框架变为有窗",
+        "author_partner": "-",
+        "legacy_effect": "Build"
+      },
+      "unbound_variant_count": 9
+    },
+    "H01-22": {
+      "status": "blocked_by_named_missing_mechanism",
+      "reason": "Water polygons are fixed; no authored construction order for a lining, retained seal or leak test.",
+      "author": {
+        "title": "给水池做防漏线",
+        "trigger": "池塘地基完成",
+        "action": "沿池沿贴深色防水带",
+        "effect": "池塘显示可蓄水边缘",
+        "author_partner": "-",
+        "legacy_effect": "Build"
+      },
+      "unbound_variant_count": 9
+    },
+    "H01-24": {
+      "status": "blocked_by_named_missing_mechanism",
+      "reason": "Paid work can pause with real saved progress; there is no installed and later removable tarp/covered materials object.",
+      "author": {
+        "title": "下班盖上工料",
+        "trigger": "短施工班次结束",
+        "action": "把工具和木料盖起来",
+        "effect": "工程进度停在当前阶段",
+        "author_partner": "-",
+        "legacy_effect": "Shelter"
+      },
+      "unbound_variant_count": 12
+    },
+    "H01-25": {
+      "status": "blocked_by_named_missing_mechanism",
+      "reason": "Fence imagery respects collision but lacks wind-deformation, nails and per-section repair state.",
+      "author": {
+        "title": "夹正松动篱笆",
+        "trigger": "篱笆被风吹歪",
+        "action": "两手扶正，扣紧卡钉",
+        "effect": "歪斜的篱笆恢复",
+        "author_partner": "-",
+        "legacy_effect": "Repair"
+      },
+      "unbound_variant_count": 9
+    },
+    "H01-26": {
+      "status": "blocked_by_named_missing_mechanism",
+      "reason": "Existing flood/drain applies to crop plots. No actually impounded roadside puddle blocked by a removable packet of leaves at a path outlet.",
+      "author": {
+        "title": "清理雨水出口",
+        "trigger": "小雨后石径旁积水",
+        "action": "掏走堵口的叶团",
+        "effect": "局部水洼缩小",
+        "author_partner": "-",
+        "legacy_effect": "Drain"
+      },
+      "unbound_variant_count": 8
+    },
+    "H01-28": {
+      "status": "blocked_by_named_missing_mechanism",
+      "reason": "Roads support authored construction and paving. No single sunken stepping stone and replacement that becomes walkable after a test.",
+      "author": {
+        "title": "把石径补成一线",
+        "trigger": "一段踏石下陷",
+        "action": "垫入薄石，踩稳确认",
+        "effect": "恢复该段可走的踏石",
+        "author_partner": "-",
+        "legacy_effect": "Repair"
+      },
+      "unbound_variant_count": 9
+    },
+    "H01-31": {
+      "status": "blocked_by_named_missing_mechanism",
+      "reason": "Rain/snow exists; violent wind damage does not create a fallen structural beam or identifiable wreckage.",
+      "author": {
+        "title": "收回吹倒的横木",
+        "trigger": "罕见风暴后的受损阶段",
+        "action": "捡走碎木并标出坏点",
+        "effect": "灾害状态进入清理",
+        "author_partner": "-",
+        "legacy_effect": "Repair"
+      },
+      "unbound_variant_count": 9
+    },
+    "H01-32": {
+      "status": "blocked_by_named_missing_mechanism",
+      "reason": "Snow exists; there is no frostbite impact on an individual named twig and no pruning/trimming of that individual twig.",
+      "author": {
+        "title": "剪去冻蔫的枝梢",
+        "trigger": "霜灾后的修复窗口",
+        "action": "戴手套修去变暗的芽",
+        "effect": "冻伤痕迹减少",
+        "author_partner": "-",
+        "legacy_effect": "Repair"
+      },
+      "unbound_variant_count": 8
+    },
+    "H01-35": {
+      "status": "blocked_by_named_missing_mechanism",
+      "reason": "Construction has real frames but does not support storm-broken supports and replacement of a particular crossbrace.",
+      "author": {
+        "title": "重新固定受损工架",
+        "trigger": "风暴后工程框架受损",
+        "action": "换下断柱，压回斜撑",
+        "effect": "工程从受损进度继续施工",
+        "author_partner": "-",
+        "legacy_effect": "Repair"
+      },
+      "unbound_variant_count": 8
+    },
+    "H01-36": {
+      "status": "blocked_by_named_missing_mechanism",
+      "reason": "Rain sets flood flags but does not destroy a part of a vegetable bed, so there is no real disaster-caused vacant planting spot and valid replacement provenance.",
+      "author": {
+        "title": "为灾后空位补种",
+        "trigger": "地块进入恢复阶段",
+        "action": "打开备用种子盒，再撒新籽",
+        "effect": "受灾地块从恢复转为新一轮生长",
+        "author_partner": "-",
+        "legacy_effect": "Sow"
+      },
+      "unbound_variant_count": 9
+    },
+    "H01-41": {
+      "status": "blocked_by_named_missing_mechanism",
+      "reason": "No loose snack box, shelf-height slots, physical knocking it down by the cat, or stored higher placement.",
+      "author": {
+        "title": "把零食盒收高",
+        "trigger": "橘猫把零食盒推下架",
+        "action": "捡起后放到窗边高处",
+        "effect": "临时道具换位",
+        "author_partner": "A01",
+        "legacy_effect": "Tidy"
+      },
+      "unbound_variant_count": 0
+    },
+    "H01-42": {
+      "status": "blocked_by_named_missing_mechanism",
+      "reason": "Cat has sheltered naps. No local wind field or adjustable curtain that suppresses the wind effects locally.",
+      "author": {
+        "title": "给睡着的猫遮风",
+        "trigger": "猫睡在门口且起风",
+        "action": "蹲下调整挡风帘",
+        "effect": "这个休息点的风吹道具停止摆动",
+        "author_partner": "-",
+        "legacy_effect": "Shelter"
+      },
+      "unbound_variant_count": 10
+    },
+    "H01-43": {
+      "status": "blocked_by_named_missing_mechanism",
+      "reason": "The shared table, guests and private meals exist independently. The original requires a named arrival, a funded porch plate and expiry/pickup ownership for that outdoor invite.",
+      "author": {
+        "title": "在门外摆一碟访客点心",
+        "trigger": "有访客预约且入口空",
+        "action": "摆下浅碟，等人退到一边",
+        "effect": "留下限时可取食状态",
+        "author_partner": "-",
+        "legacy_effect": "Food"
+      },
+      "unbound_variant_count": 10
+    },
+    "H01-44": {
+      "status": "blocked_by_named_missing_mechanism",
+      "reason": "The map does not have an operable short rabbit gate or a waiting rabbit that can complete a one-time gated entrance together.",
+      "author": {
+        "title": "替兔子开矮栅门",
+        "trigger": "兔子在外侧等候",
+        "action": "抽开低处木闩",
+        "effect": "本次访客获得菜畦旁的通道",
+        "author_partner": "A07",
+        "legacy_effect": "Trail"
+      },
+      "unbound_variant_count": 0
+    },
+    "H01-45": {
+      "status": "blocked_by_named_missing_mechanism",
+      "reason": "Resident gardener and existing field inspection are real. No synchronized paired visit to the same unhealthy plot and independently expiring diagnosis.",
+      "author": {
+        "title": "带园艺师看病苗",
+        "trigger": "园艺师到访且有待修地块",
+        "action": "两人一起停在同一块土前",
+        "effect": "生成一项有期限的诊断标记",
+        "author_partner": "H02",
+        "legacy_effect": "Survey"
+      },
+      "unbound_variant_count": 1
+    },
+    "H01-46": {
+      "status": "blocked_by_named_missing_mechanism",
+      "reason": "Carpenter and real material debt exist. The original shared drawing of a specific next beam must target an actual accepted supply order for that pending work.",
+      "author": {
+        "title": "与木匠核对下一根料",
+        "trigger": "木匠到工位且工程缺料",
+        "action": "摊图纸，指向一截木梁",
+        "effect": "工位的待料项更新",
+        "author_partner": "H03",
+        "legacy_effect": "Build"
+      },
+      "unbound_variant_count": 1
+    },
+    "H01-47": {
+      "status": "blocked_by_named_missing_mechanism",
+      "reason": "Needs actual cook visit and two independently funded plate/tray identities, one selected for that guest versus the cat.",
+      "author": {
+        "title": "帮厨师分餐具",
+        "trigger": "厨房访客来了且临近开饭",
+        "action": "摆出大小不同的两只盘",
+        "effect": "本餐访客点心与猫粮分开",
+        "author_partner": "-",
+        "legacy_effect": "Food"
+      },
+      "unbound_variant_count": 10
+    },
+    "H01-51": {
+      "status": "blocked_by_named_missing_mechanism",
+      "reason": "Construction uses real gear, but the existing costume does not represent a distinct stored safety helmet that stays on through paid work.",
+      "author": {
+        "title": "扣紧亮色安全帽",
+        "trigger": "本次施工班开始",
+        "action": "回屋取硬帽和工具，再出来往工位走",
+        "effect": "本次施工保持硬帽和工作服",
+        "author_partner": "-",
+        "legacy_effect": "Tidy"
+      },
+      "unbound_variant_count": 7
+    },
+    "H01-59": {
+      "status": "blocked_by_named_missing_mechanism",
+      "reason": "There is one real courtyard lamp and public lamp shifts. Several independent domestic sockets, toggled test and a per-night lamp group plan are not available.",
+      "author": {
+        "title": "核对夜里还要亮哪盏灯",
+        "trigger": "傍晚且有新设施完工",
+        "action": "走一圈试亮门廊与工位灯",
+        "effect": "存下本夜的灯位组合",
+        "author_partner": "-",
+        "legacy_effect": "Lamp"
+      },
+      "unbound_variant_count": 7
+    },
+    "S03": {
+      "status": "blocked_by_named_missing_mechanism",
+      "reason": "No actual persistent travelling party with a lead/follower order and a single collective low-speed stop/resume. Social visits are reserved meetings, not a moving cohort.",
+      "author": {
+        "title": "被同伴的停步带住",
+        "trigger": "两名能结伴的角色同行，其中一名突然慢下来",
+        "action": "后一名也在相邻位置停住，先转向同伴再继续前行",
+        "effect": "小队在下一个路口保持同行，停顿结束后清除等待状态",
+        "author_partner": "-",
+        "legacy_effect": "Bond"
+      },
+      "unbound_variant_count": 45
+    },
+    "S06": {
+      "status": "blocked_by_named_missing_mechanism",
+      "reason": "Current lamp and day-night palette do not author alternative shadow paths or distinguish light occupancy during real navigation.",
+      "author": {
+        "title": "借暗处移动",
+        "trigger": "入夜后原路线旁的灯亮起，另有一段相通阴影",
+        "action": "角色贴过暗边，穿过时只有轮廓或小亮点可见",
+        "effect": "亮灯期间使用阴影侧路线，恢复黑暗后重新选路",
+        "author_partner": "-",
+        "legacy_effect": "Trail"
+      },
+      "unbound_variant_count": 45
+    },
+    "S07": {
+      "status": "blocked_by_named_missing_mechanism",
+      "reason": "Scenery is either traversable low grass or honestly solid. No size-gated leaf-covered shortcut with retained route leg and cover removal.",
+      "author": {
+        "title": "沿落叶底缩身穿过",
+        "trigger": "小体型角色抵达一簇盖住石隙的落叶",
+        "action": "一片叶缘抬起又落下，角色在另一侧露面",
+        "effect": "该缺口在本轮探索保留为近路，落叶被移走时取消",
+        "author_partner": "-",
+        "legacy_effect": "Trail"
+      },
+      "unbound_variant_count": 45
+    },
+    "S10": {
+      "status": "blocked_by_named_missing_mechanism",
+      "reason": "No authoritative localized time-varying wind or persistent high-stem bend/release state.",
+      "author": {
+        "title": "被阵风压弯后回弹",
+        "trigger": "较高的茎叶遇到一次短促阵风",
+        "action": "叶面朝同一侧压低，风落后慢慢回正",
+        "effect": "本次风势写入一个短暂姿态状态，回正后解除",
+        "author_partner": "-",
+        "legacy_effect": "Trail"
+      },
+      "unbound_variant_count": 45
+    },
+    "S11": {
+      "status": "blocked_by_named_missing_mechanism",
+      "reason": "Rain currently waters actual crops; no leaf droplet accumulation, draining downward and transfer to actual root moisture.",
+      "author": {
+        "title": "把叶面雨珠汇到根边",
+        "trigger": "小雨结束且宽叶上仍聚有水珠",
+        "action": "数颗小亮点汇到叶尖，最后一滴落在土面",
+        "effect": "根侧表层湿度短暂增加，水珠累计清空",
+        "author_partner": "-",
+        "legacy_effect": "Water"
+      },
+      "unbound_variant_count": 45
+    },
+    "S15": {
+      "status": "blocked_by_named_missing_mechanism",
+      "reason": "No wind direction or strength affecting actual flight progress. Weather alone is insufficient to choose corresponding route and arrival time.",
+      "author": {
+        "title": "顺风滑过开阔区",
+        "trigger": "会飞的角色遇到和目的地同方向的稳定风",
+        "action": "拍翅逐渐变少，角色沿一条较直的弧线越过空地",
+        "effect": "本次跨区更快到达，落地后清除顺风状态",
+        "author_partner": "-",
+        "legacy_effect": "Trail"
+      },
+      "unbound_variant_count": 45
+    },
+    "S16": {
+      "status": "blocked_by_named_missing_mechanism",
+      "reason": "No localized actual sediment slip/temporary impediment, recovery work or original edge failure state.",
+      "author": {
+        "title": "避开刚踩松的边缘",
+        "trigger": "角色试探一处松软边缘并触发轻微塌落",
+        "action": "最外一层碎土掉下，角色迅速收回脚并后退",
+        "effect": "这段边缘暂时标为难走，地形修整后恢复",
+        "author_partner": "-",
+        "legacy_effect": "Trail"
+      },
+      "unbound_variant_count": 45
+    },
+    "S17": {
+      "status": "blocked_by_named_missing_mechanism",
+      "reason": "Appointments exist, but no independently witnessed public incident with allocated surrounding ring and restoration of all individual original plans.",
+      "author": {
+        "title": "围观后各自散去",
+        "trigger": "多个角色先后靠近一个无害的突发小动静",
+        "action": "角色在外围形成短暂空圈，动静消失后从各自方向离开",
+        "effect": "该处不形成永久热点，围观者回到各自原来的行动队列",
+        "author_partner": "-",
+        "legacy_effect": "Bond"
+      },
+      "unbound_variant_count": 45
+    },
+    "S19": {
+      "status": "blocked_by_named_missing_mechanism",
+      "reason": "No true vision occlusion/last-known companion tracking and bounded search route.",
+      "author": {
+        "title": "追踪刚消失的同伴",
+        "trigger": "熟悉的同伴刚离开视野且它不是警戒对象",
+        "action": "角色沿对方最后出现的方向走到路口，左右转头搜寻",
+        "effect": "只保留上一次见到同伴的地点，搜不到时回到自主活动",
+        "author_partner": "-",
+        "legacy_effect": "Trail"
+      },
+      "unbound_variant_count": 45
+    },
+    "S20": {
+      "status": "blocked_by_named_missing_mechanism",
+      "reason": "Trees and logs are authored solid or harvested. No actual new fallen branch that temporarily intersects a committed path then allows identical path recovery.",
+      "author": {
+        "title": "绕过占道的落枝",
+        "trigger": "一根新落枝横在常走的低处路径",
+        "action": "角色先贴枝探路，再从短的一头绕出",
+        "effect": "新绕行点暂时替代旧路径节点，枝条移开时清除",
+        "author_partner": "-",
+        "legacy_effect": "Tidy"
+      },
+      "unbound_variant_count": 45
+    },
+    "S21": {
+      "status": "blocked_by_named_missing_mechanism",
+      "reason": "Orchard flower and seeds exist; no light exposure direction, newly born leaf identity or previous leaf direction baseline.",
+      "author": {
+        "title": "把新叶转向亮处",
+        "trigger": "连续多个小屋时段里光从同一侧照进未被遮住的地块",
+        "action": "新叶一点点转向亮侧，旧叶仍保持原有方向",
+        "effect": "只保存当批新叶的方向，下一批叶可根据新光位独立调整",
+        "author_partner": "-",
+        "legacy_effect": "Trail"
+      },
+      "unbound_variant_count": 44
+    },
+    "S23": {
+      "status": "blocked_by_named_missing_mechanism",
+      "reason": "Water polygons and wet field flags exist. No ephemeral path-spanning shallow puddle with re-route authority and dry-edge ripple.",
+      "author": {
+        "title": "改走水洼边沿",
+        "trigger": "原路线被浅水截断且能从边缘继续前往",
+        "action": "角色沿干湿边界绕行，经过浅边时带出小水纹",
+        "effect": "在水洼消退前维持这条绕行线，目标点保持原样",
+        "author_partner": "-",
+        "legacy_effect": "Trail"
+      },
+      "unbound_variant_count": 44
+    },
+    "S24": {
+      "status": "blocked_by_named_missing_mechanism",
+      "reason": "Station capacities and holds exist. No social group standing-area reallocation with all three physical arrival/side move/actual newcomer occupied position and release.",
+      "author": {
+        "title": "把空地让给新来者",
+        "trigger": "两个以上角色已经停在小空地，新来者接近且同类关系平静",
+        "action": "靠外的角色侧移，空出一块位置，新来者停进去",
+        "effect": "停留区重新分配位置，所有角色离开时释放占位",
+        "author_partner": "-",
+        "legacy_effect": "Bond"
+      },
+      "unbound_variant_count": 44
+    }
+  },
+  "final_registry_note": "1.1.7 final registered_ids below come from the compiled exact ID registry. Earlier candidate allowlists/observations are review evidence, not additional enabled IDs."
+}

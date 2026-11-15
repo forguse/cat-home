@@ -23,7 +23,7 @@ use windows_sys::Win32::Storage::FileSystem::{
 
 const MAX_SNAPSHOT: usize = 256 * 1024;
 const LANDSCAPE_REVISION: u8 = 1;
-const BEHAVIOR_REVISION: u8 = 2;
+const BEHAVIOR_REVISION: u8 = 3;
 const V4_FILE: &str = "world-v4.json";
 const COMPAT_FILE: &str = "world-compat-v3.json";
 const LIVE_PUMP_BUDGET: Duration = Duration::from_millis(6);
@@ -360,7 +360,8 @@ impl HomeHost {
             village_camera: VillageCamera::new(),
         };
         home.try_enable_map_density();
-        let upgraded = map_migration_source.is_some() || landscape_migration_source.is_some()
+        let upgraded = map_migration_source.is_some()
+            || landscape_migration_source.is_some()
             || behavior_migration_source.is_some();
         if let Some((revision, bytes)) = map_migration_source {
             keep_map_revision_backup(&home.root, revision, &bytes)?;
@@ -429,6 +430,15 @@ impl HomeHost {
                 .pending_world_target_ms()
                 .saturating_sub(self.world.world_ms())
                 >= OFFLINE_BACKLOG_MS
+    }
+
+    /// Only a foreground user command may request this sensory reaction.
+    pub fn tap_window(&mut self, now: u64) -> bool {
+        self.tick(now);
+        if self.offline_backlog() {
+            return false;
+        }
+        self.world.request_cat_window_tap()
     }
 
     fn try_enable_map_density(&mut self) {
@@ -585,8 +595,14 @@ impl HomeHost {
             self.view
                 .set_village_public_corner(self.life.social_public_corner());
             self.view.set_resident_presence(self.life.residents());
-            self.view.set_village_menu(self.life.kitchen_menu(&self.world));
-            self.view.set_village_art_boards(self.life.village_art_visuals(&self.world));
+            self.view.set_village_rain_barrel(self.life.rain_barrel());
+            self.view.set_village_soil_window(self.life.soil_window(&self.world));
+            self.view.set_village_leaf_card(self.life.village_leaf_card(&self.world));
+            self.view.set_village_food_saucer(self.life.village_food_saucer());
+            self.view
+                .set_village_menu(self.life.kitchen_menu(&self.world));
+            self.view
+                .set_village_art_boards(self.life.village_art_visuals(&self.world));
             let trip = self.life.trip_visual(&self.world);
             self.view.set_village_household_payload([
                 self.life
@@ -823,6 +839,9 @@ impl HomeHost {
             s.push_str(&self.world.landscape_summary());
             s.push_str("\n\n生活见闻：\n");
             s.push_str(&self.world.legacy_behaviors().summary());
+            if let Some((_, day)) = self.world.first_apple_bloom_note() {
+                s.push_str(&format!("\n花期手记：第 {} 个世界日，记下第一朵苹果花。", day));
+            }
             s.push_str(&format!(
                 "\n\n城镇成长：已过 {} 个真实日 · {}",
                 self.world.town_real_days(),
@@ -1111,18 +1130,21 @@ mod landscape_save_tests {
         let host = HomeHost::open(root.clone(), 0, false).unwrap();
         assert!(host.world.legacy_behaviors().is_empty());
         drop(host);
-        let backup = root.join(format!("world-v4-behavior-r0-{:x}.json",Sha3_256::digest(&original)));
-        assert_eq!(read_bytes(&backup).unwrap(),original);
+        let backup = root.join(format!(
+            "world-v4-behavior-r0-{:x}.json",
+            Sha3_256::digest(&original)
+        ));
+        assert_eq!(read_bytes(&backup).unwrap(), original);
         let saved = read_bytes(&root.join(V4_FILE)).unwrap();
-        let host = HomeHost::open(root.clone(),0,false).unwrap();
+        let host = HomeHost::open(root.clone(), 0, false).unwrap();
         drop(host);
-        assert_eq!(read_bytes(&root.join(V4_FILE)).unwrap(),saved);
-        let mut future:serde_json::Value=serde_json::from_slice(&saved).unwrap();
-        future["behavior_revision"]=serde_json::json!(BEHAVIOR_REVISION+1);
-        let future=serde_json::to_vec(&future).unwrap();
-        fs::write(root.join(V4_FILE),&future).unwrap();
-        assert!(HomeHost::open(root.clone(),0,false).is_err());
-        assert_eq!(read_bytes(&root.join(V4_FILE)).unwrap(),future);
+        assert_eq!(read_bytes(&root.join(V4_FILE)).unwrap(), saved);
+        let mut future: serde_json::Value = serde_json::from_slice(&saved).unwrap();
+        future["behavior_revision"] = serde_json::json!(BEHAVIOR_REVISION + 1);
+        let future = serde_json::to_vec(&future).unwrap();
+        fs::write(root.join(V4_FILE), &future).unwrap();
+        assert!(HomeHost::open(root.clone(), 0, false).is_err());
+        assert_eq!(read_bytes(&root.join(V4_FILE)).unwrap(), future);
     }
 
     // Keep the extra deserialized world out of the native-host test frame.
@@ -1132,27 +1154,62 @@ mod landscape_save_tests {
         let mut old: serde_json::Value = serde_json::from_slice(original).unwrap();
         old["behavior_revision"] = serde_json::json!(1);
         let mut world: LivingWorld = serde_json::from_value(old["world"].clone()).unwrap();
-        let tile=cat_home::map_data::TilePos::new(15,20);
-        assert!(world.record_legacy_completion("H01-37",cat_home::legacy_content::LegacyActor::Household(0),tile,tile,
-            cat_home::legacy_content::LegacyPlace::Front,1,None));
-        old["world"]=serde_json::to_value(world).unwrap();
+        let tile = cat_home::map_data::TilePos::new(15, 20);
+        assert!(world.record_legacy_completion(
+            "H01-37",
+            cat_home::legacy_content::LegacyActor::Household(0),
+            tile,
+            tile,
+            cat_home::legacy_content::LegacyPlace::Front,
+            1,
+            None
+        ));
+        old["world"] = serde_json::to_value(world).unwrap();
         serde_json::to_vec_pretty(&old).unwrap()
     }
 
     #[test]
     fn behavior_revision_one_archives_original_and_retains_seen_actions() {
         let (root, original) = fixture("behavior-one");
-        let original=revision_one_with_seen_action(&original);
-        fs::write(root.join(V4_FILE),&original).unwrap();
-        let host=HomeHost::open(root.clone(),0,false).unwrap();
-        assert_eq!(host.world.legacy_behaviors().observed_count(),1);
+        let original = revision_one_with_seen_action(&original);
+        fs::write(root.join(V4_FILE), &original).unwrap();
+        let host = HomeHost::open(root.clone(), 0, false).unwrap();
+        assert_eq!(host.world.legacy_behaviors().observed_count(), 1);
         drop(host);
-        let backup=root.join(format!("world-v4-behavior-r1-{:x}.json",Sha3_256::digest(&original)));
-        assert_eq!(read_bytes(&backup).unwrap(),original);
-        let saved=read_bytes(&root.join(V4_FILE)).unwrap();
-        assert_eq!(serde_json::from_slice::<serde_json::Value>(&saved).unwrap()["behavior_revision"],BEHAVIOR_REVISION);
-        let host=HomeHost::open(root.clone(),0,false).unwrap();drop(host);
-        assert_eq!(read_bytes(&root.join(V4_FILE)).unwrap(),saved);
+        let backup = root.join(format!(
+            "world-v4-behavior-r1-{:x}.json",
+            Sha3_256::digest(&original)
+        ));
+        assert_eq!(read_bytes(&backup).unwrap(), original);
+        let saved = read_bytes(&root.join(V4_FILE)).unwrap();
+        assert_eq!(
+            serde_json::from_slice::<serde_json::Value>(&saved).unwrap()["behavior_revision"],
+            BEHAVIOR_REVISION
+        );
+        let host = HomeHost::open(root.clone(), 0, false).unwrap();
+        drop(host);
+        assert_eq!(read_bytes(&root.join(V4_FILE)).unwrap(), saved);
+    }
+
+    #[test]
+    fn behavior_revision_two_archives_original_once_and_retains_seen_actions() {
+        let (root, original) = fixture("behavior-two");
+        let bytes = revision_one_with_seen_action(&original);
+        let mut old: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+        old["behavior_revision"] = serde_json::json!(2);
+        let original = serde_json::to_vec_pretty(&old).unwrap();
+        fs::write(root.join(V4_FILE), &original).unwrap();
+        let host = HomeHost::open(root.clone(), 0, false).unwrap();
+        assert_eq!(host.world.legacy_behaviors().observed_count(), 1);
+        drop(host);
+        let backup = root.join(format!("world-v4-behavior-r2-{:x}.json", Sha3_256::digest(&original)));
+        assert_eq!(read_bytes(&backup).unwrap(), original);
+        let saved = read_bytes(&root.join(V4_FILE)).unwrap();
+        assert_eq!(serde_json::from_slice::<serde_json::Value>(&saved).unwrap()["behavior_revision"], 3);
+        let host = HomeHost::open(root.clone(), 0, false).unwrap();
+        drop(host);
+        assert_eq!(read_bytes(&root.join(V4_FILE)).unwrap(), saved);
+        assert_eq!(read_bytes(&backup).unwrap(), original);
     }
 }
 

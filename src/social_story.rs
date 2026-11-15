@@ -886,6 +886,7 @@ impl State {
                 || life.people[id].escrow.is_some()
                 || life.services.carried_asset(id as u8).is_some()
                 || life.care.active(id)
+                || life.rain.active(id)
                 || person.state == super::State::Away
                 || person.hidden() && life.occupied(world, origin, Some(id), None)
                 || outer_corridor(origin) && life.corridor_reserved(Some(id), None)

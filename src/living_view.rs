@@ -272,6 +272,10 @@ pub struct LivingView {
     village_public_corner: Option<(crate::map_data::TilePos, u8)>,
     village_menu: Option<(u16, u8)>,
     village_art_boards: [Option<VillageArtVisual>; 4],
+    village_rain_barrel: Option<(crate::map_data::TilePos, u8, bool)>,
+    village_soil_window: Option<(crate::map_data::TilePos, crate::living_world::SoilProfile)>,
+    village_leaf_card: Option<(crate::map_data::TilePos, u8, u8)>,
+    village_food_saucer: Option<(crate::map_data::TilePos, bool)>,
     indoor_reveals: [Option<(i32, i32)>; 2],
     awake_screen_feet: [Option<(i32, i32)>; 2],
     visible_motion: bool,
@@ -350,6 +354,10 @@ impl LivingView {
             village_public_corner: None,
             village_menu: None,
             village_art_boards: [None; 4],
+            village_rain_barrel: None,
+            village_soil_window: None,
+            village_leaf_card: None,
+            village_food_saucer: None,
             indoor_reveals: [None; 2],
             awake_screen_feet: [None; 2],
             visible_motion: false,
@@ -391,6 +399,22 @@ impl LivingView {
 
     pub fn set_village_art_boards(&mut self, mut boards: impl Iterator<Item = VillageArtVisual>) {
         self.village_art_boards = std::array::from_fn(|_| boards.next());
+    }
+
+    pub fn set_village_rain_barrel(&mut self, barrel: Option<(crate::map_data::TilePos, u8, bool)>) {
+        self.village_rain_barrel = barrel;
+    }
+
+    pub fn set_village_soil_window(&mut self, profile: Option<(crate::map_data::TilePos, crate::living_world::SoilProfile)>) {
+        self.village_soil_window = profile;
+    }
+
+    pub fn set_village_leaf_card(&mut self, card: Option<(crate::map_data::TilePos, u8, u8)>) {
+        self.village_leaf_card = card;
+    }
+
+    pub fn set_village_food_saucer(&mut self, saucer: Option<(crate::map_data::TilePos, bool)>) {
+        self.village_food_saucer = saucer;
     }
 
     pub fn set_resident_presence(
@@ -1675,7 +1699,7 @@ impl LivingView {
             self.contact_shadow((x + 1, y), (5, 2), 36);
         }
         if actor.kind == ActorKind::Orange {
-            let (action, data) = match actor.pose {
+            let (mut action, data) = match actor.pose {
                 Pose::Walk | Pose::Carry => ("walk", CAT_WALK),
                 Pose::Sleep => ("sleep", CAT_SLEEP),
                 Pose::Rest => ("rest", CAT_SLEEP),
@@ -1685,14 +1709,35 @@ impl LivingView {
             };
             let bowl = self.density == 2 && actor.pose == Pose::Drink;
             let sniffing = village.is_some_and(|world| village_cat_smelling(world, actor));
+            let bloom = village.and_then(LivingWorld::cat_bloom_target);
             let meal = sniffing || actor.pose == Pose::Eat && village.is_some_and(LivingWorld::cat_food_served);
-            let drawing_x = if bowl && village.is_none() { x + 5 } else { x };
-            let drawing_y = y + i32::from(sniffing && time / 13_000 % 2 == 1);
+            let detail = village.and_then(|world| world.household_detail_progress(actor.kind));
+            let mut frame = frame;
+            if let Some((elapsed, duration)) = detail {
+                frame = ((elapsed.saturating_mul(3) / duration.max(1)) as usize).min(2);
+                action = match actor.activity {
+                    Activity::StretchAtDoor if frame == 1 => "rest",
+                    Activity::StretchAtDoor | Activity::GroomWhiskers | Activity::ShelterFromRain
+                    | Activity::DryCoat | Activity::WatchHarvest | Activity::WatchEmptyHook
+                    | Activity::RubDoor | Activity::SmellFirstBloom => "sit",
+                    _ => action,
+                };
+            }
+            let cheek = if detail.is_some() && actor.activity == Activity::RubDoor && frame == 1 {
+                if actor.facing_left { -1 } else { 1 }
+            } else {
+                0
+            };
+            let drawing_x = if bowl && village.is_none() { x + 5 } else { x + cheek };
+            let drawing_y = y + i32::from(sniffing && time / 13_000 % 2 == 1 || bloom.is_some() && frame == 1);
+            let facing = bloom.map_or(bowl || meal || actor.facing_left, |(stand, tree)| {
+                tree.x < stand.x || tree.x == stand.x && actor.facing_left
+            });
             if self.density == 2
                 && self.premium_frame(
                     &format!("cat_{action}_{frame}"),
                     (drawing_x, drawing_y),
-                    bowl || meal || actor.facing_left,
+                    facing,
                     Palette::Unchanged,
                 )
             {
@@ -1846,6 +1891,11 @@ impl LivingView {
         {
             self.core_with(&frame_key, feet, facing_left, actor_scale, paint);
         }
+        if village.is_some_and(|world| world.household_wears_apron(actor.kind))
+            && !matches!(actor.pose, Pose::Rest | Pose::Sleep) && !moving_box
+        {
+            self.village_cooking_apron(feet, facing_left);
+        }
         if let (Some((fx, fy)), Some(_)) = (float, hand)
             && !self.premium_frame(&bobber, (fx, fy), false, Palette::Unchanged)
         {
@@ -1867,6 +1917,12 @@ impl LivingView {
             let hand =
                 hand.unwrap_or((x * self.density, (y - actor_scale.apply(8)) * self.density));
             self.core_at_texel(key, hand, facing_left, scale, Palette::Unchanged);
+        }
+        if !moving_box && actor.pose != Pose::Sleep
+            && outside_payload == Some(crate::visitors::VisitorHeld::Parcel("wrapped_seed_packet"))
+        {
+            let hand = hand.unwrap_or((x * self.density, (y - actor_scale.apply(8)) * self.density));
+            self.village_oilpaper(hand, true);
         }
         if actor.fishing_result().is_none() && !moving_box && actor.pose != Pose::Sleep {
             let legacy_carry = matches!(

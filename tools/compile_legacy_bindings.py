@@ -9,6 +9,7 @@ ROOT = Path(__file__).resolve().parent.parent
 FAMILIES = ROOT / 'assets/maps/village-legacy-families.tsv'
 GENERATED = ROOT / 'src/legacy_bindings.rs'
 REGISTER = ROOT / 'assets/maps/village-legacy-bindings.tsv'
+EXACT = ROOT / 'assets/maps/village-legacy-exact-scenes.tsv'
 IDENTITY_ORDER_SHA256 = '4f6828a20bce81b04b77daca418a9ad9da7385fa276b11bdaac08241a01c164f'
 EXCLUDED_SCENES = {
     # Dusk ends at 20:00. The 18:00 rain spell cannot follow another wet
@@ -47,6 +48,21 @@ def compile_tables(family_rows=None):
             family_rows = list(csv.DictReader(f, delimiter='\t'))
     families = sorted(family_rows, key=lambda r: r['base'])
     assert len({r['base'] for r in families}) == len(families)
+    exact = {}
+    if EXACT.exists():
+        with EXACT.open(encoding='utf-8', newline='') as source:
+            for item in csv.DictReader(source, delimiter='\t'):
+                code = item['old_id']
+                assert code not in exact, f'duplicate exact scene {code}'
+                assert item['evidence'].strip(), f'missing evidence {code}'
+                exact[code] = item['evidence']
+    scene_index = {r[0]: r for r in scenes}
+    for code in exact:
+        assert code in scene_index, f'unknown exact scene {code}'
+        original = bases[scene_index[code][1]]
+        assert scene_index[code][7] == original[5], f'unproven exact partner {code}'
+        assert not (scene_index[code][3] == '2' and scene_index[code][4] == '2'), f'impossible winter rain {code}'
+        assert code not in EXCLUDED_SCENES, f'unreachable exact scene {code}'
     groups, rules, report = [], [], []
     labels = {}
     # Keep source labels separate from the exact adapted implementation note.
@@ -78,7 +94,7 @@ def compile_tables(family_rows=None):
             if code in EXCLUDED_SCENES:
                 continue
             p, w, s, l, m = map(int, (period, weather, season, place, mode))
-            if not (m in nums(family['variant_modes']) and l in nums(family['places'])
+            if code not in exact and not (m in nums(family['variant_modes']) and l in nums(family['places'])
                     and w in nums(family['weather']) and p in nums(family['periods'])
                     and s in nums(family['seasons'])):
                 continue
@@ -91,7 +107,7 @@ def compile_tables(family_rows=None):
             rules.append((code, ordinal[code], p, w, s, l, m,
                           255 if partner == '-' else role(partner), label))
             report.append((code, base, 'variant', family['roles'], period, weather,
-                           season, place, mode, partner, family['binding']))
+                           season, place, mode, partner, exact.get(code, family['binding'])))
         display = family.get('display_label', '').strip() or labels.get(base, base)
         assert display and '\n' not in display and '\r' not in display
         if not base.startswith('S'):
@@ -116,7 +132,7 @@ def main():
     args = parser.parse_args()
     rust, register, base, variant = compile_tables()
     if args.check:
-        assert 'under 1.1.6 integration review' not in register, 'Unfinished behavior contracts cannot be released'
+        assert 'integration review' not in register and 'DEV_PENDING:' not in register, 'Unfinished behavior contracts cannot be released'
     for path, content in ((GENERATED, rust), (REGISTER, register)):
         if args.check:
             assert path.read_text(encoding='utf-8') == content, f'{path.name} is stale'

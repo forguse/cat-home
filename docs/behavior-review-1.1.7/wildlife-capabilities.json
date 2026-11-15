@@ -1,0 +1,3821 @@
+{
+  "scope": "正式村庄 A02–A20，19 种，每种10条基础；A01由家务组另审。",
+  "notes": [
+    "missing 记录缺失条件或尚未闭环验证的当前开发状态。",
+    "任何登记模式都须与旧单条实际效果相符。天气/时段匹配不能替代实物、路径或配偶。",
+    "均以实际完成时采样天气、季节和站位。未支持的模式保持空。"
+  ],
+  "available": 17,
+  "producer_pending_registry": 0,
+  "missing": 173,
+  "runtime_producers": 17,
+  "optional_presentation": "wildlife-and-work-1.1.7.png 由真实运行的可验证快照渲染，按主题编排。",
+  "validation": {
+    "focused_wildlife_latest": 12,
+    "village_render_latest": 17,
+    "earlier_full_view_suite": 48,
+    "old_continuity_regression": {
+      "same_time_world_pixels": 0,
+      "transition_count": 43
+    },
+    "native_logs": [
+      "wildlife-final-new-game/report.json",
+      "wildlife-final-old-save/report.json",
+      "wildlife-side-eave/report.json",
+      "wildlife-registered-receipts.json",
+      "wildlife-ecology-detour-resume/report.json",
+      "wildlife-ecology-registered-receipts.json",
+      "wildlife-ecology-main-context/report.json"
+    ],
+    "exact_old_variant_receipt": "wildlife-ecology-main-exact-variant/A05-02~01101.json",
+    "latest_native_motion_readback": [
+      {
+        "max_delta_world_px": 0.0,
+        "paired_visuals": 9,
+        "snapshot": "wind-glide",
+        "world_ms": 385368000
+      },
+      {
+        "max_delta_world_px": 0.0,
+        "paired_visuals": 7,
+        "snapshot": "squirrel-carry",
+        "world_ms": 4859640000
+      },
+      {
+        "max_delta_world_px": 0.0,
+        "paired_visuals": 8,
+        "snapshot": "crow-carry",
+        "world_ms": 4948992000
+      },
+      {
+        "max_delta_world_px": 0.0,
+        "paired_visuals": 8,
+        "snapshot": "crow-leaf-carry",
+        "world_ms": 4949184000
+      }
+    ],
+    "density_visual_proof": "wildlife-acorns-and-care-1.1.7.png",
+    "native_autumn_daytime_upgrade": "wildlife-ecology-daytime-upgrade/report.json"
+  },
+  "shared": [
+    {
+      "base": "S05",
+      "actor": "A09 Wildlife(9)",
+      "partner": "必需 A04 Wildlife(8)",
+      "producer": "residents_wildlife_flock::State::advance",
+      "context": {
+        "place": "Front，替代落点在原栏西侧，at=(17,16) target=(18,16)",
+        "weather": [
+          "Clear",
+          "Clouds"
+        ],
+        "season": [
+          "Spring",
+          "Summer",
+          "Autumn"
+        ],
+        "period": "白天08:00–09:35内两个实际角色都在当日活动"
+      },
+      "modes": {
+        "1": "同一栏杆出现真实共目标，一先落，另一侧方绕开并到临栏，在场实两足点。",
+        "2": null,
+        "3": null
+      },
+      "evidence": [
+        "wildlife-final-new-game/two-birds-perched.json",
+        "wildlife-final-old-save/two-birds-perched.json"
+      ],
+      "registered_ids": [
+        "S05"
+      ]
+    },
+    {
+      "base": "S15",
+      "actor": "A09 Wildlife(9)",
+      "partner": null,
+      "producer": "residents_wildlife_wind::State::advance → Proof::Tailwind",
+      "context": {
+        "place": "Nearby，真实溪水两岸(59,40)↔(68,40)；at是合法下风岸",
+        "weather": [
+          "Clear",
+          "Clouds"
+        ],
+        "season": [
+          "Spring",
+          "Summer",
+          "Autumn"
+        ],
+        "period": "11:00–11:35开始，跨段全程为同一稳定风向"
+      },
+      "modes": {
+        "1": "时段内局部溪道有1–3级真方向风；沿风飞边7–21%加速、滑翔少拍翅，到真实另一岸后解除风态；落点突然有来客则从原连续位置改线且不入账。",
+        "2": null,
+        "3": null
+      },
+      "evidence": [
+        "wildlife-ecology-main-fresh/wind-glide.json",
+        "wildlife-ecology-main-fresh/S15.json",
+        "src/residents_wildlife_wind.rs::actual_tailwind_changes_the_crossing_duration_and_reopens_in_flight"
+      ],
+      "legacy_scene_modes": "S15原Trail模式一明确要求留下经过点足迹，空中滑行只改变实际飞行时间，不产生足迹。故原变体均不计。",
+      "status": "available",
+      "actual_registered_id": "S15",
+      "proof": "wildlife-ecology-registered-receipts.json",
+      "registered_ids": [
+        "S15"
+      ]
+    }
+  ],
+  "rows": [
+    {
+      "base": "A02-01",
+      "role": "A02",
+      "species": "灰猫",
+      "legacy_name": "侦察新开的东侧小路",
+      "legacy_trigger": "拉宽小屋后第一次到访",
+      "legacy_visible": "灰猫沿新路走到尽头，留下三枚脚印",
+      "legacy_effect": "橘猫下次散步时可以沿脚印走到新区域",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 1
+      },
+      "status": "missing",
+      "missing": "东宅与灰猫常规活动地相距较远。缺首次拓宽后实测新路、短时可循的脚印和橘子散步选线。",
+      "registered_ids": []
+    },
+    {
+      "base": "A02-02",
+      "role": "A02",
+      "species": "灰猫",
+      "legacy_name": "试踩新木桥",
+      "legacy_trigger": "池塘工地搭出第一块踏板",
+      "legacy_visible": "灰猫压低身体踩两下，松动的踏板轻晃",
+      "legacy_effect": "管理员的待办记下这块踏板，修紧前小动物绕行",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 2
+      },
+      "status": "missing",
+      "missing": "现有桥梁通行检查属人的道路；缺池塘工地的首块受检踏板、松紧和小动物临绕。",
+      "registered_ids": []
+    },
+    {
+      "base": "A02-03",
+      "role": "A02",
+      "species": "灰猫",
+      "legacy_name": "把松动的界石推回去",
+      "legacy_trigger": "院前一块界石挡住它的巡路",
+      "legacy_visible": "灰猫侧肩顶石，石块退到路沿",
+      "legacy_effect": "院前小径恢复通行",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 3
+      },
+      "status": "missing",
+      "missing": "景石清理有人的工具和真实产料；没有可由猫推动且挡路的松界石。",
+      "registered_ids": []
+    },
+    {
+      "base": "A02-04",
+      "role": "A02",
+      "species": "灰猫",
+      "legacy_name": "在交叉路口擦脸留记号",
+      "legacy_trigger": "第一次连续走完两条相接的小路",
+      "legacy_visible": "灰猫蹭路标柱，柱脚出现灰色爪纹",
+      "legacy_effect": "同一来访周期的灰猫会优先从这条路返回",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 4
+      },
+      "status": "missing",
+      "missing": "灰猫路线只是北居小段折返。缺走完两条相接的小路、实体擦脸点及同次返回优先权。",
+      "registered_ids": []
+    },
+    {
+      "base": "A02-05",
+      "role": "A02",
+      "species": "灰猫",
+      "legacy_name": "带橘猫绕开积水",
+      "legacy_trigger": "橘猫散步时前方有未退的水洼",
+      "legacy_visible": "灰猫回头招呼，橘猫跟到另一条石路",
+      "legacy_effect": "这次散步的终点换到干燥地块",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 5
+      },
+      "status": "missing",
+      "missing": "目前没有灰猫和橘子围绕同一真实积水点同游且共同改终点的预约。",
+      "registered_ids": []
+    },
+    {
+      "base": "A02-06",
+      "role": "A02",
+      "species": "灰猫",
+      "legacy_name": "把掉在路中央的果子滚给兔子",
+      "legacy_trigger": "收获后的果实挡在路上，兔子也在院里",
+      "legacy_visible": "灰猫轻拍果子，兔子把它拖离小径",
+      "legacy_effect": "道路清空，兔子的分享动作变为可用",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 6
+      },
+      "status": "missing",
+      "missing": "果枝产量和果篮已有，缺合法路中单个落果、从灰猫移动到兔子取食的实物。",
+      "registered_ids": []
+    },
+    {
+      "base": "A02-07",
+      "role": "A02",
+      "species": "灰猫",
+      "legacy_name": "从水里捞回落叶堵塞物",
+      "legacy_trigger": "浅沟有一团湿叶，水位已退到安全线",
+      "legacy_visible": "灰猫伸爪把叶团拖到岸边",
+      "legacy_effect": "堵塞解除，下次下雨时这段沟先排水",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 7
+      },
+      "status": "missing",
+      "missing": "现有田排涝不模拟沟口堵叶。缺水退后的具体堵叶及后续水流影响。",
+      "registered_ids": []
+    },
+    {
+      "base": "A02-08",
+      "role": "A02",
+      "species": "灰猫",
+      "legacy_name": "回头等落在后面的黑猫",
+      "legacy_trigger": "两只客猫同时通过狭窄门廊",
+      "legacy_visible": "灰猫停在门外，等黑猫经过再并行",
+      "legacy_effect": "这两只客猫本次离场时可以同行",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 8
+      },
+      "status": "missing",
+      "missing": "灰猫北屋白班、黑猫公共区晚班，目前无共同窄廊、同次等待或同行目的。",
+      "registered_ids": []
+    },
+    {
+      "base": "A02-09",
+      "role": "A02",
+      "species": "灰猫",
+      "legacy_name": "指认风后弯掉的篱笆",
+      "legacy_trigger": "阵风过后灰猫巡到破损边界",
+      "legacy_visible": "灰猫绕着弯木走一圈，再蹲在外侧",
+      "legacy_effect": "管理员下次养护优先检查这段边界",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 9
+      },
+      "status": "missing",
+      "missing": "缺可更新的局部风损篱栏及养护预约；雨态不能当阵风。",
+      "registered_ids": []
+    },
+    {
+      "base": "A02-10",
+      "role": "A02",
+      "species": "灰猫",
+      "legacy_name": "找出藏在落叶下的旧钥匙",
+      "legacy_trigger": "秋季同一路口被落叶覆盖后又被雨淋湿",
+      "legacy_visible": "灰猫掀起叶堆，地上露出一把小钥匙",
+      "legacy_effect": "管理员可用它打开旧工具箱，解锁箱旁整理工作",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 10
+      },
+      "status": "missing",
+      "missing": "缺落叶覆盖的持久拾物和有锁旧工具箱。",
+      "registered_ids": []
+    },
+    {
+      "base": "A03-01",
+      "role": "A03",
+      "species": "黑猫",
+      "legacy_name": "沿门灯走一圈夜巡",
+      "legacy_trigger": "夜间门灯点亮且黑猫来访",
+      "legacy_visible": "黑猫从灯下出发，经过三处暗角再回来",
+      "legacy_effect": "本夜巡视过的角落在手记中显示一枚灯印",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 11
+      },
+      "status": "missing",
+      "missing": "主屋已有实际夜灯，黑猫晚班在相距的公共区且不到灯下；缺巡查物理范围和本夜进度。",
+      "registered_ids": []
+    },
+    {
+      "base": "A03-02",
+      "role": "A03",
+      "species": "黑猫",
+      "legacy_name": "追逐地上的灯影",
+      "legacy_trigger": "门灯点亮且管理员刚从灯前走过",
+      "legacy_visible": "黑猫沿墙追晃动的影子，扑空后坐下",
+      "legacy_effect": "门廊被占用一小会儿，路过的角色会在台阶等候",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 12
+      },
+      "status": "missing",
+      "missing": "缺人刚过灯前产生的动态投影及真实台阶避让。",
+      "registered_ids": []
+    },
+    {
+      "base": "A03-03",
+      "role": "A03",
+      "species": "黑猫",
+      "legacy_name": "用尾巴碰一下歪灯罩",
+      "legacy_trigger": "风后灯罩偏移且门灯已亮",
+      "legacy_visible": "灯罩轻摆，地上的光斑从歪斜恢复居中",
+      "legacy_effect": "该灯本夜重新照亮石路入口",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 13
+      },
+      "status": "missing",
+      "missing": "无会因大风移位、随后改变道路照明的实体灯罩。",
+      "registered_ids": []
+    },
+    {
+      "base": "A03-04",
+      "role": "A03",
+      "species": "黑猫",
+      "legacy_name": "把夜访的刺猬领到暗路",
+      "legacy_trigger": "刺猬被门灯照得停住时",
+      "legacy_visible": "黑猫走向背光侧，刺猬从旁边跟过去",
+      "legacy_effect": "刺猬本次觅食改走篱笆边，避开门廊",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 14
+      },
+      "status": "missing",
+      "missing": "黑猫活动在东南公共区，刺猬在果园，两者没有同一实体照灯路及替代暗路。",
+      "registered_ids": []
+    },
+    {
+      "base": "A03-05",
+      "role": "A03",
+      "species": "黑猫",
+      "legacy_name": "卧在暖灯照到的木板上",
+      "legacy_trigger": "降温后的干燥夜晚，门廊空着",
+      "legacy_visible": "黑猫贴着暖光蜷卧，偶尔摆一下尾巴",
+      "legacy_effect": "本次来访的休息地点固定在木板，其他角色绕开",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 15
+      },
+      "status": "missing",
+      "missing": "黑猫有睡姿，缺干冷夜实际暖灯木板、限位和离场状态；不能以睡姿算。",
+      "registered_ids": []
+    },
+    {
+      "base": "A03-06",
+      "role": "A03",
+      "species": "黑猫",
+      "legacy_name": "守住刚收好的点心盘",
+      "legacy_trigger": "夜间摆了访客点心且松鼠白天来过",
+      "legacy_visible": "黑猫在点心旁伏着，停留后把盘推到亮处",
+      "legacy_effect": "余下点心位置移到门灯下，下一位来客从这里取食",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 16
+      },
+      "status": "missing",
+      "missing": "无属于访客的连续余下点心盘、松鼠实际取用记录和可移动实体盘。",
+      "registered_ids": []
+    },
+    {
+      "base": "A03-07",
+      "role": "A03",
+      "species": "黑猫",
+      "legacy_name": "把闪光碎片踢出小径",
+      "legacy_trigger": "月光照到石路上一块松动碎片",
+      "legacy_visible": "黑猫用爪把碎片拨到边缘，闪点随之移动",
+      "legacy_effect": "碎片收进工具棚的拾获盒，小径清空",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 17
+      },
+      "status": "missing",
+      "missing": "无独立松散反光碎片、猫的推动状态和工具棚拾获盒。",
+      "registered_ids": []
+    },
+    {
+      "base": "A03-08",
+      "role": "A03",
+      "species": "黑猫",
+      "legacy_name": "在门前和橘猫慢眨眼",
+      "legacy_trigger": "橘猫夜醒并与黑猫在灯下会面",
+      "legacy_visible": "两只猫面对面坐稳，先后缓慢闭眼",
+      "legacy_effect": "同夜下一次接近时两只猫愿意在同一块垫旁休息",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 18
+      },
+      "status": "missing",
+      "missing": "黑猫与橘子没有灯下真实会面状态、更没有同夜同垫的二次信任/共休。",
+      "registered_ids": []
+    },
+    {
+      "base": "A03-09",
+      "role": "A03",
+      "species": "黑猫",
+      "legacy_name": "在下雨夜给蜗牛让路",
+      "legacy_trigger": "黑猫走到一段有蜗牛穿过的湿石路",
+      "legacy_visible": "黑猫抬起一只前爪等候，蜗牛从爪前爬过",
+      "legacy_effect": "蜗牛保留正在形成的湿路标记",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 19
+      },
+      "status": "missing",
+      "missing": "缺晚班同路径交集与蜗牛正在留痕时的真实相互让行。",
+      "registered_ids": []
+    },
+    {
+      "base": "A03-10",
+      "role": "A03",
+      "species": "黑猫",
+      "legacy_name": "叼着小布条盖住露水",
+      "legacy_trigger": "深夜备用软垫露在门廊外",
+      "legacy_visible": "黑猫把布条拖到垫面，布边压住一角",
+      "legacy_effect": "这块软垫到清晨仍可供猫咪使用",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 20
+      },
+      "status": "missing",
+      "missing": "缺会被露水打湿、可盖布的备用实体垫和猫托管的布。",
+      "registered_ids": []
+    },
+    {
+      "base": "A04-01",
+      "role": "A04",
+      "species": "麻雀",
+      "legacy_name": "给空花畦带一粒草籽",
+      "legacy_trigger": "春天路过一处翻好的空畦",
+      "legacy_visible": "麻雀落地啄两下，一粒种子落进土里",
+      "legacy_effect": "空畦开启一轮草花生长",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 21
+      },
+      "status": "missing",
+      "missing": "只有家庭种袋与普通作物，缺麻雀可拾散草籽及实际草花种床。",
+      "registered_ids": []
+    },
+    {
+      "base": "A04-02",
+      "role": "A04",
+      "species": "麻雀",
+      "legacy_name": "从石沟挑出小树枝",
+      "legacy_trigger": "有一小段干枝堵在石沟口",
+      "legacy_visible": "麻雀叼枝飞到篱笆顶，沟口露出来",
+      "legacy_effect": "石沟恢复排水，巢材库存增加一根枝",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 22
+      },
+      "status": "missing",
+      "missing": "无石沟堵枝、枝条与巢材实物库存。",
+      "registered_ids": []
+    },
+    {
+      "base": "A04-03",
+      "role": "A04",
+      "species": "麻雀",
+      "legacy_name": "在水碗里扑翅洗澡",
+      "legacy_trigger": "晴天水碗满且周围没有其他来客",
+      "legacy_visible": "麻雀扑腾两次，水洒到附近泥地",
+      "legacy_effect": "水碗略降，碗边幼苗获得一次短暂润湿",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 23
+      },
+      "status": "missing",
+      "missing": "已有猫盘，原碗旁无近距真实育苗格；缺浴用安全水面、真实减水和局部补苗。",
+      "registered_ids": []
+    },
+    {
+      "base": "A04-04",
+      "role": "A04",
+      "species": "麻雀",
+      "legacy_name": "向院子发出猫影警报",
+      "legacy_trigger": "来访猫从它的正下方突然经过",
+      "legacy_visible": "麻雀连叫两声，旁边同类飞上屋檐",
+      "legacy_effect": "该巢的出入短暂停止，直到猫离开下面的小路",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 24
+      },
+      "status": "missing",
+      "missing": "现有麻雀落檐不是孵育巢，缺受猫警报后真正暂停同巢出入。",
+      "registered_ids": []
+    },
+    {
+      "base": "A04-05",
+      "role": "A04",
+      "species": "麻雀",
+      "legacy_name": "把羽毛叼进燕子旧巢",
+      "legacy_trigger": "燕子迁走后，旧泥巢边出现一根羽毛",
+      "legacy_visible": "麻雀叼羽从屋檐洞口钻出钻进",
+      "legacy_effect": "旧巢可作为麻雀的临时夜栖点",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 25
+      },
+      "status": "missing",
+      "missing": "燕子现有避雨檐只停留，没有已迁出的泥巢、单根羽毛或麻雀占巢。",
+      "registered_ids": []
+    },
+    {
+      "base": "A04-06",
+      "role": "A04",
+      "species": "麻雀",
+      "legacy_name": "啄开裂果里的虫子",
+      "legacy_trigger": "成熟苹果掉落后裂开，开始招虫",
+      "legacy_visible": "麻雀在果皮边轻啄，虫点消失",
+      "legacy_effect": "掉果附近的虫子计数降低",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 26
+      },
+      "status": "missing",
+      "missing": "无裂开的路面落果及该果上独立虫体。",
+      "registered_ids": []
+    },
+    {
+      "base": "A04-07",
+      "role": "A04",
+      "species": "麻雀",
+      "legacy_name": "分食前院的面包屑",
+      "legacy_trigger": "地上有碎屑且附近有第二只麻雀",
+      "legacy_visible": "先落地的一只后退，让另一只啄几口",
+      "legacy_effect": "这次麻雀来访会停留更久，碎屑数量减少",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 27
+      },
+      "status": "missing",
+      "missing": "当前一个麻雀个体；无第二只共享的有限实物碎屑。",
+      "registered_ids": []
+    },
+    {
+      "base": "A04-08",
+      "role": "A04",
+      "species": "麻雀",
+      "legacy_name": "在雪后刨开一小块地面",
+      "legacy_trigger": "雪盖住它常去的取食角",
+      "legacy_visible": "麻雀抖翅、用脚拨雪，露出一圈深色土",
+      "legacy_effect": "小鸟在雪化前优先飞到这块露出的取食区",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 28
+      },
+      "status": "missing",
+      "missing": "冬天会下雪，缺可刨开的局部雪壳和露出后真可重复用的取食位。",
+      "registered_ids": []
+    },
+    {
+      "base": "A04-09",
+      "role": "A04",
+      "species": "麻雀",
+      "legacy_name": "踩落藏在篱笆上的碎籽",
+      "legacy_trigger": "松鼠在篱笆顶留下少量碎籽",
+      "legacy_visible": "麻雀沿木条跳过，两粒碎籽滚落到草边",
+      "legacy_effect": "草边变成一个临时觅食点，耗尽后消失",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 29
+      },
+      "status": "missing",
+      "missing": "缺松鼠留下且会实际掉落、吃尽的碎籽实体。",
+      "registered_ids": []
+    },
+    {
+      "base": "A04-10",
+      "role": "A04",
+      "species": "麻雀",
+      "legacy_name": "绕屋顶鸣叫标记清晨",
+      "legacy_trigger": "它当天第一次在黎明到访",
+      "legacy_visible": "麻雀在屋脊和檐角之间短飞，落下后鸣叫",
+      "legacy_effect": "当天手记留下第一声鸟鸣的时间",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 30
+      },
+      "status": "registered",
+      "site": "阿榆实际屋檐落点投影(23,12)",
+      "actor": 8,
+      "time": "黎明 06:00–07:30 期间在实际巡游窗口内落檐后鸣叫",
+      "weather": [
+        "Clear",
+        "Clouds"
+      ],
+      "seasons": [
+        "Spring",
+        "Summer",
+        "Autumn",
+        "Winter"
+      ],
+      "parcel": "Front",
+      "from_tile": [
+        23,
+        12
+      ],
+      "to_tile": [
+        23,
+        12
+      ],
+      "partner": null,
+      "proof": "Habitat::advance / Receipt::Sparrow; 同一成年麻雀以连续边落实际东屋檐、鸣叫的晚一阶段入账，绕行返回原巡线。",
+      "effect": "实际保存一次当晨第一声与场所，不产生食物或拾物。",
+      "modes": {
+        "1": "实际保存一次当晨第一声与场所，不产生食物或拾物。",
+        "2": null,
+        "3": null
+      },
+      "other_modes": "没有实际此条所需归属食物/种/拾物交接。按行为原效果这项只登记基础，除非明确满足原变体。",
+      "registered_ids": [
+        "A04-10"
+      ]
+    },
+    {
+      "base": "A05-01",
+      "role": "A05",
+      "species": "松鼠",
+      "legacy_name": "把坚果埋进空地",
+      "legacy_trigger": "秋天找到一枚成熟坚果且附近有空地",
+      "legacy_visible": "松鼠刨出小坑，把坚果埋好再覆土",
+      "legacy_effect": "该地留下一个有编号的坚果藏点",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 31
+      },
+      "status": "registered",
+      "actor": 2,
+      "proof": "residents_wildlife_acorns::State → Proof::SquirrelStore",
+      "site": "果园真实橡树(32,69)，相邻落果地(32,70)，空泥地(30,71)/(30,70)",
+      "time": "秋季原活动窗05:50–17:50，进入任务要求晴/云，在原道实走并刨藏后完成",
+      "weather": [
+        "Clear",
+        "Clouds"
+      ],
+      "seasons": [
+        "Autumn"
+      ],
+      "parcel": "Nearby",
+      "from_tile": [
+        [
+          30,
+          71
+        ],
+        [
+          30,
+          70
+        ]
+      ],
+      "to_tile": [
+        32,
+        70
+      ],
+      "partner": null,
+      "effect": "两处有界埋藏槽（各一枚），果实只从这棵现存树秋落。真地形挡路时走相邻草地，两条边后原件在实藏点。",
+      "evidence": [
+        "wildlife-ecology-detour-resume/squirrel-carry.json",
+        "wildlife-ecology-detour-resume/squirrel-burial.json"
+      ],
+      "readback": null,
+      "modes": {
+        "1": "两处有界埋藏槽（各一枚），果实只从这棵现存树秋落。真地形挡路时走相邻草地，两条边后原件在实藏点。",
+        "2": null,
+        "3": null
+      },
+      "other_modes": "没有实际此条所需归属食物/种/拾物交接。按行为原效果这项只登记基础，除非明确满足原变体。",
+      "literal_mode_1_scene_review": "正常新档续到世界日521时未出现，真实1.1.6秋日530 14:22保存升级后的同一栽埋路线自然出现。",
+      "literal_mode_1_scene": {
+        "old_id": "A05-01~10101",
+        "context": "白天·晴·秋·就近",
+        "mode_effect": "保存同一树落果为实种。埋下的第二枚来自实际树冠，只有固定槽持有，次春转同一枚幼苗。",
+        "native_receipt_ms": 45844673199,
+        "native_context_receipt": {
+          "actor": {
+            "Wildlife": 2
+          },
+          "at": [
+            30,
+            70
+          ],
+          "id": 662,
+          "now_ms": 45844673199,
+          "target": [
+            32,
+            70
+          ]
+        },
+        "sealed_cache": "wildlife-ecology-daytime-upgrade/store-30-70.json",
+        "germination": "wildlife-ecology-daytime-upgrade/same-nut-sprouted.json",
+        "registered": false
+      },
+      "registered_ids": [
+        "A05-01",
+        "A05-01~10101"
+      ]
+    },
+    {
+      "base": "A05-02",
+      "role": "A05",
+      "species": "松鼠",
+      "legacy_name": "从旧藏点挖回坚果",
+      "legacy_trigger": "干燥清晨来访且记得一处未发芽的藏点",
+      "legacy_visible": "松鼠扒开表土，抱起坚果离开",
+      "legacy_effect": "藏点清除，原处可以再次埋藏",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 32
+      },
+      "status": "registered",
+      "actor": 2,
+      "proof": "residents_wildlife_acorns::State → Proof::SquirrelRetrieve",
+      "site": "既有当秋同一取食洞(30,71)，实走回(32,73)",
+      "time": "05:50–07:20，埋藏之后另一个干燥清晨，未发芽",
+      "weather": [
+        "Clear",
+        "Clouds"
+      ],
+      "seasons": [
+        "Autumn",
+        "Spring",
+        "Summer"
+      ],
+      "parcel": "Nearby",
+      "from_tile": [
+        32,
+        73
+      ],
+      "to_tile": [
+        30,
+        71
+      ],
+      "partner": null,
+      "effect": "只拿之前埋入的同一件，不发新果。真站位挖出、返回并食用后完成；空位仍存在可翌秋再用。",
+      "evidence": [
+        "wildlife-ecology-detour-resume/squirrel-retrieval.json"
+      ],
+      "readback": null,
+      "modes": {
+        "1": "只拿之前埋入的同一件，不发新果。真站位挖出、返回并食用后完成；空位仍存在可翌秋再用。",
+        "2": null,
+        "3": null
+      },
+      "other_modes": "没有实际此条所需归属食物/种/拾物交接。按行为原效果这项只登记基础，除非明确满足原变体。",
+      "literal_mode_1_scene": {
+        "old_id": "A05-02~01101",
+        "context": "黎明·多云·秋·就近",
+        "mode_effect": "从实际可用食点取一枚食物；同一果从原编号洞挖出、回路后吃掉。",
+        "native_receipt_ms": 43653367524,
+        "base_context_save": "wildlife-ecology-main-context/context-A05-02-01101.json",
+        "registered": true,
+        "receipt": {
+          "id": 678,
+          "actor": {
+            "Wildlife": 2
+          },
+          "at": [
+            32,
+            73
+          ],
+          "target": [
+            30,
+            71
+          ],
+          "now_ms": 43653367524
+        },
+        "official_save": "wildlife-ecology-main-exact-variant/A05-02~01101.json"
+      },
+      "registered_ids": [
+        "A05-02",
+        "A05-02~01101"
+      ]
+    },
+    {
+      "base": "A05-03",
+      "role": "A05",
+      "species": "松鼠",
+      "legacy_name": "漏取一枚已经发芽的坚果",
+      "legacy_trigger": "旧藏点发芽后松鼠按原路来寻找",
+      "legacy_visible": "松鼠挖到嫩芽便退开，洞口出现两片叶",
+      "legacy_effect": "藏点变为一棵幼树的轮种地块",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 33
+      },
+      "status": "registered",
+      "actor": 2,
+      "proof": "residents_wildlife_acorns::State → Proof::Sprout",
+      "site": "被遗留的第二处原藏点(30,70)，实走回(32,73)",
+      "time": "前一秋埋入且经真雨，下一春出芽后在常规活动时段实际查看并退开",
+      "weather": [
+        "Clear",
+        "Clouds"
+      ],
+      "seasons": [
+        "Spring",
+        "Summer",
+        "Autumn"
+      ],
+      "parcel": "Nearby",
+      "from_tile": [
+        32,
+        73
+      ],
+      "to_tile": [
+        30,
+        70
+      ],
+      "partner": null,
+      "effect": "旧果真实发芽、占同一小生境，随后到幼树阶段。无复制果、农用种袋或收成；地面若被盖，视觉不会穿出。",
+      "evidence": [
+        "wildlife-ecology-detour-resume/squirrel-sprout.json",
+        "wildlife-ecology-detour-resume/squirrel-revisits-sprout.json"
+      ],
+      "readback": null,
+      "modes": {
+        "1": "旧果真实发芽、占同一小生境，随后到幼树阶段。无复制果、农用种袋或收成；地面若被盖，视觉不会穿出。",
+        "2": null,
+        "3": null
+      },
+      "other_modes": "没有实际此条所需归属食物/种/拾物交接。按行为原效果这项只登记基础，除非明确满足原变体。",
+      "registered_ids": [
+        "A05-03"
+      ]
+    },
+    {
+      "base": "A05-04",
+      "role": "A05",
+      "species": "松鼠",
+      "legacy_name": "在栏杆顶剥种壳",
+      "legacy_trigger": "找到干燥种荚且栏杆无人使用",
+      "legacy_visible": "松鼠抱着种荚咬开，壳和碎籽落下",
+      "legacy_effect": "栏杆下出现可供麻雀清理的碎籽",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 34
+      },
+      "status": "missing",
+      "missing": "真实橡果可埋、取回及萌芽，但没有干种荚的可剥壳模型、合法栏顶进食点和同一碎籽落地后供麻雀清理。不能让已食用的原坚果再变成碎籽。",
+      "registered_ids": []
+    },
+    {
+      "base": "A05-05",
+      "role": "A05",
+      "species": "松鼠",
+      "legacy_name": "踩落枯枝暴露危险枝杈",
+      "legacy_trigger": "树冠被大风吹过，松鼠从下方跃上",
+      "legacy_visible": "枯枝随跳动掉下来，原处露出浅色断口",
+      "legacy_effect": "管理员养护队列新增清理枝杈事项",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 35
+      },
+      "status": "missing",
+      "missing": "缺大风与真实松动枝杈、掉落危害工单。",
+      "registered_ids": []
+    },
+    {
+      "base": "A05-06",
+      "role": "A05",
+      "species": "松鼠",
+      "legacy_name": "把小果送给常遇见的灰猫",
+      "legacy_trigger": "松鼠多次与灰猫在同一角落平静相遇",
+      "legacy_visible": "它把果子推到灰猫前，自己退到篱笆上",
+      "legacy_effect": "两位来客建立一段友好记录，下次相遇愿意靠近",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 36
+      },
+      "status": "missing",
+      "missing": "松鼠果园与灰猫北住宅相距大，缺同点多次平静会面、同一果实交接和后续靠近。",
+      "registered_ids": []
+    },
+    {
+      "base": "A05-07",
+      "role": "A05",
+      "species": "松鼠",
+      "legacy_name": "顺着树冠绕过堵住的入口",
+      "legacy_trigger": "积水封住东侧地面入口且相邻两树长成",
+      "legacy_visible": "松鼠从第一棵树跳到第二棵，再落到干处",
+      "legacy_effect": "同一场积水期间，这条高处路径继续可用",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 37
+      },
+      "status": "missing",
+      "missing": "田地积水有标记，缺封闭的果园入口与两株可攀已长树的连续高处通路。",
+      "registered_ids": []
+    },
+    {
+      "base": "A05-08",
+      "role": "A05",
+      "species": "松鼠",
+      "legacy_name": "揭开掉在地上的工具包",
+      "legacy_trigger": "搜寻食物时发现施工员遗落的布包",
+      "legacy_visible": "松鼠把包角掀起，露出金属闪点",
+      "legacy_effect": "管理员回到该工位时优先取回工具包",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 38
+      },
+      "status": "missing",
+      "missing": "家庭工具不能遗落脱管；缺真实被遗弃的布工具包及取回优先级。",
+      "registered_ids": []
+    },
+    {
+      "base": "A05-09",
+      "role": "A05",
+      "species": "松鼠",
+      "legacy_name": "搬走木料堆上压住的种荚",
+      "legacy_trigger": "高处的种荚被轻木条卡在材料架边",
+      "legacy_visible": "松鼠从侧面拽出种荚，木条轻轻回弹",
+      "legacy_effect": "材料架的堆放状态恢复，现场多一个可食种荚",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 39
+      },
+      "status": "missing",
+      "missing": "暂无材料堆内独立被压种荚、可移动轻木条和实际架位恢复。",
+      "registered_ids": []
+    },
+    {
+      "base": "A05-10",
+      "role": "A05",
+      "species": "松鼠",
+      "legacy_name": "把冬粮转移到更干燥的角落",
+      "legacy_trigger": "旧藏点被浅水淹湿但坚果仍完整",
+      "legacy_visible": "松鼠抱坚果绕水走，把它塞到屋檐下",
+      "legacy_effect": "同一份冬粮只保留在新位置，旧藏点释放",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 40
+      },
+      "status": "missing",
+      "missing": "已有真实带编号的旧藏果；缺此果藏点被实际浅水淹没及连通干屋檐藏地，真实湿润用于萌芽而非把雨天冒充积水。",
+      "registered_ids": []
+    },
+    {
+      "base": "A06-01",
+      "role": "A06",
+      "species": "刺猬",
+      "legacy_name": "沿篱笆找会啃叶的甲虫",
+      "legacy_trigger": "无雪的夜里，菜畦旁有甲虫活动",
+      "legacy_visible": "刺猬翻过一片叶，虫点消失",
+      "legacy_effect": "该畦的啃叶压力下降一个等级",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 41
+      },
+      "status": "missing",
+      "missing": "没有近菜地独立啃叶甲虫和损害等级，不能把邻近巡游当进食。",
+      "registered_ids": []
+    },
+    {
+      "base": "A06-02",
+      "role": "A06",
+      "species": "刺猬",
+      "legacy_name": "把干叶拖进避风窝",
+      "legacy_trigger": "秋夜有干叶且篱笆底空着",
+      "legacy_visible": "刺猬倒退拖进一片叶，窝口堆高",
+      "legacy_effect": "寒冷前可使用这处避风窝休息",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 42
+      },
+      "status": "missing",
+      "missing": "堆肥叶是匿名总数，缺可拖的实地干叶和能占用叶窝。",
+      "registered_ids": []
+    },
+    {
+      "base": "A06-03",
+      "role": "A06",
+      "species": "刺猬",
+      "legacy_name": "被门响吓得缩成球",
+      "legacy_trigger": "管理员突然推门且刺猬正走过台阶",
+      "legacy_visible": "刺猬短暂卷成带刺小球，停在台阶边",
+      "legacy_effect": "台阶暂时让行，管理员稍后再经过",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 43
+      },
+      "status": "missing",
+      "missing": "有卷身图，缺刺猬到门阶、屋主人真实推门声和门阶让路交互。",
+      "registered_ids": []
+    },
+    {
+      "base": "A06-04",
+      "role": "A06",
+      "species": "刺猬",
+      "legacy_name": "扒开腐果旁的板结土",
+      "legacy_trigger": "落果留在硬土上，夜里水汽足够",
+      "legacy_visible": "刺猬用鼻子拱动表土，土面变松散",
+      "legacy_effect": "该处下次下雨能吸水，果子更快分解",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 44
+      },
+      "status": "missing",
+      "missing": "缺真实腐果、板结土的渗水差、验证同一腐果分解速度。",
+      "registered_ids": []
+    },
+    {
+      "base": "A06-05",
+      "role": "A06",
+      "species": "刺猬",
+      "legacy_name": "把小纸片顶出窝口",
+      "legacy_trigger": "风把一片废纸吹进它的叶窝",
+      "legacy_visible": "刺猬从窝里出来，鼻尖顶着纸片",
+      "legacy_effect": "窝可继续休息，废纸留到清晨供管理员清扫",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 45
+      },
+      "status": "missing",
+      "missing": "缺属于刺猬的叶窝，以及被风吹入可清除的单件纸。",
+      "registered_ids": []
+    },
+    {
+      "base": "A06-06",
+      "role": "A06",
+      "species": "刺猬",
+      "legacy_name": "绕开蜗牛正走的潮湿边线",
+      "legacy_trigger": "夜间觅食路与蜗牛的湿痕相交",
+      "legacy_visible": "刺猬停下嗅闻，沿另一侧绕开",
+      "legacy_effect": "两种动物可以在同一畦活动，蜗牛路线保持连通",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 46
+      },
+      "status": "missing",
+      "missing": "刺猬在果园(29,85)18:20起，蜗牛庭院(19,22)常规18:20止；需实地相遇与蜗牛的同期留痕。",
+      "registered_ids": []
+    },
+    {
+      "base": "A06-07",
+      "role": "A06",
+      "species": "刺猬",
+      "legacy_name": "把掉进食盆的落叶拱出去",
+      "legacy_trigger": "点心盘边掉落一片挡住食物的枯叶",
+      "legacy_visible": "刺猬鼻尖顶起枯叶，落叶滑到盘外",
+      "legacy_effect": "盘里余下的点心重新对来客可见",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 47
+      },
+      "status": "missing",
+      "missing": "无访客点心盘落叶遮挡遮蔽模型，不能复用无关猫碗。",
+      "registered_ids": []
+    },
+    {
+      "base": "A06-08",
+      "role": "A06",
+      "species": "刺猬",
+      "legacy_name": "从低枝上抖下缠在刺间的干叶",
+      "legacy_trigger": "在叶堆穿行后有一片干叶挂住",
+      "legacy_visible": "刺猬钻过矮枝，干叶被树枝钩落",
+      "legacy_effect": "落叶留在矮枝下，可供蜗牛分解或管理员收走",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 48
+      },
+      "status": "missing",
+      "missing": "无实际穿叶堆挂起单片叶、并在指定低枝落到独立可回收格。",
+      "registered_ids": []
+    },
+    {
+      "base": "A06-09",
+      "role": "A06",
+      "species": "刺猬",
+      "legacy_name": "堵住通风太强的窝边缝",
+      "legacy_trigger": "冷夜风吹过已有的叶窝",
+      "legacy_visible": "刺猬把两片小叶推到窝边，缝隙收窄",
+      "legacy_effect": "叶窝能度过下一次轻霜，重霜仍可能要搬家",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 49
+      },
+      "status": "missing",
+      "missing": "缺叶窝可补缝、风级及轻霜/重霜不同的保温结果。",
+      "registered_ids": []
+    },
+    {
+      "base": "A06-10",
+      "role": "A06",
+      "species": "刺猬",
+      "legacy_name": "挪到池边把鼻尖洗干净",
+      "legacy_trigger": "刚拱过松土，浅水边可安全到达",
+      "legacy_visible": "刺猬把沾泥的鼻尖碰向水面，水边泛纹",
+      "legacy_effect": "池边多一处泥点，下一次巡检可清走",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 50
+      },
+      "status": "missing",
+      "missing": "特定刺猬路线离池岸远；缺刚拱土的鼻泥、洗去和一格待清泥印。",
+      "registered_ids": []
+    },
+    {
+      "base": "A07-01",
+      "role": "A07",
+      "species": "兔子",
+      "legacy_name": "间出挤在一起的菜苗",
+      "legacy_trigger": "胡萝卜或萝卜刚发芽且苗过密",
+      "legacy_visible": "兔子轻轻拔走一棵最小的苗",
+      "legacy_effect": "剩余菜苗获得更多空位，本轮长成体型稍大",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 51
+      },
+      "status": "missing",
+      "missing": "根菜履历不记录出苗拥挤度或逐株株距，缺兔子间苗后保留苗体积变化。",
+      "registered_ids": []
+    },
+    {
+      "base": "A07-02",
+      "role": "A07",
+      "species": "兔子",
+      "legacy_name": "把完整胡萝卜叶拖回窝",
+      "legacy_trigger": "收获已经结束，地里留着一片菜叶",
+      "legacy_visible": "兔子叼菜叶一边退一边甩头",
+      "legacy_effect": "废弃菜叶从菜畦转移到兔窝的食料格",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 52
+      },
+      "status": "missing",
+      "missing": "根菜收获入库不自动留下实物菜叶。缺有容积的兔窝食料位及搬运。",
+      "registered_ids": []
+    },
+    {
+      "base": "A07-03",
+      "role": "A07",
+      "species": "兔子",
+      "legacy_name": "刨开被堵住的浅排水口",
+      "legacy_trigger": "雨后菜畦边的土堵住浅沟",
+      "legacy_visible": "兔子用前爪刨两下，湿泥露出小口",
+      "legacy_effect": "菜畦的表层积水沿浅沟排走",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 53
+      },
+      "status": "missing",
+      "missing": "已有田积水与人的排水工具；缺真实菜畦边堵口、兔可刨的局部浅沟和再流出。",
+      "registered_ids": []
+    },
+    {
+      "base": "A07-04",
+      "role": "A07",
+      "species": "兔子",
+      "legacy_name": "踩出一条穿过高草的小径",
+      "legacy_trigger": "连续两次从同一片高草经过",
+      "legacy_visible": "草叶沿兔子的方向压倒成细路",
+      "legacy_effect": "后到的小动物可以从这条路走，草长回后消失",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 54
+      },
+      "status": "missing",
+      "missing": "现有草景可移除，缺连续过草形成可复用的躲藏通路及随生长失效。",
+      "registered_ids": []
+    },
+    {
+      "base": "A07-05",
+      "role": "A07",
+      "species": "兔子",
+      "legacy_name": "把兔窝门口的湿草换成干草",
+      "legacy_trigger": "窝口发潮且田边有干草",
+      "legacy_visible": "兔子拖出湿草，把干草塞到门口",
+      "legacy_effect": "该窝在本轮雨后重新可用，旧草进入腐熟点",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 55
+      },
+      "status": "missing",
+      "missing": "缺真实湿窝口、单把同一干草、旧草送入有容量堆肥。",
+      "registered_ids": []
+    },
+    {
+      "base": "A07-06",
+      "role": "A07",
+      "species": "兔子",
+      "legacy_name": "跳起来拍落枝头的苹果",
+      "legacy_trigger": "苹果成熟并低垂到兔子可够的高度",
+      "legacy_visible": "兔子踮跳碰枝，苹果滚到草地上",
+      "legacy_effect": "果子成为地上的可收获物，可被管理员或动物搬走",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 56
+      },
+      "status": "missing",
+      "missing": "果量在真实树上，暂无可触及低垂枝位和可携落果实体。",
+      "registered_ids": []
+    },
+    {
+      "base": "A07-07",
+      "role": "A07",
+      "species": "兔子",
+      "legacy_name": "在菜畦边留一堆可用的肥料",
+      "legacy_trigger": "在同一块成熟菜畦停留足够久",
+      "legacy_visible": "菜畦外缘留下几枚小深色颗粒",
+      "legacy_effect": "清理者可把它们送进堆肥槽，下一轮种植受益",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 57
+      },
+      "status": "missing",
+      "missing": "可复用堆肥能力，但兔在既有草地不是成熟畦，缺有限可领取的肥料实体。",
+      "registered_ids": []
+    },
+    {
+      "base": "A07-08",
+      "role": "A07",
+      "species": "兔子",
+      "legacy_name": "给灰猫退让一条狭窄小路",
+      "legacy_trigger": "两者在高草小径迎面走近",
+      "legacy_visible": "兔子侧跳到草里，灰猫先走过",
+      "legacy_effect": "兔子稍后从邻近石路绕行，保留双方的到访目的",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 58
+      },
+      "status": "missing",
+      "missing": "灰猫北住宅、兔西田，缺高草窄段会车与双目的保留。",
+      "registered_ids": []
+    },
+    {
+      "base": "A07-09",
+      "role": "A07",
+      "species": "兔子",
+      "legacy_name": "从安全角探头看雨停",
+      "legacy_trigger": "兔子因阵雨躲在屋檐下，天气刚转干",
+      "legacy_visible": "只露出耳朵和脑袋，确认后跳回院前",
+      "legacy_effect": "本次到访从避雨恢复为继续觅食",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 59
+      },
+      "status": "registered",
+      "actor": 4,
+      "proof": "residents_wildlife_rabbit::State::advance → Proof::RabbitResumed",
+      "site": "西田小径、真实小禾旧屋或正式启用农仓的侧檐",
+      "time": "清晨原路线遇实际雨，雨停后的归路最早09:00以后、限定11:30以前回觅食",
+      "weather": [
+        "Clear",
+        "Clouds"
+      ],
+      "seasons": [
+        "Spring",
+        "Summer",
+        "Autumn"
+      ],
+      "parcel": "Front",
+      "from_tile": "实际重走的西田觅食一格，原常规(13,63)至(15,64)附近",
+      "to_tile": "小禾旧屋(11,16)/(13,16)；或实际农仓入口的侧一格",
+      "partner": null,
+      "effect": "同一兔先实际在檐侧等待雨歇，再抬头及沿保存路线回到原巡线，完成一段实际觅食路线。最多保存64个相邻步。",
+      "evidence": [
+        "wildlife-side-eave/rabbit-roof.json",
+        "wildlife-side-eave/rabbit-peek.json",
+        "wildlife-side-eave/rabbit-forage.json",
+        "rabbit-resumed-native/world-v4.json"
+      ],
+      "readback": "实际新档第10日，屋檐(11,16)避雨、雨停Peek、原路回西田；在(13,63)到(14,63)的觅食边中重开，原边终点时间898734175只续一次。",
+      "modes": {
+        "1": "同一兔先实际在檐侧等待雨歇，再抬头及沿保存路线回到原巡线，完成一段实际觅食路线。最多保存64个相邻步。",
+        "2": null,
+        "3": null
+      },
+      "other_modes": "没有实际此条所需归属食物/种/拾物交接。按行为原效果这项只登记基础，除非明确满足原变体。",
+      "registered_ids": [
+        "A07-09"
+      ]
+    },
+    {
+      "base": "A07-10",
+      "role": "A07",
+      "species": "兔子",
+      "legacy_name": "把被风吹散的菜篮推回架下",
+      "legacy_trigger": "收获时菜篮被风吹到近处草坪",
+      "legacy_visible": "兔子低头推着篮沿短跑",
+      "legacy_effect": "菜篮恢复可用，管理员下一班继续把收成装进篮子",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 60
+      },
+      "status": "missing",
+      "missing": "篮工具在主人手中/柜里，缺风吹入草坪的同一有状态菜篮及复位。",
+      "registered_ids": []
+    },
+    {
+      "base": "A08-01",
+      "role": "A08",
+      "species": "青蛙",
+      "legacy_name": "在新水洼试跳一次",
+      "legacy_trigger": "刚下雨且草地出现可到达的浅水",
+      "legacy_visible": "青蛙跃进浅水，溅出一圈细点",
+      "legacy_effect": "浅水被标为可停留，其他小蛙可以使用",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 61
+      },
+      "status": "missing",
+      "missing": "一般雨后田有积涝位，但未建青蛙可抵达并试跳、同类复用的安全浅水泊。",
+      "registered_ids": []
+    },
+    {
+      "base": "A08-02",
+      "role": "A08",
+      "species": "青蛙",
+      "legacy_name": "在池边吃掉聚集的飞虫",
+      "legacy_trigger": "水面附近飞虫数量偏高",
+      "legacy_visible": "青蛙猛跃，飞点少一个",
+      "legacy_effect": "本轮池边的飞虫密度下降",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 62
+      },
+      "status": "missing",
+      "missing": "池水几何存在，缺可耗尽的聚集飞虫和下一轮密度。",
+      "registered_ids": []
+    },
+    {
+      "base": "A08-03",
+      "role": "A08",
+      "species": "青蛙",
+      "legacy_name": "用叫声接住远处的回声",
+      "legacy_trigger": "雨夜池塘有两处相隔的湿岸",
+      "legacy_visible": "青蛙先叫，另一处岸边稍后亮起回声音符",
+      "legacy_effect": "手记记录一场合鸣，两处岸在当夜保持为叫声点",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 63
+      },
+      "status": "missing",
+      "missing": "目前只有一个青蛙；双岸合鸣和固定同晚叫点需第二实蛙或新增符合旧效果的声源机制。",
+      "registered_ids": []
+    },
+    {
+      "base": "A08-04",
+      "role": "A08",
+      "species": "青蛙",
+      "legacy_name": "在无鸭的背水湾留下卵团",
+      "legacy_trigger": "池塘水位稳定且一处浅湾保持安静",
+      "legacy_visible": "水草旁出现半透明小卵团",
+      "legacy_effect": "若水位持续合适，数个小屋日后出现短期蝌蚪群",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 64
+      },
+      "status": "missing",
+      "missing": "缺安静浅湾水位记录以及向真实有周期的卵团/蝌蚪转换。",
+      "registered_ids": []
+    },
+    {
+      "base": "A08-05",
+      "role": "A08",
+      "species": "青蛙",
+      "legacy_name": "从干缩的水洼跳到更深处",
+      "legacy_trigger": "热天浅水逐渐缩小且池塘可达",
+      "legacy_visible": "青蛙离开原地，沿两段草地跳到池边",
+      "legacy_effect": "原水洼停止作为青蛙来访点，直到下一场雨",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 65
+      },
+      "status": "missing",
+      "missing": "缺会热干、关闭青蛙复访位的浅洼容量，不用天气标签冒充水面缩小。",
+      "registered_ids": []
+    },
+    {
+      "base": "A08-06",
+      "role": "A08",
+      "species": "青蛙",
+      "legacy_name": "用一片浮叶遮住午后的光",
+      "legacy_trigger": "晴朗午后，池面上恰好漂来一片叶子",
+      "legacy_visible": "青蛙从岸边推叶，自己移到叶影里",
+      "legacy_effect": "浮叶成为临时阴影点，直到风把它吹走",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 66
+      },
+      "status": "missing",
+      "missing": "暂无随风漂移的同一浮叶和由它提供的暂时阴影。",
+      "registered_ids": []
+    },
+    {
+      "base": "A08-07",
+      "role": "A08",
+      "species": "青蛙",
+      "legacy_name": "跳过水沟给管理员示意",
+      "legacy_trigger": "水沟被堵，管理员在附近巡检",
+      "legacy_visible": "青蛙在同一湿处反复短跳，积水泛纹",
+      "legacy_effect": "该排水问题进入管理员的查看队列",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 67
+      },
+      "status": "missing",
+      "missing": "田排涝没有水沟堵体，也无青蛙现场向具体巡检人发出实际工单。",
+      "registered_ids": []
+    },
+    {
+      "base": "A08-08",
+      "role": "A08",
+      "species": "青蛙",
+      "legacy_name": "伏在石头下躲开突来的霜",
+      "legacy_trigger": "雨刚停却遇到夜间霜冻",
+      "legacy_visible": "青蛙沿湿岸跳进石缝，水面留下薄霜",
+      "legacy_effect": "本次来访暂停，回暖后可从原石缝出来",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 68
+      },
+      "status": "missing",
+      "missing": "天气仅雨雪/晴云，目前无实际突霜和蜕离原石缝休眠路径。",
+      "registered_ids": []
+    },
+    {
+      "base": "A08-09",
+      "role": "A08",
+      "species": "青蛙",
+      "legacy_name": "把落水的种子推到岸边",
+      "legacy_trigger": "浮种卡在近岸水草之间",
+      "legacy_visible": "青蛙蹬水，把种子推到一小片湿泥",
+      "legacy_effect": "岸边种子可在条件合适时萌芽",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 69
+      },
+      "status": "missing",
+      "missing": "没有近岸浮种实体或冲岸后能真实萌芽的专属地块。",
+      "registered_ids": []
+    },
+    {
+      "base": "A08-10",
+      "role": "A08",
+      "species": "青蛙",
+      "legacy_name": "停叫给从水里出来的小鸭让道",
+      "legacy_trigger": "小鸭从青蛙的鸣叫石附近登岸",
+      "legacy_visible": "青蛙从石面滑入水，稍后在另一处露头",
+      "legacy_effect": "本轮鸣叫点换到对岸，小鸭的上岸路保持可用",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 70
+      },
+      "status": "registered",
+      "site": "家池共享岸",
+      "actor": 5,
+      "time": "15:25–17:20 雨中当蛙与鸭同时在活动窗；精确以完成时计",
+      "weather": [
+        "Rain"
+      ],
+      "seasons": [
+        "Spring",
+        "Summer",
+        "Autumn"
+      ],
+      "parcel": "Nearby",
+      "from_tile": [
+        18,
+        31
+      ],
+      "to_tile": [
+        12,
+        29
+      ],
+      "partner": "A10 (Wildlife(10))",
+      "proof": "State::advance_pond / Receipt::Pond；蛙离开调用石并到对岸、此前幼鸭始终实际在水中等，之后幼鸭登目标岸；当场路/石无效取消。",
+      "effect": "本轮让出实岸，改用对岸休位，两个动物保留归原路径。",
+      "modes": {
+        "1": "本轮让出实岸，改用对岸休位，两个动物保留归原路径。",
+        "2": null,
+        "3": null
+      },
+      "other_modes": "没有实际此条所需归属食物/种/拾物交接。按行为原效果这项只登记基础，除非明确满足原变体。",
+      "registered_ids": [
+        "A08-10"
+      ]
+    },
+    {
+      "base": "A09-01",
+      "role": "A09",
+      "species": "燕子",
+      "legacy_name": "从湿沟取泥搭第一圈巢",
+      "legacy_trigger": "春天刚到，屋檐下有空位且沟边有湿泥",
+      "legacy_visible": "燕子掠过水沟，叼泥贴到檐下",
+      "legacy_effect": "巢基进入搭建状态，后续来访可接着补巢",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 71
+      },
+      "status": "registered",
+      "actor": 9,
+      "proof": "residents_wildlife_nest::State::advance → Proof::SwallowFoundation",
+      "site": "桥下东岸(66,40)临水湿泥，青梭实体屋檐投影(81,22)",
+      "time": "春前11天约09:40–16:50，雨止一小时内，抵达后工作满时才入第一圈",
+      "weather": [
+        "Clear",
+        "Clouds"
+      ],
+      "seasons": [
+        "Spring"
+      ],
+      "parcel": "Front",
+      "from_tile": [
+        81,
+        22
+      ],
+      "to_tile": [
+        66,
+        40
+      ],
+      "partner": null,
+      "effect": "实际湿泥一次合法取用，随同燕回檐上圈。再一次新湿泥旅行把第二圈补完。中断携泥退回原岸。只保留一个固定巢。",
+      "evidence": [
+        "wildlife-final-new-game/swallow-carried-mud.json",
+        "wildlife-final-new-game/swallow-nest-base.json",
+        "wildlife-final-new-game/swallow-nest-ready.json"
+      ],
+      "readback": null,
+      "modes": {
+        "1": "实际湿泥一次合法取用，随同燕回檐上圈。再一次新湿泥旅行把第二圈补完。中断携泥退回原岸。只保留一个固定巢。",
+        "2": null,
+        "3": null
+      },
+      "other_modes": "没有实际此条所需归属食物/种/拾物交接。按行为原效果这项只登记基础，除非明确满足原变体。",
+      "registered_ids": [
+        "A09-01"
+      ]
+    },
+    {
+      "base": "A09-02",
+      "role": "A09",
+      "species": "燕子",
+      "legacy_name": "给裂开的旧泥巢补口",
+      "legacy_trigger": "风暴后旧泥巢出现裂口",
+      "legacy_visible": "燕子来回两趟补泥，巢边缺口逐渐变小",
+      "legacy_effect": "旧巢恢复为可用的避风点",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 72
+      },
+      "status": "missing",
+      "missing": "缺持续可用的旧泥巢/真实风暴裂缝和修补材料。",
+      "registered_ids": []
+    },
+    {
+      "base": "A09-03",
+      "role": "A09",
+      "species": "燕子",
+      "legacy_name": "贴着草地飞捕雨前小虫",
+      "legacy_trigger": "天色转阴，草面出现低飞虫群",
+      "legacy_visible": "燕子从草尖快速穿过，飞虫点减少",
+      "legacy_effect": "草地上方的虫群短时间变稀",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 73
+      },
+      "status": "missing",
+      "missing": "无低飞虫群对象或被捕后密度减少。",
+      "registered_ids": []
+    },
+    {
+      "base": "A09-04",
+      "role": "A09",
+      "species": "燕子",
+      "legacy_name": "沿屋檐高飞避让正在上墙的猫",
+      "legacy_trigger": "橘猫伸到屋檐附近，而燕子准备入巢",
+      "legacy_visible": "燕子突然抬升，改从屋顶背面飞入",
+      "legacy_effect": "当次飞行路线绕开猫所在的屋檐侧",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 74
+      },
+      "status": "missing",
+      "missing": "猫可走地面和回屋；家猫不沿燕巢所在真实墙面上爬。",
+      "registered_ids": []
+    },
+    {
+      "base": "A09-05",
+      "role": "A09",
+      "species": "燕子",
+      "legacy_name": "把湿巢里过长的草梗抽掉",
+      "legacy_trigger": "雨停后巢口一根草梗挂住翅膀",
+      "legacy_visible": "燕子叼住草梗抽出，从屋檐落下",
+      "legacy_effect": "巢口恢复通畅，草梗成为庭院可捡的材料",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 75
+      },
+      "status": "missing",
+      "missing": "无现有巢的实体草梗障碍、同一梗的可回收状态。",
+      "registered_ids": []
+    },
+    {
+      "base": "A09-06",
+      "role": "A09",
+      "species": "燕子",
+      "legacy_name": "第一次带幼鸟飞过庭院",
+      "legacy_trigger": "泥巢完好并完成一个育雏周期",
+      "legacy_visible": "成年燕子飞过院前，幼鸟稍晚跟上",
+      "legacy_effect": "当天手记留下幼鸟离巢记录，巢进入空置期",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 76
+      },
+      "status": "missing",
+      "missing": "既有一个燕子成体，没有巢、亲代/雏鸟和完整育雏离巢周期。",
+      "registered_ids": []
+    },
+    {
+      "base": "A09-07",
+      "role": "A09",
+      "species": "燕子",
+      "legacy_name": "在檐角汇合后结队离开",
+      "legacy_trigger": "秋凉后离开窗口到来，至少有一处完好巢",
+      "legacy_visible": "两三只燕子在檐角集结，先后飞出院外",
+      "legacy_effect": "本季暂停燕子常规来访，旧巢可以借给麻雀",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 77
+      },
+      "status": "missing",
+      "missing": "既有一个成体且冬天不显示；不构成同檐结队迁离及保留的空巢。",
+      "registered_ids": []
+    },
+    {
+      "base": "A09-08",
+      "role": "A09",
+      "species": "燕子",
+      "legacy_name": "春归时辨认去年用过的旧巢",
+      "legacy_trigger": "新一轮春季开始，旧巢仍完整",
+      "legacy_visible": "燕子绕巢两圈再钻进去",
+      "legacy_effect": "旧巢保留原位置，本轮搭建时间缩短",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 78
+      },
+      "status": "registered",
+      "actor": 9,
+      "proof": "residents_wildlife_nest::State::advance → Proof::SwallowOldNest",
+      "site": "青梭实体屋檐处由真实两次湿泥补齐的同一个巢",
+      "time": "后来一年的首春前11天09:40–16:50，抵达旧巢实际停稳并检查",
+      "weather": [
+        "Clear",
+        "Clouds"
+      ],
+      "seasons": [
+        "Spring"
+      ],
+      "parcel": "Front",
+      "from_tile": [
+        81,
+        22
+      ],
+      "to_tile": [
+        81,
+        22
+      ],
+      "partner": null,
+      "effect": "已有巢继续保留，两道泥料准备跳过。每个后来年份至多一次相认记录。",
+      "evidence": [
+        "wildlife-final-new-game/swallow-nest-ready.json",
+        "wildlife-final-new-game/live/world-v4.json"
+      ],
+      "readback": "新档自然续到世界日134，依然是首年所建两圈。last_reused=1；同一个来源消耗时间仍为831600000，没有新取泥。",
+      "modes": {
+        "1": "已有巢继续保留，两道泥料准备跳过。每个后来年份至多一次相认记录。",
+        "2": null,
+        "3": null
+      },
+      "other_modes": "没有实际此条所需归属食物/种/拾物交接。按行为原效果这项只登记基础，除非明确满足原变体。",
+      "registered_ids": [
+        "A09-08"
+      ]
+    },
+    {
+      "base": "A09-09",
+      "role": "A09",
+      "species": "燕子",
+      "legacy_name": "从池面擦过捉水边飞虫",
+      "legacy_trigger": "池面开阔，小鸭已离开中间水域",
+      "legacy_visible": "燕子翅尖从水面上方掠过，水面留细纹",
+      "legacy_effect": "池面飞虫减少，浅水中的蝌蚪不受影响",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 79
+      },
+      "status": "missing",
+      "missing": "池塘有小鸭，但无飞虫与蝌蚪，各自保护/消耗世界效果都缺。",
+      "registered_ids": []
+    },
+    {
+      "base": "A09-10",
+      "role": "A09",
+      "species": "燕子",
+      "legacy_name": "把一缕软草送到巢底",
+      "legacy_trigger": "巢体已硬化，附近有干细草",
+      "legacy_visible": "燕子带草飞入檐下，巢口露出新衬垫",
+      "legacy_effect": "巢里的保温条件提升，可以开始育雏",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 80
+      },
+      "status": "missing",
+      "missing": "缺硬化巢、同一干细草、巢内保温和育雏门槛。",
+      "registered_ids": []
+    },
+    {
+      "base": "A10-01",
+      "role": "A10",
+      "species": "小鸭",
+      "legacy_name": "踩出浅水边的蹼印",
+      "legacy_trigger": "雨后泥地有一段露在水面外",
+      "legacy_visible": "小鸭摇摆走过，泥上留下成对蹼印",
+      "legacy_effect": "管理员可以从蹼印确认池边哪段还能走",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 81
+      },
+      "status": "registered",
+      "site": "家池东岸潮地",
+      "actor": 10,
+      "time": "08:20–17:20 内雨停后两处真实踩印，工作中可跨常驻窗",
+      "weather": [
+        "Clear",
+        "Clouds"
+      ],
+      "seasons": [
+        "Spring",
+        "Summer",
+        "Autumn"
+      ],
+      "parcel": "Nearby",
+      "from_tile": [
+        17,
+        31
+      ],
+      "to_tile": [
+        17,
+        30
+      ],
+      "partner": null,
+      "proof": "Habitat::advance / Receipt::DuckPrint；实际两步后限定寿命脚印，清理淡化逐次可见；中断入账为零。",
+      "effect": "标记实际可走露岸，两个印记有限储存、雨雪重来清掉。",
+      "modes": {
+        "1": "标记实际可走露岸，两个印记有限储存、雨雪重来清掉。",
+        "2": null,
+        "3": null
+      },
+      "other_modes": "没有实际此条所需归属食物/种/拾物交接。按行为原效果这项只登记基础，除非明确满足原变体。",
+      "registered_ids": [
+        "A10-01"
+      ]
+    },
+    {
+      "base": "A10-02",
+      "role": "A10",
+      "species": "小鸭",
+      "legacy_name": "抖水给岸边幼苗降温",
+      "legacy_trigger": "干热午后上岸，身边有成排幼苗",
+      "legacy_visible": "小鸭抖羽，水点落进离水最近的土",
+      "legacy_effect": "近岸一小块地在本轮热天得到短暂补水",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 82
+      },
+      "status": "missing",
+      "missing": "原池岸附近无真实成排幼苗/热天温度补水影响，普通湿地草不能冒充苗。",
+      "registered_ids": []
+    },
+    {
+      "base": "A10-03",
+      "role": "A10",
+      "species": "小鸭",
+      "legacy_name": "用脚蹼带开水面的浮萍",
+      "legacy_trigger": "池塘一侧浮萍挤成片",
+      "legacy_visible": "小鸭划过，绿色薄层分开一条水道",
+      "legacy_effect": "池面留出一处开阔水区，浮萍随后慢慢合回",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 83
+      },
+      "status": "missing",
+      "missing": "池面固定，不模拟可被蹼移动且渐渐合拢的浮萍实体。",
+      "registered_ids": []
+    },
+    {
+      "base": "A10-04",
+      "role": "A10",
+      "species": "小鸭",
+      "legacy_name": "啄开入水坡上的草结",
+      "legacy_trigger": "岸坡被一绺湿草拦住且水位安全",
+      "legacy_visible": "小鸭低头连续拨动，草团滑到旁边",
+      "legacy_effect": "入水坡恢复通行，湿草留给管理员清走",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 84
+      },
+      "status": "missing",
+      "missing": "入水坡可达，未设实际会堵住动物的湿草结及被啄后的同一湿草。",
+      "registered_ids": []
+    },
+    {
+      "base": "A10-05",
+      "role": "A10",
+      "species": "小鸭",
+      "legacy_name": "把水草上漂来的菜叶带到岸",
+      "legacy_trigger": "收成中的菜叶被风吹进池面",
+      "legacy_visible": "小鸭叼住菜叶游到浅水，把叶甩上岸",
+      "legacy_effect": "菜叶从池面转进岸边的可回收物",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 85
+      },
+      "status": "missing",
+      "missing": "收成不会吹出带归属的菜叶，缺水面到岸边回收的载荷。",
+      "registered_ids": []
+    },
+    {
+      "base": "A10-06",
+      "role": "A10",
+      "species": "小鸭",
+      "legacy_name": "绕开有蝌蚪的浅湾",
+      "legacy_trigger": "沿岸游动时靠近有蝌蚪的一片水草",
+      "legacy_visible": "小鸭在水草边转弯，从开阔水面继续游",
+      "legacy_effect": "浅湾保持安静，蝌蚪群不会因本次游动散开",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 86
+      },
+      "status": "missing",
+      "missing": "缺真实蝌蚪湾，不能只凭鸭在水面改一条路线计成功。",
+      "registered_ids": []
+    },
+    {
+      "base": "A10-07",
+      "role": "A10",
+      "species": "小鸭",
+      "legacy_name": "站上新修好的短跳板",
+      "legacy_trigger": "池塘施工结束且小跳板空着",
+      "legacy_visible": "小鸭走到板端，摇一下尾巴再跳下水",
+      "legacy_effect": "短跳板被标为可用，下次小鸭可从这里入水",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 87
+      },
+      "status": "missing",
+      "missing": "正式地图的桥是人行河桥，池塘旁无刚开通且可鸭子重用的短入水跳板。",
+      "registered_ids": []
+    },
+    {
+      "base": "A10-08",
+      "role": "A10",
+      "species": "小鸭",
+      "legacy_name": "把漂走的木片拍向岸边",
+      "legacy_trigger": "暴雨后有一片轻木板漂到池中央",
+      "legacy_visible": "小鸭用脚蹼从外侧绕一圈，木片漂回岸边",
+      "legacy_effect": "管理员能在岸上捡回这一块材料",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 88
+      },
+      "status": "missing",
+      "missing": "木料不会因雨从库里浮到池塘；缺一块漂木与原件岸上回收。",
+      "registered_ids": []
+    },
+    {
+      "base": "A10-09",
+      "role": "A10",
+      "species": "小鸭",
+      "legacy_name": "在干草里整理羽毛",
+      "legacy_trigger": "游完一圈后找到未被占用的暖草边",
+      "legacy_visible": "小鸭用嘴整理翅膀，旁边留下一根软羽",
+      "legacy_effect": "羽毛留给造巢或修补窝的动物取用",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 89
+      },
+      "status": "missing",
+      "missing": "有小鸭干岸停留，缺真实换出的可收羽毛并用于造巢/修窝。",
+      "registered_ids": []
+    },
+    {
+      "base": "A10-10",
+      "role": "A10",
+      "species": "小鸭",
+      "legacy_name": "沿岸叫管理员来看水位",
+      "legacy_trigger": "水漫过小鸭惯用的浅坡",
+      "legacy_visible": "小鸭站在干岸边短叫，沿高处换一条路",
+      "legacy_effect": "手记标记水位异常，漫水浅坡暂时关闭",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 90
+      },
+      "status": "missing",
+      "missing": "池塘水在线只按地图几何，未设升水淹过浅坡与真实临时关闭。",
+      "registered_ids": []
+    },
+    {
+      "base": "A11-01",
+      "role": "A11",
+      "species": "蜗牛",
+      "legacy_name": "画出一条雨后的湿路",
+      "legacy_trigger": "雨停后从门前湿石爬到菜畦边",
+      "legacy_visible": "地面逐渐出现一条弯曲的银色湿痕",
+      "legacy_effect": "湿痕保留到干燥后，可用于提示仍潮湿的路段",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 91
+      },
+      "status": "registered",
+      "actor": 14,
+      "proof": "residents_wildlife_routes::State::snail_step → Proof::SnailTrail",
+      "site": "院落真实硬地的菜畦步道口，(21,23)→(21,22)→(21,21)",
+      "time": "07:30–18:20间原活动期间刚雨止，实际两条边走完",
+      "weather": [
+        "Clear",
+        "Clouds"
+      ],
+      "seasons": [
+        "Spring",
+        "Summer",
+        "Autumn"
+      ],
+      "parcel": "Front",
+      "from_tile": [
+        21,
+        23
+      ],
+      "to_tile": [
+        21,
+        21
+      ],
+      "partner": null,
+      "effect": "实际已经走过的两段各留一份渐淡潮痕，最多两份，75分钟风干；路线被占用、消失或下新雨不会补画。",
+      "evidence": [
+        "wildlife-final-new-game/snail-two-wet-segments.json",
+        "wildlife-final-old-save/snail-two-wet-segments.json"
+      ],
+      "readback": null,
+      "modes": {
+        "1": "实际已经走过的两段各留一份渐淡潮痕，最多两份，75分钟风干；路线被占用、消失或下新雨不会补画。",
+        "2": null,
+        "3": null
+      },
+      "other_modes": "没有实际此条所需归属食物/种/拾物交接。按行为原效果这项只登记基础，除非明确满足原变体。",
+      "registered_ids": [
+        "A11-01"
+      ]
+    },
+    {
+      "base": "A11-02",
+      "role": "A11",
+      "species": "蜗牛",
+      "legacy_name": "在阴角吃掉一小块腐叶",
+      "legacy_trigger": "落叶开始腐软且阴角没有积水",
+      "legacy_visible": "蜗牛沿叶边爬，叶片边缘缺掉一角",
+      "legacy_effect": "腐叶更快变成可入堆肥的碎屑",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 92
+      },
+      "status": "missing",
+      "missing": "没有阴角单片实际腐叶/碎屑，堆肥的匿名汇总叶不会独立被蜗牛啃。",
+      "registered_ids": []
+    },
+    {
+      "base": "A11-03",
+      "role": "A11",
+      "species": "蜗牛",
+      "legacy_name": "啃出幼苗上的第一个小缺口",
+      "legacy_trigger": "嫩苗刚长成、菜畦没有防护边时",
+      "legacy_visible": "蜗牛爬上茎部，叶缘出现一个清楚缺口",
+      "legacy_effect": "这棵苗本轮的生长进度略减，可由管理员处理",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 93
+      },
+      "status": "missing",
+      "missing": "缺可对每株嫩苗应用、防护边可拦截的局部食损。",
+      "registered_ids": []
+    },
+    {
+      "base": "A11-04",
+      "role": "A11",
+      "species": "蜗牛",
+      "legacy_name": "爬上垫高的石头避开积涝",
+      "legacy_trigger": "水位升高淹到原来的草边",
+      "legacy_visible": "蜗牛沿石面往上爬，停在水线之上",
+      "legacy_effect": "该石面暂时成为避水点，直到泥地重新露出",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 94
+      },
+      "status": "missing",
+      "missing": "缺实际水位淹且蜗牛能从原草边到垫石的真实立面路线。",
+      "registered_ids": []
+    },
+    {
+      "base": "A11-05",
+      "role": "A11",
+      "species": "蜗牛",
+      "legacy_name": "在门槛阴影里封壳度过干旱",
+      "legacy_trigger": "连续干旱，蜗牛身边只剩干石路",
+      "legacy_visible": "它缩进壳里，壳口显出一层浅色薄膜",
+      "legacy_effect": "干旱时停止活动，再遇湿润天气才恢复",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 95
+      },
+      "status": "registered",
+      "actor": 14,
+      "proof": "residents_wildlife_routes::State::snail_step → Proof::SnailDryRest",
+      "site": "庭院草丛实物(20,22)叶影，替代未建模的门槛阴影",
+      "time": "刚雨后实走回遮蔽，连续3世界小时无雨无雪后封壳，直到真实再雨才复原",
+      "weather": [
+        "Clear",
+        "Clouds"
+      ],
+      "seasons": [
+        "Spring",
+        "Summer",
+        "Autumn"
+      ],
+      "parcel": "Nearby",
+      "from_tile": [
+        20,
+        22
+      ],
+      "to_tile": [
+        20,
+        22
+      ],
+      "partner": null,
+      "effect": "同一只蜗牛在实掩体封壳暂停路线，下一次雨恢复原巡线；清掉草丛则撤离。",
+      "evidence": [
+        "wildlife-side-eave/snail-drying.json",
+        "wildlife-side-eave/snail-closed.json",
+        "src/residents_wildlife_routes.rs::drying_snail_seals_in_the_same_shade_and_leaves_it_when_rain_returns"
+      ],
+      "readback": "自然封壳发生于842952000、春季云天；重开再遇雨的原位复出另有通过的专项测试。",
+      "modes": {
+        "1": "同一只蜗牛在实掩体封壳暂停路线，下一次雨恢复原巡线；清掉草丛则撤离。",
+        "2": null,
+        "3": null
+      },
+      "other_modes": "没有实际此条所需归属食物/种/拾物交接。按行为原效果这项只登记基础，除非明确满足原变体。",
+      "registered_ids": [
+        "A11-05"
+      ]
+    },
+    {
+      "base": "A11-06",
+      "role": "A11",
+      "species": "蜗牛",
+      "legacy_name": "沿着新搭的木花槽底边走",
+      "legacy_trigger": "木花槽完工后的第一个潮湿夜晚",
+      "legacy_visible": "蜗牛绕过槽角，沿底边留下一圈湿痕",
+      "legacy_effect": "管理员能根据湿痕找到花槽最低、最容易积水的一侧",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 96
+      },
+      "status": "missing",
+      "missing": "无真实刚完工花槽最低积水一侧与首潮夜状态。",
+      "registered_ids": []
+    },
+    {
+      "base": "A11-07",
+      "role": "A11",
+      "species": "蜗牛",
+      "legacy_name": "在翻过的碎木片下留下休息点",
+      "legacy_trigger": "院里有一块底面潮湿、上面干燥的木片",
+      "legacy_visible": "蜗牛从木片下缓慢钻入，触角缩回",
+      "legacy_effect": "干燥的白天可继续使用这处躲藏点",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 97
+      },
+      "status": "missing",
+      "missing": "缺实际木片上下湿度差和可休息的可翻木片。",
+      "registered_ids": []
+    },
+    {
+      "base": "A11-08",
+      "role": "A11",
+      "species": "蜗牛",
+      "legacy_name": "把花粉从落花边带到下一朵",
+      "legacy_trigger": "雨后低矮花瓣贴住湿土，蜗牛经过两朵",
+      "legacy_visible": "第二朵花边留下一点淡黄色湿迹",
+      "legacy_effect": "花畦留下可被花匠观察的授粉记录",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 98
+      },
+      "status": "missing",
+      "missing": "果树传粉不能转给蜗牛；没有贴湿土、能低处连续两花的授粉目标。",
+      "registered_ids": []
+    },
+    {
+      "base": "A11-09",
+      "role": "A11",
+      "species": "蜗牛",
+      "legacy_name": "爬过刺猬翻松的土看湿度",
+      "legacy_trigger": "刺猬刚松过土，表层仍有湿气",
+      "legacy_visible": "蜗牛走出比旧路更短的一段深色湿线",
+      "legacy_effect": "这段湿土在管理员巡检时标为暂缓浇水",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 99
+      },
+      "status": "missing",
+      "missing": "刺猬翻土与蜗牛交集尚无；缺实际湿土保留、下一次人可读待浇抑制。",
+      "registered_ids": []
+    },
+    {
+      "base": "A11-10",
+      "role": "A11",
+      "species": "蜗牛",
+      "legacy_name": "在管理员挪走后重新找遮阴",
+      "legacy_trigger": "管理员把它从幼苗移到落叶堆旁",
+      "legacy_visible": "蜗牛伸出触角，爬进落叶侧边",
+      "legacy_effect": "原菜苗停止受损，蜗牛转而利用落叶堆",
+      "source": {
+        "path": "design/character-animals-a.tsv",
+        "line": 100
+      },
+      "status": "missing",
+      "missing": "人尚不会从苗地实物捏移蜗牛，缺停止特定苗食损和替代叶堆。",
+      "registered_ids": []
+    },
+    {
+      "base": "A12-01",
+      "role": "A12",
+      "species": "瓢虫",
+      "legacy_name": "搜查叶背",
+      "legacy_trigger": "菜苗叶背出现一簇蚜虫",
+      "legacy_visible": "瓢虫爬过叶缘翻到叶背，蚜虫一只只消失",
+      "legacy_effect": "该叶片虫害下降，保住一片嫩叶",
+      "source": {
+        "path": "design/character-animals-b.tsv",
+        "line": 1
+      },
+      "status": "missing",
+      "missing": "现有虫只作观察，作物未模拟局部蚜虫或嫩叶保护。",
+      "registered_ids": []
+    },
+    {
+      "base": "A12-02",
+      "role": "A12",
+      "species": "瓢虫",
+      "legacy_name": "在猎场留卵",
+      "legacy_trigger": "附近有蚜虫且同一株嫩叶连续干燥两个小屋时段",
+      "legacy_visible": "叶背多出一簇浅黄小点，成虫沿叶柄离开",
+      "legacy_effect": "卵簇保留至孵化，新增一批从这片叶子开始活动的幼虫",
+      "source": {
+        "path": "design/character-animals-b.tsv",
+        "line": 2
+      },
+      "status": "missing",
+      "missing": "缺同株连续叶面干燥、蚜虫及附叶卵簇生命周期。",
+      "registered_ids": []
+    },
+    {
+      "base": "A12-03",
+      "role": "A12",
+      "species": "瓢虫",
+      "legacy_name": "幼虫沿枝清扫",
+      "legacy_trigger": "卵簇孵化且菜叶仍有虫害",
+      "legacy_visible": "细小深色幼虫沿茎上行，枝顶蚜虫数量减少",
+      "legacy_effect": "虫害扩散被推迟，菜苗后续新叶完整率提高",
+      "source": {
+        "path": "design/character-animals-b.tsv",
+        "line": 3
+      },
+      "status": "missing",
+      "missing": "缺已经孵化的真实幼虫和随处理推迟扩散的蚜虫。",
+      "registered_ids": []
+    },
+    {
+      "base": "A12-04",
+      "role": "A12",
+      "species": "瓢虫",
+      "legacy_name": "把蛹固定在叶柄",
+      "legacy_trigger": "幼虫吃够且找到避开猫和雨滴的位置",
+      "legacy_visible": "叶柄出现不动的小橙蛹，雨后仍挂在原处",
+      "legacy_effect": "该点暂时停留一个成长周期，之后出现新成虫",
+      "source": {
+        "path": "design/character-animals-b.tsv",
+        "line": 4
+      },
+      "status": "missing",
+      "missing": "缺幼虫成长、叶柄固定蛹的个体保存与防雨/猫和变成成虫。",
+      "registered_ids": []
+    },
+    {
+      "base": "A12-05",
+      "role": "A12",
+      "species": "瓢虫",
+      "legacy_name": "张翅转场",
+      "legacy_trigger": "原地蚜虫减少而另一片菜叶出现新虫点",
+      "legacy_visible": "红色鞘翅抬起，细翅将瓢虫送到另一块地",
+      "legacy_effect": "同一只瓢虫迁移至新虫源，旧地不再自动获得它的保护",
+      "source": {
+        "path": "design/character-animals-b.tsv",
+        "line": 5
+      },
+      "status": "missing",
+      "missing": "缺两个实际异地害虫宿主和各自压力，该动物故无可选择的真实虫食转场。",
+      "registered_ids": []
+    },
+    {
+      "base": "A12-06",
+      "role": "A12",
+      "species": "瓢虫",
+      "legacy_name": "翻落装死",
+      "legacy_trigger": "猫鼻靠近到叶子晃动",
+      "legacy_visible": "瓢虫收脚滚到苔边，猫离开后重新翻身",
+      "legacy_effect": "它暂时中止捕食并改走邻近茎秆，避开猫刚停留的位置",
+      "source": {
+        "path": "design/character-animals-b.tsv",
+        "line": 6
+      },
+      "status": "missing",
+      "missing": "猫不会嗅同一承载瓢虫的叶并触发叶晃，也无有合法叶茎退路。",
+      "registered_ids": []
+    },
+    {
+      "base": "A12-07",
+      "role": "A12",
+      "species": "瓢虫",
+      "legacy_name": "沿叶缘理掉露水",
+      "legacy_trigger": "清晨叶面有露水且未开始觅食",
+      "legacy_visible": "瓢虫在叶尖停留，前足抹过触角后继续爬行",
+      "legacy_effect": "首次觅食延后到露珠蒸散，同一清晨不重复整理",
+      "source": {
+        "path": "design/character-animals-b.tsv",
+        "line": 7
+      },
+      "status": "missing",
+      "missing": "天气未为单叶生成并保存可去除晨露，定时理翅不足旧效果。",
+      "registered_ids": []
+    },
+    {
+      "base": "A12-08",
+      "role": "A12",
+      "species": "瓢虫",
+      "legacy_name": "在碎石上暖身",
+      "legacy_trigger": "初春低温但日照照到一片干石",
+      "legacy_visible": "几个红点聚在向阳面，冷影移过后各自散开",
+      "legacy_effect": "附近地块下一次搜查叶背更早开始",
+      "source": {
+        "path": "design/character-animals-b.tsv",
+        "line": 8
+      },
+      "status": "missing",
+      "missing": "缺可保存在当天行为因果里的冷暖石和暖身后提前的真实叶背搜捕。",
+      "registered_ids": []
+    },
+    {
+      "base": "A12-09",
+      "role": "A12",
+      "species": "瓢虫",
+      "legacy_name": "钻进干叶缝越冬",
+      "legacy_trigger": "初雪后连续两次夜间降温",
+      "legacy_visible": "一只只瓢虫从枯叶边缘钻入，叶缝留几个红点",
+      "legacy_effect": "该批瓢虫本季停止户外活动，回暖后从同处出现",
+      "source": {
+        "path": "design/character-animals-b.tsv",
+        "line": 9
+      },
+      "status": "missing",
+      "missing": "普通季节显隐不构成钻入实际干叶堆、同批越冬和回暖原点复出。",
+      "registered_ids": []
+    },
+    {
+      "base": "A12-10",
+      "role": "A12",
+      "species": "瓢虫",
+      "legacy_name": "换吃花粉",
+      "legacy_trigger": "虫害接近清空且旁边有开放的小花",
+      "legacy_visible": "瓢虫从叶背钻进花芯，花瓣轻轻摇动",
+      "legacy_effect": "成虫可在无蚜虫的地块多停一段时间",
+      "source": {
+        "path": "design/character-animals-b.tsv",
+        "line": 10
+      },
+      "status": "missing",
+      "missing": "缺实际近清零蚜虫、含粉花与选食延长链。",
+      "registered_ids": []
+    },
+    {
+      "base": "A13-01",
+      "role": "A13",
+      "species": "萤火虫",
+      "legacy_name": "沿湿地试亮",
+      "legacy_trigger": "暮色初降且池边有微风",
+      "legacy_visible": "一道短绿光从水草间亮起，沿岸一闪一停",
+      "legacy_effect": "这一段岸线当晚成为下一轮巡飞路线",
+      "source": {
+        "path": "design/character-animals-b.tsv",
+        "line": 11
+      },
+      "status": "missing",
+      "missing": "没有微风场及可由试亮确立的当夜新巡飞路线。",
+      "registered_ids": []
+    },
+    {
+      "base": "A13-02",
+      "role": "A13",
+      "species": "萤火虫",
+      "legacy_name": "在草尖回灯",
+      "legacy_trigger": "草尖个体接到符合节奏的远处闪光",
+      "legacy_visible": "飞行光点停一拍，草尖随后亮出一小点光",
+      "legacy_effect": "两只个体缩短下一段距离，维持同一个相遇点到天亮",
+      "source": {
+        "path": "design/character-animals-b.tsv",
+        "line": 12
+      },
+      "status": "missing",
+      "missing": "只有一只野萤；缺独立同种个体及真实节奏回应和靠近。",
+      "registered_ids": []
+    },
+    {
+      "base": "A13-03",
+      "role": "A13",
+      "species": "萤火虫",
+      "legacy_name": "成群同步闪",
+      "legacy_trigger": "天暗、无雨且水边累积多只个体",
+      "legacy_visible": "分散光点由稀疏闪烁转为两轮同时亮起",
+      "legacy_effect": "同一湿地该晚只触发一次群闪，手记留下时间和地点",
+      "source": {
+        "path": "design/character-animals-b.tsv",
+        "line": 13
+      },
+      "status": "missing",
+      "missing": "只有一个个体，不能用多个亮点充当群体同步。",
+      "registered_ids": []
+    },
+    {
+      "base": "A13-04",
+      "role": "A13",
+      "species": "萤火虫",
+      "legacy_name": "绕开门廊光晕",
+      "legacy_trigger": "自动或手动门廊灯突然点亮",
+      "legacy_visible": "贴近小屋的光点熄下，片刻后在阴影侧重现",
+      "legacy_effect": "亮灯期间该批光点改用避光路线，亮区不再出现求偶闪",
+      "source": {
+        "path": "design/character-animals-b.tsv",
+        "line": 14
+      },
+      "status": "missing",
+      "missing": "现有真实主屋灯与萤火虫实际池南岸相隔甚远，缺相通暗岸和光晕路段。",
+      "registered_ids": []
+    },
+    {
+      "base": "A13-05",
+      "role": "A13",
+      "species": "萤火虫",
+      "legacy_name": "雨歇后从草底复飞",
+      "legacy_trigger": "小雨结束且草地仍湿",
+      "legacy_visible": "湿草下先亮一颗，再有光点升至低空",
+      "legacy_effect": "重新启用被雨暂停的巡飞路线，持续至湿地干燥或天亮",
+      "source": {
+        "path": "design/character-animals-b.tsv",
+        "line": 15
+      },
+      "status": "registered",
+      "actor": 16,
+      "proof": "residents_wildlife_routes::State::firefly_step → Proof::FireflyResume",
+      "site": "真实家池南芦叶或晚期湿地芦叶与同一水边巡线",
+      "time": "夏夜19:10–01:10实际天气变雨并到真实芦叶后，仍在该时窗雨停才复飞",
+      "weather": [
+        "Clear",
+        "Clouds"
+      ],
+      "seasons": [
+        "Summer"
+      ],
+      "parcel": "Nearby",
+      "from_tile": [
+        [
+          20,
+          38
+        ],
+        [
+          74,
+          111
+        ]
+      ],
+      "to_tile": [
+        [
+          18,
+          34
+        ],
+        [
+          75,
+          111
+        ]
+      ],
+      "partner": null,
+      "effect": "实物遮挡处暂停，同一个体完成离叶和恢复原湿地去程；天气未按强度细分。",
+      "evidence": [
+        "wildlife-final-new-game/firefly-rain-wait.json",
+        "wildlife-final-new-game/firefly-rain-takeoff.json",
+        "firefly-resumed-native/world-v4.json"
+      ],
+      "readback": "夏季雨中到芦后，晴时读档续飞同一条在途边，到2678557022回原巡线。",
+      "modes": {
+        "1": "实物遮挡处暂停，同一个体完成离叶和恢复原湿地去程；天气未按强度细分。",
+        "2": null,
+        "3": null
+      },
+      "other_modes": "没有实际此条所需归属食物/种/拾物交接。按行为原效果这项只登记基础，除非明确满足原变体。",
+      "registered_ids": [
+        "A13-05"
+      ]
+    },
+    {
+      "base": "A13-06",
+      "role": "A13",
+      "species": "萤火虫",
+      "legacy_name": "在湿苔中留卵",
+      "legacy_trigger": "成虫配对后找得到湿而不淹的苔面",
+      "legacy_visible": "雌虫伏在苔面，离开后苔间留下浅点",
+      "legacy_effect": "该处进入固定孵化阶段，后续从此生成地表幼虫",
+      "source": {
+        "path": "design/character-animals-b.tsv",
+        "line": 16
+      },
+      "status": "missing",
+      "missing": "缺一对实际成虫、湿苔卵巢和孵化幼虫。",
+      "registered_ids": []
+    },
+    {
+      "base": "A13-07",
+      "role": "A13",
+      "species": "萤火虫",
+      "legacy_name": "幼虫伏击小蜗牛",
+      "legacy_trigger": "夜间湿苔附近有小蜗牛经过",
+      "legacy_visible": "草根下的小绿点跟着细银痕移动，蜗牛停住",
+      "legacy_effect": "该地块蜗牛压力降低，附近菜叶少一次啃食",
+      "source": {
+        "path": "design/character-animals-b.tsv",
+        "line": 17
+      },
+      "status": "missing",
+      "missing": "缺萤火幼虫、局部湿苔及真实小蜗牛捕食和田面效果。",
+      "registered_ids": []
+    },
+    {
+      "base": "A13-08",
+      "role": "A13",
+      "species": "萤火虫",
+      "legacy_name": "在泥下结蛹",
+      "legacy_trigger": "幼虫成长结束且池岸湿度稳定",
+      "legacy_visible": "贴地小绿点钻入薄泥，泥面多一个低圆包",
+      "legacy_effect": "这一只离开地表巡游，经过蛹期从圆包旁羽化",
+      "source": {
+        "path": "design/character-animals-b.tsv",
+        "line": 18
+      },
+      "status": "missing",
+      "missing": "缺同一已发育幼虫、泥中带时限的蛹与实生羽化来源。",
+      "registered_ids": []
+    },
+    {
+      "base": "A13-09",
+      "role": "A13",
+      "species": "萤火虫",
+      "legacy_name": "到邻塘交换光讯",
+      "legacy_trigger": "本塘拥挤且新展开地块有另一片湿地",
+      "legacy_visible": "三两光点沿暗草带逐一飞向新水面",
+      "legacy_effect": "新增湿地获得一组独立活动个体，旧水面亮点数量略减",
+      "source": {
+        "path": "design/character-animals-b.tsv",
+        "line": 19
+      },
+      "status": "missing",
+      "missing": "晚期萤巡游原本整体搬到同湿地，不是拥挤塘独立成体真实分群。",
+      "registered_ids": []
+    },
+    {
+      "base": "A13-10",
+      "role": "A13",
+      "species": "萤火虫",
+      "legacy_name": "黎明落在芦叶背",
+      "legacy_trigger": "晨光照进昨夜巡飞区",
+      "legacy_visible": "飞行光点从高到低消失，最后一只停在芦苇阴面",
+      "legacy_effect": "该批个体记录白天栖点，下一次黄昏从同侧出发",
+      "source": {
+        "path": "design/character-animals-b.tsv",
+        "line": 20
+      },
+      "status": "registered",
+      "actor": 16,
+      "proof": "residents_wildlife_routes::State::firefly_step → Proof::FireflyDawn",
+      "site": "同一夏夜原巡线临侧的真实芦叶(20,38)/(74,111)",
+      "time": "夏季05:00清/云，已在实际芦叶保持至晨光；下一可用夏夜从同一叶飞回原线",
+      "weather": [
+        "Clear",
+        "Clouds"
+      ],
+      "seasons": [
+        "Summer"
+      ],
+      "parcel": "Nearby",
+      "from_tile": [
+        [
+          20,
+          38
+        ],
+        [
+          74,
+          111
+        ]
+      ],
+      "to_tile": [
+        [
+          20,
+          38
+        ],
+        [
+          74,
+          111
+        ]
+      ],
+      "partner": null,
+      "effect": "留下有限当前一叶的昼栖记录，真实昼栖后从叶位离场（草/芦被移除则回安全飞线）。",
+      "evidence": [
+        "wildlife-final-new-game/firefly-dawn-roost.json",
+        "wildlife-final-old-save/firefly-evening-takeoff.json"
+      ],
+      "readback": null,
+      "modes": {
+        "1": "留下有限当前一叶的昼栖记录，真实昼栖后从叶位离场（草/芦被移除则回安全飞线）。",
+        "2": null,
+        "3": null
+      },
+      "other_modes": "没有实际此条所需归属食物/种/拾物交接。按行为原效果这项只登记基础，除非明确满足原变体。",
+      "registered_ids": [
+        "A13-10"
+      ]
+    },
+    {
+      "base": "A14-01",
+      "role": "A14",
+      "species": "蜜蜂",
+      "legacy_name": "给新花授粉",
+      "legacy_trigger": "晴天有两株同种花同时盛开",
+      "legacy_visible": "蜜蜂先钻入一朵花心，再落到相邻花心",
+      "legacy_effect": "第二株更易进入结籽阶段，下一轮附近可能出现同种花",
+      "source": {
+        "path": "design/character-animals-b.tsv",
+        "line": 21
+      },
+      "status": "registered",
+      "site": "同季同时开花的四株苹果树中任意两株",
+      "actor": 17,
+      "time": "08:40–15:25 选两树，落花前连续访问并返巢",
+      "weather": [
+        "Clear"
+      ],
+      "seasons": [
+        "Spring"
+      ],
+      "parcel": "Expanded",
+      "from_tile": "四株之一的真实树锚",
+      "to_tile": "另一株未结算目标",
+      "partner": null,
+      "proof": "Habitat::advance -> Receipt::Bee -> village_pollinate_orchard；两依次实际花位驻足，每株一次。",
+      "effect": "该株本轮首次成熟在 (health/15).clamp(2,7) 上加一，最多七。旧文次轮漫播不支持。",
+      "modes": {
+        "1": "该株本轮首次成熟在 (health/15).clamp(2,7) 上加一，最多七。旧文次轮漫播不支持。",
+        "2": null,
+        "3": null
+      },
+      "other_modes": "没有实际此条所需归属食物/种/拾物交接。按行为原效果这项只登记基础，除非明确满足原变体。",
+      "registered_ids": [
+        "A14-01"
+      ]
+    },
+    {
+      "base": "A14-02",
+      "role": "A14",
+      "species": "蜜蜂",
+      "legacy_name": "搓出花粉团",
+      "legacy_trigger": "多朵花有充足的散粉",
+      "legacy_visible": "蜜蜂悬停擦动后腿，腿侧各多出一颗花粉粒",
+      "legacy_effect": "记录一次满载采粉，接下来优先回巢补给",
+      "source": {
+        "path": "design/character-animals-b.tsv",
+        "line": 22
+      },
+      "status": "missing",
+      "missing": "双花流程实际传粉，尚无可收花粉团/饱和重量和带回蜂箱补给库存。",
+      "registered_ids": []
+    },
+    {
+      "base": "A14-03",
+      "role": "A14",
+      "species": "蜜蜂",
+      "legacy_name": "向同伴报花位",
+      "legacy_trigger": "找到一块足量的新花田并回到蜂箱",
+      "legacy_visible": "入口边的侦查蜂绕两圈，沿中线急抖身体",
+      "legacy_effect": "同窝蜂下一轮有数只集中前往那片花田",
+      "source": {
+        "path": "design/character-animals-b.tsv",
+        "line": 23
+      },
+      "status": "missing",
+      "missing": "现有一只蜜蜂、未模拟蜂箱群体和同窝多只接受花位后的复访。",
+      "registered_ids": []
+    },
+    {
+      "base": "A14-04",
+      "role": "A14",
+      "species": "蜜蜂",
+      "legacy_name": "踩湿石饮水",
+      "legacy_trigger": "暖日且水边有露出水面的平石",
+      "legacy_visible": "蜂停在湿石边，腹部有规律微动后飞离",
+      "legacy_effect": "蜂群补水，后续可延长一小段暖天采集时间",
+      "source": {
+        "path": "design/character-animals-b.tsv",
+        "line": 24
+      },
+      "status": "missing",
+      "missing": "近水真实落点可拓展，但需补水与下一次出勤期因果，当前无蜜蜂自身水量或群体。",
+      "registered_ids": []
+    },
+    {
+      "base": "A14-05",
+      "role": "A14",
+      "species": "蜜蜂",
+      "legacy_name": "用树脂封小缝",
+      "legacy_trigger": "附近树皮有可取树脂且蜂箱侧边出现裂隙",
+      "legacy_visible": "蜜蜂叼回棕色小点，箱侧裂口逐段封住",
+      "legacy_effect": "该条裂缝保留封补痕迹，箱内潮气积累放慢",
+      "source": {
+        "path": "design/character-animals-b.tsv",
+        "line": 25
+      },
+      "status": "missing",
+      "missing": "暂无可采树脂、蜂箱持久裂缝/潮气及封补。",
+      "registered_ids": []
+    },
+    {
+      "base": "A14-06",
+      "role": "A14",
+      "species": "蜜蜂",
+      "legacy_name": "在蜂箱口扇风",
+      "legacy_trigger": "闷热晴天且多只蜂刚刚回巢",
+      "legacy_visible": "几只蜂朝同方向排在入口，翅影快速震动",
+      "legacy_effect": "蜂箱降温后恢复出勤，缓解热天短时间停飞",
+      "source": {
+        "path": "design/character-animals-b.tsv",
+        "line": 26
+      },
+      "status": "missing",
+      "missing": "只有一个游飞蜜蜂、蜂箱无可测热度或需要物理通风的库存。",
+      "registered_ids": []
+    },
+    {
+      "base": "A14-07",
+      "role": "A14",
+      "species": "蜜蜂",
+      "legacy_name": "新蜂认巢",
+      "legacy_trigger": "蜂箱口首次放出一批初次出勤工蜂",
+      "legacy_visible": "蜜蜂面向入口，逐圈扩大悬停弧线",
+      "legacy_effect": "初次工蜂记住蜂箱方位，下次返程不会先绕庭院",
+      "source": {
+        "path": "design/character-animals-b.tsv",
+        "line": 27
+      },
+      "status": "missing",
+      "missing": "没有新的实际工蜂个体或稳定认巢路径学习。",
+      "registered_ids": []
+    },
+    {
+      "base": "A14-08",
+      "role": "A14",
+      "species": "蜜蜂",
+      "legacy_name": "从花瓣下等雨",
+      "legacy_trigger": "细雨来得突然且附近有低垂的大花",
+      "legacy_visible": "蜜蜂缩进花瓣边缘，翅膀收住，雨歇后抖翅",
+      "legacy_effect": "本轮采集暂停，雨停后继续最近一朵花",
+      "source": {
+        "path": "design/character-animals-b.tsv",
+        "line": 28
+      },
+      "status": "missing",
+      "missing": "旧流程雨落就中断传粉；没有可物理停在同一大花瓣下并雨止续采的单独作业。",
+      "registered_ids": []
+    },
+    {
+      "base": "A14-09",
+      "role": "A14",
+      "species": "蜜蜂",
+      "legacy_name": "放弃采空的花列",
+      "legacy_trigger": "同一列花蜜被连续采集且花心采集信号减弱",
+      "legacy_visible": "蜜蜂检查前两朵后越过整排，改到远端一株",
+      "legacy_effect": "旧花列获得恢复时段，新花列成为暂时采集目的地",
+      "source": {
+        "path": "design/character-animals-b.tsv",
+        "line": 29
+      },
+      "status": "missing",
+      "missing": "果花只持授粉标记，不存可耗花蜜/恢复量或真实多花列替换。",
+      "registered_ids": []
+    },
+    {
+      "base": "A14-10",
+      "role": "A14",
+      "species": "蜜蜂",
+      "legacy_name": "在树枝上临时聚团",
+      "legacy_trigger": "旧蜂箱拥挤且新展开区域有空巢位",
+      "legacy_visible": "树枝下挂一团蜂影，几只侦查蜂来回飞动",
+      "legacy_effect": "找到空巢后形成第二个蜂群，两个蜂群分别使用各自花区",
+      "source": {
+        "path": "design/character-animals-b.tsv",
+        "line": 30
+      },
+      "status": "missing",
+      "missing": "蜂箱没有群密或第二个可被占据实际蜂巢位。",
+      "registered_ids": []
+    },
+    {
+      "base": "A15-01",
+      "role": "A15",
+      "species": "乌鸦",
+      "legacy_name": "把坚果塞进石缝",
+      "legacy_trigger": "捡到坚果且庭院暂时没有其他鸟",
+      "legacy_visible": "乌鸦把果子推入石缝，再用一片叶子盖口",
+      "legacy_effect": "留下一个可追踪的藏食点，可被它日后取回",
+      "source": {
+        "path": "design/character-animals-b.tsv",
+        "line": 31
+      },
+      "status": "registered",
+      "actor": 11,
+      "proof": "residents_wildlife_acorns::State → Proof::CrowStore",
+      "site": "实际有橡树(183,15)和岩石(181,15)的采石场北面外侧",
+      "time": "乌鸦的06:40–08:50早间活动，晴/云且实查附近无其他鸟，秋果已落",
+      "weather": [
+        "Clear",
+        "Clouds"
+      ],
+      "seasons": [
+        "Autumn",
+        "Spring",
+        "Summer",
+        "Winter"
+      ],
+      "parcel": "Nearby",
+      "from_tile": [
+        181,
+        16
+      ],
+      "to_tile": [
+        181,
+        15
+      ],
+      "partner": null,
+      "effect": "始终一枚：夹到岩缝，随后另带落叶到位盖住，期间保存可续。没有第二份载具或隐形补货。",
+      "evidence": [
+        "wildlife-ecology-detour-resume/crow-carry.json",
+        "wildlife-ecology-detour-resume/crow-leaf-carry.json",
+        "wildlife-ecology-detour-resume/crow-cover.json"
+      ],
+      "readback": null,
+      "modes": {
+        "1": "始终一枚：夹到岩缝，随后另带落叶到位盖住，期间保存可续。没有第二份载具或隐形补货。",
+        "2": null,
+        "3": null
+      },
+      "other_modes": "没有实际此条所需归属食物/种/拾物交接。按行为原效果这项只登记基础，除非明确满足原变体。",
+      "registered_ids": [
+        "A15-01"
+      ]
+    },
+    {
+      "base": "A15-02",
+      "role": "A15",
+      "species": "乌鸦",
+      "legacy_name": "靠石纹找回旧藏",
+      "legacy_trigger": "乌鸦回来且原先盖口的叶子被雨冲走",
+      "legacy_visible": "乌鸦沿石边走走停停，终于从缝里夹出果子",
+      "legacy_effect": "该藏食点清空，石边留下被翻开的叶屑",
+      "source": {
+        "path": "design/character-animals-b.tsv",
+        "line": 32
+      },
+      "status": "registered",
+      "actor": 11,
+      "proof": "residents_wildlife_acorns::State → Proof::CrowRetrieve",
+      "site": "同一(181,16)藏点、石边检查位与真实雨水把叶挪至(180,16)",
+      "time": "06:40–08:50晴/云，早先下的雨实际先搬走该叶并露出同枚果",
+      "weather": [
+        "Clear",
+        "Clouds"
+      ],
+      "seasons": [
+        "Autumn",
+        "Spring",
+        "Summer",
+        "Winter"
+      ],
+      "parcel": "Nearby",
+      "from_tile": [
+        180,
+        20
+      ],
+      "to_tile": [
+        181,
+        16
+      ],
+      "partner": null,
+      "effect": "先到石侧查看再挖出原果，实际夹回食用。有限叶屑持续90世界分钟，仓库粮食无变化。",
+      "evidence": [
+        "wildlife-ecology-detour-resume/crow-washed-leaf.json",
+        "wildlife-ecology-detour-resume/crow-retrieval.json"
+      ],
+      "readback": null,
+      "modes": {
+        "1": "先到石侧查看再挖出原果，实际夹回食用。有限叶屑持续90世界分钟，仓库粮食无变化。",
+        "2": null,
+        "3": null
+      },
+      "other_modes": "没有实际此条所需归属食物/种/拾物交接。按行为原效果这项只登记基础，除非明确满足原变体。",
+      "registered_ids": [
+        "A15-02"
+      ]
+    },
+    {
+      "base": "A15-03",
+      "role": "A15",
+      "species": "乌鸦",
+      "legacy_name": "把硬面包沾软",
+      "legacy_trigger": "访客盘上有干面包且盆边可以落脚",
+      "legacy_visible": "乌鸦叼着面包边在浅水里点两次，再从软边啄食",
+      "legacy_effect": "面包碎块减少，盆中留下一点面包渣供管理员冲洗",
+      "source": {
+        "path": "design/character-animals-b.tsv",
+        "line": 33
+      },
+      "status": "missing",
+      "missing": "访客菜肴不记录一块可衔干面包，水碗无由该块生成并实际可洗的残渣。",
+      "registered_ids": []
+    },
+    {
+      "base": "A15-04",
+      "role": "A15",
+      "species": "乌鸦",
+      "legacy_name": "把果壳丢到石板",
+      "legacy_trigger": "厚壳果无法从地上直接啄开",
+      "legacy_visible": "乌鸦抬起短飞，果壳砸在石板上裂成两片",
+      "legacy_effect": "石板边留下空壳，某些小鸟可啄取残屑",
+      "source": {
+        "path": "design/character-animals-b.tsv",
+        "line": 34
+      },
+      "status": "missing",
+      "missing": "已有有归属的橡果；没有该硬果先啄失败、悬空抛落、石板撞裂成两半以及其他鸟对实际残屑的领取链。不能复用已食用枚。",
+      "registered_ids": []
+    },
+    {
+      "base": "A15-05",
+      "role": "A15",
+      "species": "乌鸦",
+      "legacy_name": "在高处报猫踪",
+      "legacy_trigger": "乌鸦在栏顶看见猫贴地靠近鸟群",
+      "legacy_visible": "乌鸦朝猫连叫几声，远处鸟影迅速升上枝头",
+      "legacy_effect": "邻近小鸟暂时避开猫的行进路线",
+      "source": {
+        "path": "design/character-animals-b.tsv",
+        "line": 35
+      },
+      "status": "missing",
+      "missing": "乌鸦东采石边，橘子主宅附近，且缺邻近目标鸟真实改路线，不能用观察猫日志代替。",
+      "registered_ids": []
+    },
+    {
+      "base": "A15-06",
+      "role": "A15",
+      "species": "乌鸦",
+      "legacy_name": "用脚压住细枝剥皮",
+      "legacy_trigger": "新落枝有松动的外皮且树梢潮湿",
+      "legacy_visible": "乌鸦一脚踩住枝条，用嘴拉开一条细皮",
+      "legacy_effect": "留下一条脱皮枝和少量树皮碎屑供别的角色使用",
+      "source": {
+        "path": "design/character-animals-b.tsv",
+        "line": 36
+      },
+      "status": "missing",
+      "missing": "缺潮树梢新增枝实物及分成两种独立可交付材料的工序。",
+      "registered_ids": []
+    },
+    {
+      "base": "A15-07",
+      "role": "A15",
+      "species": "乌鸦",
+      "legacy_name": "从高枝卸下拾得的瓶盖",
+      "legacy_trigger": "它从围栏外带回一个小物件，树枝又窄又滑",
+      "legacy_visible": "乌鸦换脚站立时瓶盖从喙边跌到树根",
+      "legacy_effect": "地面添一个可由管理员收拾的瓶盖，手记记录来路",
+      "source": {
+        "path": "design/character-animals-b.tsv",
+        "line": 37
+      },
+      "status": "missing",
+      "missing": "村外触点成人可走，乌鸦没有原来路瓶盖或归属拾获盒。",
+      "registered_ids": []
+    },
+    {
+      "base": "A15-08",
+      "role": "A15",
+      "species": "乌鸦",
+      "legacy_name": "试探刚摆来的食盘",
+      "legacy_trigger": "新食盘第一次出现且附近没有熟鸟取食",
+      "legacy_visible": "乌鸦侧跳绕盘，拉过一根草茎碰盘沿",
+      "legacy_effect": "食盘通过一次安全探查后，乌鸦下次直接落盘边",
+      "source": {
+        "path": "design/character-animals-b.tsv",
+        "line": 38
+      },
+      "status": "missing",
+      "missing": "有系统猫饭水碗，缺乌鸦真实首置新盘、实际不被占与下次跳过探查记忆。",
+      "registered_ids": []
+    },
+    {
+      "base": "A15-09",
+      "role": "A15",
+      "species": "乌鸦",
+      "legacy_name": "隔栏与同伴呼应",
+      "legacy_trigger": "傍晚相邻地块出现另一只乌鸦",
+      "legacy_visible": "两只乌鸦一前一后叫，声落后飞向同侧高枝",
+      "legacy_effect": "黄昏集合点移到那段围栏，次晨从同一方向出发",
+      "source": {
+        "path": "design/character-animals-b.tsv",
+        "line": 39
+      },
+      "status": "missing",
+      "missing": "只有一只乌鸦，黄昏也不在当前活跃窗口，缺真实同类声音和翌日复用。",
+      "registered_ids": []
+    },
+    {
+      "base": "A15-10",
+      "role": "A15",
+      "species": "乌鸦",
+      "legacy_name": "假藏引开偷食者",
+      "legacy_trigger": "它叼着坚果，另一个取食角色持续跟随",
+      "legacy_visible": "乌鸦在明处拨土空放，转到背光面藏真果",
+      "legacy_effect": "保留一个空标记和一个真实藏食点，跟随者先检查空标记",
+      "source": {
+        "path": "design/character-animals-b.tsv",
+        "line": 40
+      },
+      "status": "missing",
+      "missing": "无拥有同一坚果、另一实际跟随者或真实空藏标记与食物藏点竞争。",
+      "registered_ids": []
+    },
+    {
+      "base": "A16-01",
+      "role": "A16",
+      "species": "山雀",
+      "legacy_name": "倒挂检查嫩枝",
+      "legacy_trigger": "细枝背面有小虫或虫卵",
+      "legacy_visible": "山雀翻到枝下，头朝下啄两下再翻回",
+      "legacy_effect": "这根枝条减少一批虫卵，下个晴天的虫害减弱",
+      "source": {
+        "path": "design/character-animals-b.tsv",
+        "line": 41
+      },
+      "status": "missing",
+      "missing": "无嫩枝背面可扣减虫卵与重复虫害等级。",
+      "registered_ids": []
+    },
+    {
+      "base": "A16-02",
+      "role": "A16",
+      "species": "山雀",
+      "legacy_name": "把种子卡进枝杈",
+      "legacy_trigger": "捡到一颗圆滑种子且找到窄枝杈",
+      "legacy_visible": "山雀将种子塞牢，短啄数次把壳震开",
+      "legacy_effect": "枝杈留细壳，鸟群随后会回避这颗空壳",
+      "source": {
+        "path": "design/character-animals-b.tsv",
+        "line": 42
+      },
+      "status": "missing",
+      "missing": "缺圆种实物、枝杈卡物、啄开空壳和其他鸟回避。",
+      "registered_ids": []
+    },
+    {
+      "base": "A16-03",
+      "role": "A16",
+      "species": "山雀",
+      "legacy_name": "挑取软苔铺窝",
+      "legacy_trigger": "春季有空树洞且旧窝底层干硬",
+      "legacy_visible": "山雀把薄薄一撮苔叼入洞口，洞缘垫高",
+      "legacy_effect": "树洞保留软衬，后续暖巢消耗降低",
+      "source": {
+        "path": "design/character-animals-b.tsv",
+        "line": 43
+      },
+      "status": "missing",
+      "missing": "无可承载山雀保存的树洞巢底和软苔实物。",
+      "registered_ids": []
+    },
+    {
+      "base": "A16-04",
+      "role": "A16",
+      "species": "山雀",
+      "legacy_name": "清晨在树梢划界",
+      "legacy_trigger": "繁殖季晴晨，附近出现同类回应",
+      "legacy_visible": "山雀从两个树梢轮流短唱，远处同类停在边界外",
+      "legacy_effect": "短期形成一块活动范围，其内不会再新增同类巢位",
+      "source": {
+        "path": "design/character-animals-b.tsv",
+        "line": 44
+      },
+      "status": "missing",
+      "missing": "既有一只山雀；缺同类响应和必须禁止入巢的新领界。",
+      "registered_ids": []
+    },
+    {
+      "base": "A16-05",
+      "role": "A16",
+      "species": "山雀",
+      "legacy_name": "鼓起羽毛熬过霜晨",
+      "legacy_trigger": "霜晨日光还未越过树篱",
+      "legacy_visible": "山雀缩颈圆成小团，把一条腿藏进羽间",
+      "legacy_effect": "低温期间少外出一次，日晒后恢复正常觅食",
+      "source": {
+        "path": "design/character-animals-b.tsv",
+        "line": 45
+      },
+      "status": "missing",
+      "missing": "有早晨/降雪但无实测霜区与日光越篱规则，常规消失不构成减少一次觅食。",
+      "registered_ids": []
+    },
+    {
+      "base": "A16-06",
+      "role": "A16",
+      "species": "山雀",
+      "legacy_name": "把多余种子塞进树皮",
+      "legacy_trigger": "秋天拾到多余种子且树皮有浅裂",
+      "legacy_visible": "山雀侧身压入种子，树皮缝露一点浅色",
+      "legacy_effect": "保留一个越冬粮点，附近其他禽类可偶然发现",
+      "source": {
+        "path": "design/character-animals-b.tsv",
+        "line": 46
+      },
+      "status": "missing",
+      "missing": "没有带所有者的同一 extra seed 保存在真实树皮裂隙并被别鸟取走。",
+      "registered_ids": []
+    },
+    {
+      "base": "A16-07",
+      "role": "A16",
+      "species": "山雀",
+      "legacy_name": "夹一条软虫入巢",
+      "legacy_trigger": "巢里有雏鸟且近树出现嫩叶卷虫",
+      "legacy_visible": "山雀横叼卷虫飞入洞内，洞口短暂露出两张小嘴",
+      "legacy_effect": "雏鸟获得一份食物，巢附近虫害减少",
+      "source": {
+        "path": "design/character-animals-b.tsv",
+        "line": 47
+      },
+      "status": "missing",
+      "missing": "缺同窝雏鸟、实际卷叶虫和亲鸟原件喂食。",
+      "registered_ids": []
+    },
+    {
+      "base": "A16-08",
+      "role": "A16",
+      "species": "山雀",
+      "legacy_name": "叼出窝里的碎壳",
+      "legacy_trigger": "巢内孵化完成且成鸟发现可移走的蛋壳",
+      "legacy_visible": "成鸟叼半片薄壳飞到篱笆外，折返时喙已空",
+      "legacy_effect": "巢口清洁，地面多出一处孵化痕迹",
+      "source": {
+        "path": "design/character-animals-b.tsv",
+        "line": 48
+      },
+      "status": "missing",
+      "missing": "缺已孵化的真实蛋壳和原位窝清洁。",
+      "registered_ids": []
+    },
+    {
+      "base": "A16-09",
+      "role": "A16",
+      "species": "山雀",
+      "legacy_name": "从树冠加入冬季混群",
+      "legacy_trigger": "入冬后当地独行山雀遇见过路鸟群",
+      "legacy_visible": "山雀沿树冠并入队列，几种鸟分层跳行",
+      "legacy_effect": "这只山雀暂时使用混群的巡游路线，找到新树皮虫源",
+      "source": {
+        "path": "design/character-animals-b.tsv",
+        "line": 49
+      },
+      "status": "missing",
+      "missing": "没有真实过路鸟群集体路线及新虫食来源，静态多种鸟同时出现不算。",
+      "registered_ids": []
+    },
+    {
+      "base": "A16-10",
+      "role": "A16",
+      "species": "山雀",
+      "legacy_name": "在枝间催幼鸟试跳",
+      "legacy_trigger": "雏鸟离窝后站在低枝且没有猫靠近",
+      "legacy_visible": "亲鸟停到隔壁枝短叫，幼鸟第一次张翅跳过去",
+      "legacy_effect": "这只幼鸟解锁低枝移动路线，随后可独自到水边",
+      "source": {
+        "path": "design/character-animals-b.tsv",
+        "line": 50
+      },
+      "status": "missing",
+      "missing": "缺出窝的第二个实际幼鸟与爪位、低枝训练和技能解锁。",
+      "registered_ids": []
+    },
+    {
+      "base": "A17-01",
+      "role": "A17",
+      "species": "蝴蝶",
+      "legacy_name": "张翅晒暖",
+      "legacy_trigger": "气温偏低但干石上出现日斑",
+      "legacy_visible": "蝴蝶在石上摊开两翅，影子从斜线变成扇形",
+      "legacy_effect": "暖身后当日第一次飞行可以越过较远的地块",
+      "source": {
+        "path": "design/character-animals-b.tsv",
+        "line": 51
+      },
+      "status": "missing",
+      "missing": "可拓展真实日照石；仍需低温前置和因晒暖改变本次飞行半径，不按时间播放热身标签。",
+      "registered_ids": []
+    },
+    {
+      "base": "A17-02",
+      "role": "A17",
+      "species": "蝴蝶",
+      "legacy_name": "在湿沙补盐",
+      "legacy_trigger": "雨停后水边裸露出一圈湿沙",
+      "legacy_visible": "蝴蝶停在沙地收翅，口器伸到深色沙点",
+      "legacy_effect": "这只蝴蝶优先在湿沙消失前完成补给，同日不再来回重复",
+      "source": {
+        "path": "design/character-animals-b.tsv",
+        "line": 52
+      },
+      "status": "missing",
+      "missing": "现有岸边Path/Grass/Water，缺真实潮湿沙带，也没有按日物理摄盐来影响再访。",
+      "registered_ids": []
+    },
+    {
+      "base": "A17-03",
+      "role": "A17",
+      "species": "蝴蝶",
+      "legacy_name": "合翅藏进落叶色",
+      "legacy_trigger": "捕食者经过且地面落叶与翅背颜色相近",
+      "legacy_visible": "蝴蝶落地时合翅，明亮花纹缩成一条褐线",
+      "legacy_effect": "该个体暂时脱离追逐，停在原位等待安全",
+      "source": {
+        "path": "design/character-animals-b.tsv",
+        "line": 53
+      },
+      "status": "missing",
+      "missing": "无实际捕食者与袭击/脱离模型和与翅背适配的同一地面落叶。",
+      "registered_ids": []
+    },
+    {
+      "base": "A17-04",
+      "role": "A17",
+      "species": "蝴蝶",
+      "legacy_name": "用长口器探深花",
+      "legacy_trigger": "开放的管状花对其他小访客不易够到",
+      "legacy_visible": "蝴蝶贴近花口，口器伸入后花冠轻晃",
+      "legacy_effect": "这类深花获得一次有效授粉，优先进入结果状态",
+      "source": {
+        "path": "design/character-animals-b.tsv",
+        "line": 54
+      },
+      "status": "missing",
+      "missing": "没有可区分且长花管开放的植物与其专有授粉效果，不能把苹果传粉当长花。",
+      "registered_ids": []
+    },
+    {
+      "base": "A17-05",
+      "role": "A17",
+      "species": "蝴蝶",
+      "legacy_name": "在花丛上双飞",
+      "legacy_trigger": "两只成蝶同时到达空旷的同种花区",
+      "legacy_visible": "两条飞行轨迹绕成螺旋，在花梢短暂停靠",
+      "legacy_effect": "这一对在邻近寄主植物生成一次后续繁殖机会",
+      "source": {
+        "path": "design/character-animals-b.tsv",
+        "line": 55
+      },
+      "status": "missing",
+      "missing": "既有一只蝴蝶；双亲/实体开花地和繁殖机会缺。",
+      "registered_ids": []
+    },
+    {
+      "base": "A17-06",
+      "role": "A17",
+      "species": "蝴蝶",
+      "legacy_name": "挑寄主叶留卵",
+      "legacy_trigger": "成蝶找到适合幼虫的完整寄主叶",
+      "legacy_visible": "蝴蝶接连点过两片叶，末片留下一个细浅卵点",
+      "legacy_effect": "该叶进入孵化状态，后续幼虫从此取食",
+      "source": {
+        "path": "design/character-animals-b.tsv",
+        "line": 56
+      },
+      "status": "missing",
+      "missing": "缺寄主真叶和附叶卵的孵化模型。",
+      "registered_ids": []
+    },
+    {
+      "base": "A17-07",
+      "role": "A17",
+      "species": "蝴蝶",
+      "legacy_name": "幼虫从叶缘慢吃",
+      "legacy_trigger": "寄主叶上的卵已孵化且叶片足够嫩",
+      "legacy_visible": "幼虫绕过主叶脉，叶缘出现月牙缺口",
+      "legacy_effect": "寄主叶蓄积一道可见啃痕，幼虫长到下一龄",
+      "source": {
+        "path": "design/character-animals-b.tsv",
+        "line": 57
+      },
+      "status": "missing",
+      "missing": "缺同一实际幼虫、寄主叶啃损和成长龄级。",
+      "registered_ids": []
+    },
+    {
+      "base": "A17-08",
+      "role": "A17",
+      "species": "蝴蝶",
+      "legacy_name": "用丝把蛹固定在檐下",
+      "legacy_trigger": "末龄幼虫找得到干燥而安静的窄沿",
+      "legacy_visible": "檐下出现丝线和挂起的蛹，之后逐渐变深",
+      "legacy_effect": "幼虫退出取食状态，蛹位置保持到羽化",
+      "source": {
+        "path": "design/character-animals-b.tsv",
+        "line": 58
+      },
+      "status": "missing",
+      "missing": "缺末龄实际个体与干狭檐处的悬蛹/羽化。",
+      "registered_ids": []
+    },
+    {
+      "base": "A17-09",
+      "role": "A17",
+      "species": "蝴蝶",
+      "legacy_name": "在晨光里展新翅",
+      "legacy_trigger": "蛹已成熟且空气干燥",
+      "legacy_visible": "蛹壳裂开，新成蝶软翅展开后静静晾干",
+      "legacy_effect": "空蛹壳暂留在檐下，新成蝶加入庭院飞行",
+      "source": {
+        "path": "design/character-animals-b.tsv",
+        "line": 59
+      },
+      "status": "missing",
+      "missing": "缺成熟同一蛹、物理空壳和从该位进入真实巡游。",
+      "registered_ids": []
+    },
+    {
+      "base": "A17-10",
+      "role": "A17",
+      "species": "蝴蝶",
+      "legacy_name": "顺风越过新花带",
+      "legacy_trigger": "暖风持续且扩大后的庭院有连续开花地块",
+      "legacy_visible": "蝴蝶贴着花带逐站停靠，最后越出旧花园边缘",
+      "legacy_effect": "新地块得到成蝶的首次授粉路线，原花带少一只访花者",
+      "source": {
+        "path": "design/character-animals-b.tsv",
+        "line": 60
+      },
+      "status": "missing",
+      "missing": "没有暖风方向持续态；另缺新真实深花区有效授粉，不能算晴天迁移。",
+      "registered_ids": []
+    },
+    {
+      "base": "A18-01",
+      "role": "A18",
+      "species": "蜥蜴",
+      "legacy_name": "贴石晒背",
+      "legacy_trigger": "早晨冷而石面先被阳光照暖",
+      "legacy_visible": "蜥蜴把腹部压低贴上石面，暖起来后抬起头",
+      "legacy_effect": "进入可快速捕虫状态，下一次冲刺距离增加",
+      "source": {
+        "path": "design/character-animals-b.tsv",
+        "line": 61
+      },
+      "status": "missing",
+      "missing": "岩石有权威资源状态，仍须一段未受阴影照暖真实岩石与暖身后一次增距冲刺。",
+      "registered_ids": []
+    },
+    {
+      "base": "A18-02",
+      "role": "A18",
+      "species": "蜥蜴",
+      "legacy_name": "把影子当警报",
+      "legacy_trigger": "头顶有大鸟影快速扫过石面",
+      "legacy_visible": "蜥蜴在影沿到来时钻进石缝，只露尾尖",
+      "legacy_effect": "短时间只使用有掩体的路线，暂停开阔处捕食",
+      "source": {
+        "path": "design/character-animals-b.tsv",
+        "line": 62
+      },
+      "status": "missing",
+      "missing": "蜥蜴与乌鸦采石地几格相离，但当前无大鸟实际掠影与蜥蜴改投有效掩体的共同流。",
+      "registered_ids": []
+    },
+    {
+      "base": "A18-03",
+      "role": "A18",
+      "species": "蜥蜴",
+      "legacy_name": "在石缝口伏击虫子",
+      "legacy_trigger": "石面暖且小飞虫常经过缝口",
+      "legacy_visible": "蜥蜴静伏后向前快速扑一次，再回原处",
+      "legacy_effect": "该窄路的小飞虫数量降低，下一次守候改在邻缝",
+      "source": {
+        "path": "design/character-animals-b.tsv",
+        "line": 63
+      },
+      "status": "missing",
+      "missing": "缺小飞虫密度、摄食和换守邻石缝。",
+      "registered_ids": []
+    },
+    {
+      "base": "A18-04",
+      "role": "A18",
+      "species": "蜥蜴",
+      "legacy_name": "沿墙面换晒台",
+      "legacy_trigger": "阳光从平石移到低墙且墙面有粗糙落脚处",
+      "legacy_visible": "蜥蜴贴住墙根逐段爬高，侧身移到阳光条带",
+      "legacy_effect": "临时启用一条立面路线，正午猫较少遇见它",
+      "source": {
+        "path": "design/character-animals-b.tsv",
+        "line": 64
+      },
+      "status": "missing",
+      "missing": "无蜥蜴可登粗糙墙面、两实际日照台随太阳时间切换。",
+      "registered_ids": []
+    },
+    {
+      "base": "A18-05",
+      "role": "A18",
+      "species": "蜥蜴",
+      "legacy_name": "在松土中浅埋卵",
+      "legacy_trigger": "暖季找到避雨的疏松土角",
+      "legacy_visible": "蜥蜴用后足拨出浅坑，填回土后压平",
+      "legacy_effect": "留下一个浅卵窝，稳定温暖后出现新幼体",
+      "source": {
+        "path": "design/character-animals-b.tsv",
+        "line": 65
+      },
+      "status": "missing",
+      "missing": "缺松土下实际浅卵窝与蜥蜴真实幼体时程。",
+      "registered_ids": []
+    },
+    {
+      "base": "A18-06",
+      "role": "A18",
+      "species": "蜥蜴",
+      "legacy_name": "在粗石上蹭掉旧皮",
+      "legacy_trigger": "背上蜕皮起边且空气湿度适宜",
+      "legacy_visible": "蜥蜴拱身从粗石角擦过，石边留下薄白皮屑",
+      "legacy_effect": "旧皮完成脱落，皮屑作为一次可消失的庭院痕迹",
+      "source": {
+        "path": "design/character-animals-b.tsv",
+        "line": 66
+      },
+      "status": "missing",
+      "missing": "无蜕皮起边/湿度前置、单件会消失旧皮地面物。",
+      "registered_ids": []
+    },
+    {
+      "base": "A18-07",
+      "role": "A18",
+      "species": "蜥蜴",
+      "legacy_name": "舔掉晨露",
+      "legacy_trigger": "长时间未饮水且叶尖挂着细露",
+      "legacy_visible": "蜥蜴伸头向叶缘，水珠逐颗变小",
+      "legacy_effect": "补水后不急于靠近开阔水塘，继续走安全路线",
+      "source": {
+        "path": "design/character-animals-b.tsv",
+        "line": 67
+      },
+      "status": "missing",
+      "missing": "缺个体饮水需求和挂露真实叶、补水后规避开阔塘。",
+      "registered_ids": []
+    },
+    {
+      "base": "A18-08",
+      "role": "A18",
+      "species": "蜥蜴",
+      "legacy_name": "沿土缝探气味",
+      "legacy_trigger": "新铺泥土上有曾经过的小昆虫路线",
+      "legacy_visible": "蜥蜴短步停顿，舌尖连点两处后改变方向",
+      "legacy_effect": "新辨出的觅食方向保留到本轮结束",
+      "source": {
+        "path": "design/character-animals-b.tsv",
+        "line": 68
+      },
+      "status": "missing",
+      "missing": "人可铺田土但无其上实际虫的路径气味及同次觅食改向。",
+      "registered_ids": []
+    },
+    {
+      "base": "A18-09",
+      "role": "A18",
+      "species": "蜥蜴",
+      "legacy_name": "甩尾脱身",
+      "legacy_trigger": "罕见情况下猫爪逼近并切断最近的石缝路线",
+      "legacy_visible": "一小截尾影在原地摆动，蜥蜴从反向迅速窜入掩体",
+      "legacy_effect": "蜥蜴一段时间减少外出并慢慢复原，猫暂时转向尾影",
+      "source": {
+        "path": "design/character-animals-b.tsv",
+        "line": 69
+      },
+      "status": "missing",
+      "missing": "猫不会切断蜥蜴逃路或追逐实际脱落尾，缺可持续再生模型。",
+      "registered_ids": []
+    },
+    {
+      "base": "A18-10",
+      "role": "A18",
+      "species": "蜥蜴",
+      "legacy_name": "退入深石穴越冬",
+      "legacy_trigger": "多日低温且浅石缝已结霜",
+      "legacy_visible": "蜥蜴从浅缝退出，沿地表最短路线消失在深穴",
+      "legacy_effect": "冬季维持休眠，回暖后从同一穴口先短暂探头",
+      "source": {
+        "path": "design/character-animals-b.tsv",
+        "line": 70
+      },
+      "status": "missing",
+      "missing": "冬天仅停止显示，缺同深石穴的实体掩蔽、多日低温和暖后原穴探头。",
+      "registered_ids": []
+    },
+    {
+      "base": "A19-01",
+      "role": "A19",
+      "species": "田鼠",
+      "legacy_name": "踩出草下通道",
+      "legacy_trigger": "同一片高草连接食点和洞口，田鼠反复通过",
+      "legacy_visible": "草从下缘分出一条贴地窄纹，偶尔露出鼠影",
+      "legacy_effect": "留下可重复使用的地表路径，移动更快且少暴露",
+      "source": {
+        "path": "design/character-animals-b.tsv",
+        "line": 71
+      },
+      "status": "missing",
+      "missing": "日常有草间绕行，尚无连续重复后物理压开、真实提升运动和减隐蔽暴露的固定通道。",
+      "registered_ids": []
+    },
+    {
+      "base": "A19-02",
+      "role": "A19",
+      "species": "田鼠",
+      "legacy_name": "剪草压成冬储",
+      "legacy_trigger": "入秋且青叶尚多，洞内储草位未满",
+      "legacy_visible": "田鼠把草叶咬断，拖过通道后草尖消失",
+      "legacy_effect": "存入一份干草储备，寒潮时可减少出洞觅食",
+      "source": {
+        "path": "design/character-animals-b.tsv",
+        "line": 72
+      },
+      "status": "missing",
+      "missing": "缺独立剪草、干草实物托管兽窝及低温减少一次出洞。",
+      "registered_ids": []
+    },
+    {
+      "base": "A19-03",
+      "role": "A19",
+      "species": "田鼠",
+      "legacy_name": "用干纤维补窝心",
+      "legacy_trigger": "窝底潮湿但洞口外有干草和碎屑",
+      "legacy_visible": "田鼠叼来细丝，洞口短暂堆起一小撮纤维",
+      "legacy_effect": "内窝保暖增强，夜间需要外出找材料的次数下降",
+      "source": {
+        "path": "design/character-animals-b.tsv",
+        "line": 73
+      },
+      "status": "missing",
+      "missing": "已有有效草掩体，未建潮湿窝底和可以消耗的同一份干纤维。",
+      "registered_ids": []
+    },
+    {
+      "base": "A19-04",
+      "role": "A19",
+      "species": "田鼠",
+      "legacy_name": "啃食露出的嫩根",
+      "legacy_trigger": "雨水冲开地表后露出少量嫩根",
+      "legacy_visible": "土边出现细咬纹，嫩根逐段缩短",
+      "legacy_effect": "邻近植株延迟一次生长，下一次取食换到别的根点",
+      "source": {
+        "path": "design/character-animals-b.tsv",
+        "line": 74
+      },
+      "status": "missing",
+      "missing": "没有雨露的具体嫩根及植物实际延迟生长与下次改点。",
+      "registered_ids": []
+    },
+    {
+      "base": "A19-05",
+      "role": "A19",
+      "species": "田鼠",
+      "legacy_name": "拨开洞口的堵土",
+      "legacy_trigger": "落叶和土粒盖住较干的备用洞口",
+      "legacy_visible": "土粒从叶堆下被推出来，小鼠鼻先探出确认",
+      "legacy_effect": "恢复一条备用出入口，追逐时多一条绕行选择",
+      "source": {
+        "path": "design/character-animals-b.tsv",
+        "line": 75
+      },
+      "status": "missing",
+      "missing": "现只有可走的原避让草角，没有被落叶土堵实的第二洞口及除堵。",
+      "registered_ids": []
+    },
+    {
+      "base": "A19-06",
+      "role": "A19",
+      "species": "田鼠",
+      "legacy_name": "把浸水支道封上",
+      "legacy_trigger": "暴雨后有积水从低洼支道靠近主窝",
+      "legacy_visible": "洞口边土团被不断向内推，湿支口最后合住",
+      "legacy_effect": "隔绝积水，本次降雨期间只保留干处的出入口",
+      "source": {
+        "path": "design/character-animals-b.tsv",
+        "line": 76
+      },
+      "status": "missing",
+      "missing": "没有一段通到主洞、能实际入水的低支道及封口改变。",
+      "registered_ids": []
+    },
+    {
+      "base": "A19-07",
+      "role": "A19",
+      "species": "田鼠",
+      "legacy_name": "搬家绕过猫常守的洞口",
+      "legacy_trigger": "猫反复蹲守主洞出口且另一处高草连到安全地块",
+      "legacy_visible": "田鼠分两次搬走草团，从高草后方钻进新窝",
+      "legacy_effect": "主洞位置转移，旧洞保留空洞痕迹供观察",
+      "source": {
+        "path": "design/character-animals-b.tsv",
+        "line": 77
+      },
+      "status": "missing",
+      "missing": "旧流程一次听声换路线，没有猫多次守同洞和洞所有权迁移。",
+      "registered_ids": []
+    },
+    {
+      "base": "A19-08",
+      "role": "A19",
+      "species": "田鼠",
+      "legacy_name": "沿雪底活动",
+      "legacy_trigger": "积雪覆盖草带但未封死贴地空隙",
+      "legacy_visible": "雪面下鼓起短小移动痕，落雪边留下一个通气孔",
+      "legacy_effect": "雪下通路在化雪前保持可用，田鼠不走暴露石径",
+      "source": {
+        "path": "design/character-animals-b.tsv",
+        "line": 78
+      },
+      "status": "missing",
+      "missing": "现雪阻断露天常规，不是雪下有真实高草通道与可见出入口。",
+      "registered_ids": []
+    },
+    {
+      "base": "A19-09",
+      "role": "A19",
+      "species": "田鼠",
+      "legacy_name": "贴草停住听脚步",
+      "legacy_trigger": "猫或管理员经过且地面有明显振动",
+      "legacy_visible": "田鼠在草端突然停住，耳尖露一下后倒退",
+      "legacy_effect": "触发短暂警戒，下一趟取食优先选择另一条草下路线",
+      "source": {
+        "path": "design/character-animals-b.tsv",
+        "line": 79
+      },
+      "status": "registered",
+      "site": "家院草角与草洞",
+      "actor": 7,
+      "time": "19:00–次日04:20 实际有临近家人或橘子接近/行走时",
+      "weather": [
+        "Clear",
+        "Clouds",
+        "Rain"
+      ],
+      "seasons": [
+        "Spring",
+        "Summer",
+        "Autumn",
+        "Winter"
+      ],
+      "parcel": "Nearby",
+      "from_tile": "14..16,21..22 听声处",
+      "to_tile": [
+        16,
+        21
+      ],
+      "partner": null,
+      "proof": "State::advance_mouse / Receipt::Mouse；真实邻近脚步后停住、去完整草掩体、走另一条原巡线，不凭同时出现。",
+      "effect": "改变这次真实取食/退避路线，掩体打除或进路有人不发凭据。",
+      "modes": {
+        "1": "改变这次真实取食/退避路线，掩体打除或进路有人不发凭据。",
+        "2": null,
+        "3": null
+      },
+      "other_modes": "没有实际此条所需归属食物/种/拾物交接。按行为原效果这项只登记基础，除非明确满足原变体。",
+      "registered_ids": [
+        "A19-09"
+      ]
+    },
+    {
+      "base": "A19-10",
+      "role": "A19",
+      "species": "田鼠",
+      "legacy_name": "在岔道整理谷粒",
+      "legacy_trigger": "已存谷粒受潮且深处仍有干储位",
+      "legacy_visible": "田鼠从一个洞口叼出数粒谷，再从另一口搬回干谷",
+      "legacy_effect": "部分潮谷被放弃，剩余储粮迁到新的干储位置",
+      "source": {
+        "path": "design/character-animals-b.tsv",
+        "line": 80
+      },
+      "status": "missing",
+      "missing": "无洞内两处分开储粮、粮食潮损和原干粮守恒转移。",
+      "registered_ids": []
+    },
+    {
+      "base": "A20-01",
+      "role": "A20",
+      "species": "白鸽",
+      "legacy_name": "沿庭院边走边探食",
+      "legacy_trigger": "清晨硬地有零散籽粒且猫仍在屋里",
+      "legacy_visible": "白鸽逐步探头，见到谷粒便低头啄起",
+      "legacy_effect": "硬地上遗撒谷粒减少，剩余食点集中到空地外沿",
+      "source": {
+        "path": "design/character-animals-b.tsv",
+        "line": 81
+      },
+      "status": "missing",
+      "missing": "家猫有真实室内状态，但白鸽公共区没有实际遗撒可耗谷粒对象。",
+      "registered_ids": []
+    },
+    {
+      "base": "A20-02",
+      "role": "A20",
+      "species": "白鸽",
+      "legacy_name": "吞几颗细砂砾",
+      "legacy_trigger": "刚吃过整粒干种子且石边有干净细砂",
+      "legacy_visible": "白鸽在砂粒间挑几颗入喙，然后离开硬地",
+      "legacy_effect": "接下来一段时间结束觅食，转为在固定高处休息",
+      "source": {
+        "path": "design/character-animals-b.tsv",
+        "line": 82
+      },
+      "status": "missing",
+      "missing": "缺刚吃到的真整粒干种、清洁砂砾摄取和转入真实高处休息计划。",
+      "registered_ids": []
+    },
+    {
+      "base": "A20-03",
+      "role": "A20",
+      "species": "白鸽",
+      "legacy_name": "在浅盆里扑翅沐浴",
+      "legacy_trigger": "天热且盆中水位浅、边沿可以落脚",
+      "legacy_visible": "白鸽蹲进水里轮流抬翼，盆边溅出一圈细滴",
+      "legacy_effect": "盆中水位略降，鸽子之后到向阳栏杆晾羽",
+      "source": {
+        "path": "design/character-animals-b.tsv",
+        "line": 83
+      },
+      "status": "missing",
+      "missing": "有猫水碗但离白鸽活动区太远，缺局部安全实体浅盆、热态、减水和向阳栏杆。",
+      "registered_ids": []
+    },
+    {
+      "base": "A20-04",
+      "role": "A20",
+      "species": "白鸽",
+      "legacy_name": "和伴侣互理头颈",
+      "legacy_trigger": "一对白鸽同时落在安静的高栏上",
+      "legacy_visible": "两只白鸽轮流低头，对方短啄头颈羽",
+      "legacy_effect": "巩固同一个配对，后续搬巢材和轮流孵蛋优先使用这对",
+      "source": {
+        "path": "design/character-animals-b.tsv",
+        "line": 84
+      },
+      "status": "missing",
+      "missing": "仅一只白鸽，未建长期配偶/双个体共栖与共同育雏。",
+      "registered_ids": []
+    },
+    {
+      "base": "A20-05",
+      "role": "A20",
+      "species": "白鸽",
+      "legacy_name": "用粗短枝搭浅盘巢",
+      "legacy_trigger": "窗檐下面有宽平隐蔽处且地面留有短枝",
+      "legacy_visible": "白鸽逐枝横叼，檐下渐渐出现稀疏盘形巢",
+      "legacy_effect": "保留固定的巢位，下一轮可用于孵育",
+      "source": {
+        "path": "design/character-animals-b.tsv",
+        "line": 85
+      },
+      "status": "missing",
+      "missing": "缺可携粗枝残料/巢容积、宽平隐蔽实际高位。",
+      "registered_ids": []
+    },
+    {
+      "base": "A20-06",
+      "role": "A20",
+      "species": "白鸽",
+      "legacy_name": "在巢上换班孵育",
+      "legacy_trigger": "巢中有卵且守巢个体已坐满一段时间",
+      "legacy_visible": "另一只落在巢边，原来那只起身离开后接替者伏下",
+      "legacy_effect": "保温过程连续推进，两只成鸟各自保留轮班记录",
+      "source": {
+        "path": "design/character-animals-b.tsv",
+        "line": 86
+      },
+      "status": "missing",
+      "missing": "缺真实卵、配对成鸟与持续孵育交接。",
+      "registered_ids": []
+    },
+    {
+      "base": "A20-07",
+      "role": "A20",
+      "species": "白鸽",
+      "legacy_name": "用嗉囊乳喂幼鸽",
+      "legacy_trigger": "巢中雏鸟孵化不久且亲鸟已从外面回来",
+      "legacy_visible": "幼鸽探头贴喙，亲鸟低颈停留片刻",
+      "legacy_effect": "雏鸟成长推进一段，接下来安静伏在巢里",
+      "source": {
+        "path": "design/character-animals-b.tsv",
+        "line": 87
+      },
+      "status": "missing",
+      "missing": "缺真实幼鸽、亲鸟携料及摄取后年龄变化。",
+      "registered_ids": []
+    },
+    {
+      "base": "A20-08",
+      "role": "A20",
+      "species": "白鸽",
+      "legacy_name": "日落前沿屋檐认路归巢",
+      "legacy_trigger": "白鸽从庭院外活动后在暮色前返程",
+      "legacy_visible": "一对翅影从远处绕出半圆，准确停进旧檐下",
+      "legacy_effect": "同一只鸽子继续占用已记住的巢位，手记可记录归巢日数",
+      "source": {
+        "path": "design/character-animals-b.tsv",
+        "line": 88
+      },
+      "status": "missing",
+      "missing": "已有一次公共屋顶停驻状态，未实现同一白鸽、原巢所有权和傍晚归巢日履历。",
+      "registered_ids": []
+    },
+    {
+      "base": "A20-09",
+      "role": "A20",
+      "species": "白鸽",
+      "legacy_name": "轮换避风的落脚点",
+      "legacy_trigger": "老栏杆持续受风且另一侧檐角形成背风处",
+      "legacy_visible": "白鸽从风口栏顶成列转移，落下后面朝不同方向",
+      "legacy_effect": "当晚栖位转到背风侧，翌晨从该处出发",
+      "source": {
+        "path": "design/character-animals-b.tsv",
+        "line": 89
+      },
+      "status": "missing",
+      "missing": "屋檐可作真实落点，但没有持续风向、背风校验及隔晚驻足后翌晨同点启程。",
+      "registered_ids": []
+    },
+    {
+      "base": "A20-10",
+      "role": "A20",
+      "species": "白鸽",
+      "legacy_name": "带着幼鸽绕屋练飞",
+      "legacy_trigger": "幼鸽已离巢且清晨风弱",
+      "legacy_visible": "成鸽先飞过一段屋檐，幼鸽稍低跟飞再一起落栏",
+      "legacy_effect": "练飞完成的幼鸽可参加之后的短程外出和归巢",
+      "source": {
+        "path": "design/character-animals-b.tsv",
+        "line": 90
+      },
+      "status": "missing",
+      "missing": "无幼鸽实体/成长、清早无风证明和技能完成后短程归巢。",
+      "registered_ids": []
+    }
+  ],
+  "final_registry_note": "1.1.7 final registered_ids below come from the compiled exact ID registry. Earlier candidate allowlists/observations are review evidence, not additional enabled IDs."
+}

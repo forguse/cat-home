@@ -1,0 +1,10 @@
+id	base	period	weather	season	place	mode	witness_log	effect_and_observation
+H02-01~10051	H02-01	1	0	0	5	1	resident-modes-spring.log	晴春白昼，林枝在真实扩田工作脚回填，现场相对坐标满足旧右侧关系。剖面保留下一次真实整地指令。
+H06-01~10041	H06-01	1	0	0	4	1	final-saucer-receipt.log	晴春白昼，同一空盘得到一份厨师当天实做、从私柜扣除的晚餐。橘子会在原盘领取。
+H06-01~11041	H06-01	1	1	0	4	1	resident-modes-spring2.log	阴春白昼，同一空盘得到一份厨师当天实做、从私柜扣除的晚餐。
+H06-03~12031	H06-03	1	2	0	3	1	exact-meal.log	真雨春日 14:56，苏灶(89,44)在同一已改目标至檐下的来客(90,44)左侧，留存已食用及空托碟归还。
+H06-07~10251	H06-07	1	0	2	5	1	resident-modes-guest.log	晴冬白昼，实际从苏灶私柜拿的一份熟食已交同一预约来客并吃掉，厨师站位相对于来客在右。
+H06-07~11151	H06-07	1	1	1	5	1	resident-modes-guest.log	阴秋白昼，同一约客取得实际一份熟餐，厨师站位相对于来客在右。
+H06-09~11241	H06-09	1	1	2	4	1	resident-modes-late.log	阴冬白昼，柜台原站实际读现存熟食数量，照库存开放最多两个有效预约。
+H06-09~12141	H06-09	1	2	1	4	1	resident-modes-late.log	雨秋白昼，棚下仍实际营业，原站点查看实有现货，不因登记增加熟菜。
+H09-06~11021	H09-06	1	1	0	2	1	resident-mode1-reflection-focused.log	定向夹具仅准备已建二级西屋和已到真实村龄。生产调度让夏墨自主携板沿路到池岸(13,29)，白昼春云09:38对西屋(12,16)完成倒影，同一画板再回挂。

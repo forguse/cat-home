@@ -83,6 +83,7 @@ fn find(names: &[&str], name: &str) -> Option<u8> {
 pub(super) const FROM_CUPBOARD: u8 = 20;
 pub(super) const OUTSIDE_CUSTODY: u8 = 21;
 pub(super) const PREMISES: u8 = 22;
+pub(super) const SNACK_TRAY: u8 = 8;
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize, Eq, PartialEq)]
 struct Token {
@@ -99,6 +100,31 @@ struct Token {
     returning: bool,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     postmark: Option<u64>,
+    #[serde(default, skip_serializing_if = "PackagePaper::dry")]
+    paper: PackagePaper,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    wrap_started: Option<u64>,
+}
+
+#[derive(Clone, Copy, Debug, Default, Serialize, Deserialize, Eq, PartialEq)]
+enum PackagePaper {
+    #[default]
+    Dry,
+    Damp,
+    Oilcloth,
+}
+
+impl PackagePaper {
+    fn dry(&self) -> bool {
+        *self == Self::Dry
+    }
+}
+
+fn package_rule(carrier: u8, name: &str) -> Option<(&'static str, &'static str)> {
+    match (carrier, name) {
+        (0, "letter" | "reply" | "booking_slip") => Some(("H07-04", "wrapped_letter")),
+        _ => None,
+    }
 }
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize, Eq, PartialEq, Default)]
@@ -170,6 +196,8 @@ impl Default for ServiceLedger {
                 pickup: None,
                 returning: false,
                 postmark: None,
+                paper: PackagePaper::Dry,
+                wrap_started: None,
             }),
             notices: [Notice::default(); NOTICES.len()],
             rapport: [0; 20],
@@ -315,6 +343,18 @@ impl ServiceLedger {
                     && t.pickup
                         .is_none_or(|tile| tile.index().is_some() && t.carrier.is_some())
                     && (!t.returning || t.carrier.is_some())
+                    && (t.paper == PackagePaper::Dry
+                        || t.carrier
+                            .is_some_and(|owner| package_rule(owner, ASSETS[index]).is_some()))
+                    && (t.paper != PackagePaper::Oilcloth
+                        || t.carrier
+                            .is_some_and(|owner| package_rule(owner, ASSETS[index]).is_some()))
+                    && t.wrap_started.is_none_or(|time| {
+                        time <= now
+                            && t.paper == PackagePaper::Damp
+                            && t.carrier == Some(0)
+                            && !t.returning
+                    })
                     && t.postmark.is_none_or(|time| {
                         ASSETS[index] == "letter"
                             && t.changed == Some(time)
@@ -400,6 +440,7 @@ impl ServiceLedger {
             || asset.quantity == 0
             || asset.carrier != Some(who)
             || asset.returning
+            || asset.paper == PackagePaper::Damp
         {
             return false;
         }
@@ -409,6 +450,7 @@ impl ServiceLedger {
         asset.carrier = None;
         asset.station = Some(at);
         asset.pickup = None;
+        asset.paper = PackagePaper::Dry;
         true
     }
 
@@ -481,6 +523,53 @@ impl ServiceLedger {
             .map(|index| ASSETS[index])
     }
 
+    pub fn expose_carried_paper_to_rain(&mut self, who: u8) {
+        for (index, parcel) in self.assets.iter_mut().enumerate() {
+            if parcel.carrier == Some(who)
+                && parcel.paper == PackagePaper::Dry
+                && package_rule(who, ASSETS[index]).is_some()
+            {
+                parcel.paper = PackagePaper::Damp;
+                break;
+            }
+        }
+    }
+
+    pub fn needs_wrapping(&self, who: u8) -> bool {
+        self.assets.iter().enumerate().any(|(index, parcel)| {
+            parcel.carrier == Some(who)
+                && !parcel.returning
+                && parcel.paper == PackagePaper::Damp
+                && package_rule(who, ASSETS[index]).is_some()
+        })
+    }
+
+    pub fn wrap_at_own_porch(&mut self, who: u8, at: TilePos, now: u64) -> Option<&'static str> {
+        if who != 0 || at != super::house(usize::from(who)).door {
+            return None;
+        }
+        let (index, parcel) = self.assets.iter_mut().enumerate().find(|(_, parcel)| {
+            parcel.carrier == Some(who) && !parcel.returning && parcel.paper == PackagePaper::Damp
+        })?;
+        let (id, _) = package_rule(who, ASSETS[index])?;
+        let start = *parcel.wrap_started.get_or_insert(now);
+        if now.saturating_sub(start) < 2 * MINUTE {
+            return None;
+        }
+        // The mail carrier owns a reusable oiled cover that stays on this
+        // token until handover or return.
+        parcel.wrap_started = None;
+        parcel.paper = PackagePaper::Oilcloth;
+        Some(id)
+    }
+
+    pub fn wrapped_appearance(&self, who: u8) -> Option<&'static str> {
+        let (index, _) = self.assets.iter().enumerate().find(|(_, parcel)| {
+            parcel.carrier == Some(who) && parcel.paper == PackagePaper::Oilcloth
+        })?;
+        Some(package_rule(who, ASSETS[index])?.1)
+    }
+
     pub fn carriers(&self) -> impl Iterator<Item = (u8, bool)> + '_ {
         self.assets
             .iter()
@@ -498,6 +587,7 @@ impl ServiceLedger {
             .find(|token| token.carrier == Some(who))
         {
             token.returning = true;
+            token.wrap_started = None;
         }
     }
 
@@ -525,6 +615,7 @@ impl ServiceLedger {
         token.returning = false;
         token.station = Some(at);
         token.pickup = None;
+        token.paper = PackagePaper::Dry;
         true
     }
 
@@ -634,6 +725,45 @@ impl ServiceLedger {
 
     pub fn plugin_active(&self) -> bool {
         self.last_plugin_active
+    }
+}
+
+#[cfg(test)]
+mod weather_tests {
+    use super::*;
+
+    #[test]
+    fn expansion_same_rain_wet_letter_requires_the_original_porch_before_handover() {
+        let mut book = ServiceLedger::default();
+        let home = super::super::house(0).door;
+        let other = super::super::house(1).door;
+        let letter = find(&ASSETS, "letter").unwrap();
+        assert!(book.assign_carrier(letter, 0, 0, home));
+        assert!(!book.needs_wrapping(0));
+        book.expose_carried_paper_to_rain(0);
+        assert!(book.needs_wrapping(0));
+        assert!(!book.move_asset(letter, 0, 1, 0, other, 1));
+        assert_eq!(book.wrap_at_own_porch(0, other, 0), None);
+        assert_eq!(book.wrap_at_own_porch(0, home, 0), None);
+        assert_eq!(book.wrap_at_own_porch(0, home, MINUTE), None);
+        let mut book: ServiceLedger =
+            serde_json::from_slice(&serde_json::to_vec(&book).unwrap()).unwrap();
+        assert!(book.validate(MINUTE));
+        assert_eq!(book.wrap_at_own_porch(0, home, 2 * MINUTE), Some("H07-04"));
+        let original = book.assets[usize::from(letter)];
+        let mut loaded: ServiceLedger =
+            serde_json::from_slice(&serde_json::to_vec(&book).unwrap()).unwrap();
+        assert!(loaded.validate(2));
+        loaded.expose_carried_paper_to_rain(0);
+        assert_eq!(loaded.assets[usize::from(letter)], original);
+        assert_eq!(loaded.wrapped_appearance(0), Some("wrapped_letter"));
+        assert!(loaded.move_asset(letter, 0, 1, 0, other, 3));
+        assert_eq!(
+            loaded.assets[usize::from(letter)].quantity,
+            original.quantity
+        );
+        assert_eq!(loaded.wrapped_appearance(0), None);
+        assert!(loaded.holds(letter, 1));
     }
 }
 

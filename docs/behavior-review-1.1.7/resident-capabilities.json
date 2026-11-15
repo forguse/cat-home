@@ -1,0 +1,2171 @@
+{
+  "scope": "H02–H10 exact 90 authorship entries; separate native completion and variant admission",
+  "counts": {
+    "registered": 26,
+    "needs_domain": 44,
+    "missing_role": 20
+  },
+  "counts_by_role": {
+    "H02": {
+      "registered": 2,
+      "needs_domain": 8
+    },
+    "H03": {
+      "needs_domain": 9,
+      "registered": 1
+    },
+    "H04": {
+      "missing_role": 10
+    },
+    "H05": {
+      "missing_role": 10
+    },
+    "H06": {
+      "registered": 6,
+      "needs_domain": 4
+    },
+    "H07": {
+      "registered": 4,
+      "needs_domain": 6
+    },
+    "H08": {
+      "needs_domain": 7,
+      "registered": 3
+    },
+    "H09": {
+      "registered": 5,
+      "needs_domain": 5
+    },
+    "H10": {
+      "registered": 5,
+      "needs_domain": 5
+    }
+  },
+  "registry_state_counts": {
+    "release_row": 26
+  },
+  "scope_limits_zh": "缺角色条目仍可开发，但要先加入原角色、入村/排班、场地和素材。缺机制条目也不是技术不可能，逐项写出现阶段仍欠缺的真实物件、来源或结果。",
+  "coordinated_remaining_chains_zh": {
+    "H03-01": "以真实建筑单号锁作业和一根真实库存绳，木匠逐脚点拉线，合格结果入同单地基许可，并归还原绳。不能重复使用家人H01-19同一活动。",
+    "H10-06+H07-07": "谷芽从已有种库存取一份，有限包携同一扩田订单、地号与交付脚点实际交米信。米信携同件到田边签收，核心Sow须在同一地实际消耗该包。取消则原件返谷芽库，不能只进无身份共享种子库存。此轮核心范围不含该Task::Sow闭环。"
+  },
+  "new_production_chains": [
+    "H02-01",
+    "H02-08",
+    "H06-01",
+    "H06-03",
+    "H06-08",
+    "H07-04",
+    "H08-02",
+    "H08-03",
+    "H09-03",
+    "H09-07",
+    "H10-04"
+  ],
+  "new_native_snapshot_families": [
+    "H02-01",
+    "H02-08",
+    "H06-01",
+    "H06-03",
+    "H06-08",
+    "H07-04",
+    "H08-02",
+    "H08-03",
+    "H08-04",
+    "H09-03",
+    "H09-07",
+    "H10-04"
+  ],
+  "mode1_new_observed_ids": [
+    "H02-01~10051",
+    "H06-01~10041",
+    "H06-01~11041",
+    "H06-03~12031",
+    "H06-07~10251",
+    "H06-07~11151",
+    "H06-09~11241",
+    "H06-09~12141",
+    "H09-06~11021"
+  ],
+  "registry_source": "assets/maps/village-legacy-families.tsv",
+  "snapshot_root": "target/expansion-1.1.7",
+  "rows": [
+    {
+      "id": "H02-01",
+      "authored": {
+        "title": "开土层观察窗",
+        "trigger": "新畦首次露出且土质未登记",
+        "action": "挖开一小块剖面，土层显出沙黄、深棕或黏红色，随后填平",
+        "outcome": "该畦保留一枚土质标记，决定下一轮先补水、翻松还是直接播种"
+      },
+      "decision": "三块真实扩田剖面、淡黄砂/深壤/赤黏；下一轮实际分别补水、直接播种或翻松",
+      "status": "registered",
+      "capability": {
+        "actor": {
+          "Resident": 6
+        },
+        "producer": "residents_care.rs::survey_soil → soil_profile.rs",
+        "site_relative": "林枝实际锄架→扩田29、30、31原编制工作脚",
+        "parcel": "Expanded",
+        "runtime_mode": 1,
+        "legacy_variant_modes": [],
+        "ordinary_time_weather_season": "MarketStreet起，确切干燥露底地块；八分钟工作，工作者退回旧家",
+        "old_context_allowlists": {},
+        "required_old_partner": null,
+        "actual_partner": null,
+        "world_effect": "开口看分层并回填。测量控制下一实际准备，黏土现已观察真实翻松",
+        "changed_for_1_1_7": true,
+        "native_state_snapshots": [
+          "second-market/soil-window.json",
+          "second-market/soil-result.json"
+        ],
+        "registry_state": "release_row",
+        "mode1_audit": {
+          "disposition": "Survey有实际田脚、校验并回填真实田剖面，结果改变下一工单。候选另有秋晴晨右 ~00151，本轮未复现。",
+          "authored_mode1_ids": [
+            "H02-01~00151",
+            "H02-01~02051",
+            "H02-01~02141",
+            "H02-01~10051",
+            "H02-01~11141",
+            "H02-01~11231",
+            "H02-01~20231",
+            "H02-01~21041",
+            "H02-01~22131"
+          ],
+          "new_observed_candidates": [
+            {
+              "id": "H02-01~10051",
+              "log": "resident-modes-spring.log",
+              "evidence": "晴春白昼，林枝在真实扩田工作脚回填，现场相对坐标满足旧右侧关系。剖面保留下一次真实整地指令。"
+            }
+          ]
+        },
+        "observed_exact_receipts": {
+          "log": "second-exact.log",
+          "lines": [
+            "receipt H02-01 d5328 min1030"
+          ],
+          "run": "isolated compiled registry using real untouched save copies"
+        }
+      },
+      "registered_ids": [
+        "H02-01",
+        "H02-01~10051"
+      ]
+    },
+    {
+      "id": "H02-02",
+      "authored": {
+        "title": "牵蔓上架",
+        "trigger": "南瓜进入生长期且架位空闲",
+        "action": "插起矮架，把贴地的绿蔓牵到横绳上",
+        "outcome": "占用该畦唯一支架位，果实此后长在架边，收获后撤架"
+      },
+      "decision": "无南瓜/蔓/唯一可拆支架槽",
+      "status": "needs_domain",
+      "registered_ids": []
+    },
+    {
+      "id": "H02-03",
+      "authored": {
+        "title": "给苹果树接枝",
+        "trigger": "苹果树成长期、晴天且有一截接穗",
+        "action": "枝头多出绑带与短接穗，过两个小屋日接合处冒出新芽",
+        "outcome": "保存一个接合截止时间，成功后本轮树冠多一条结果枝"
+      },
+      "decision": "同一果树会结果但无接穗身份和独立新结果枝",
+      "status": "needs_domain",
+      "registered_ids": []
+    },
+    {
+      "id": "H02-04",
+      "authored": {
+        "title": "错开相邻花期",
+        "trigger": "相邻花畦将连续两轮同日开放且其中一畦刚收获",
+        "action": "把后播一畦的种袋移到次日格，花牌转为浅色",
+        "outcome": "后播畦仅本轮延迟，花开后自动清掉排期标记"
+      },
+      "decision": "无可播相邻命名花畦及延后计划",
+      "status": "needs_domain",
+      "registered_ids": []
+    },
+    {
+      "id": "H02-05",
+      "authored": {
+        "title": "撑起幼苗遮阳布",
+        "trigger": "气象牌标记干热，目标畦处于发芽阶段",
+        "action": "四根竹角撑起浅布，正午阴影移过幼芽",
+        "outcome": "一畦一块，布在下次降雨或一天后收起，覆盖期减轻干热损伤"
+      },
+      "decision": "无干热严重度及可减少的幼苗热伤",
+      "status": "needs_domain",
+      "registered_ids": []
+    },
+    {
+      "id": "H02-06",
+      "authored": {
+        "title": "分株移栽薰衣草",
+        "trigger": "薰衣草已成熟且另一畦完成采收",
+        "action": "把一簇根团挪到空畦，原株少一簇，新畦多一小丛",
+        "outcome": "新畦下一轮固定为薰衣草，从生长期接续，仅占用一个轮种安排"
+      },
+      "decision": "无具名薰衣草与分株库存",
+      "status": "needs_domain",
+      "registered_ids": []
+    },
+    {
+      "id": "H02-07",
+      "authored": {
+        "title": "给成熟种荚套袋",
+        "trigger": "花畦成熟且本轮还未保种",
+        "action": "一枚浅纸袋套在种荚外，成熟尾段变为棕色",
+        "outcome": "收获时至多留下一个该花种袋，随后可交给种子商"
+      },
+      "decision": "无具名成熟种荚及同批花种闭环",
+      "status": "needs_domain",
+      "registered_ids": []
+    },
+    {
+      "id": "H02-08",
+      "authored": {
+        "title": "给树根铺落叶层",
+        "trigger": "秋季树畦有裸土且附近落叶未被收走",
+        "action": "树根周围出现厚薄不一的暖棕叶圈，雨后颜色变深",
+        "outcome": "该树畦保留一层覆盖直到下次轮作，减少根部土面干裂"
+      },
+      "decision": "四棵实际果树，每树每秋只利用本树已有落叶，明春发芽前保湿",
+      "status": "registered",
+      "capability": {
+        "actor": {
+          "Resident": 6
+        },
+        "producer": "residents_care.rs::mulch_orchard",
+        "site_relative": "林枝自家实际存锄门 → 合法果树根部站位",
+        "parcel": "Expanded",
+        "runtime_mode": 1,
+        "legacy_variant_modes": [
+          1
+        ],
+        "ordinary_time_weather_season": "MarketStreet，乾燥秋季、已有 AfterHarvest，日间；六分钟实作",
+        "old_context_allowlists": {
+          "places": "2",
+          "weather": "0,1",
+          "periods": "0,1",
+          "seasons": "1"
+        },
+        "required_old_partner": null,
+        "actual_partner": null,
+        "world_effect": "同一真实果树本秋落叶耗尽形成根部覆盖，保持至来春芽，真实减轻缺水健康损失",
+        "changed_for_1_1_7": true,
+        "native_state_snapshots": [
+          "exact-autumn/mulch-work.json",
+          "exact-autumn/mulched-orchard.json"
+        ],
+        "registry_state": "release_row",
+        "matching_mode1_contexts": [
+          "H02-08~00121",
+          "H02-08~01121",
+          "H02-08~10121"
+        ],
+        "mode1_audit": {
+          "disposition": "原模式一留地面护根，复用已登记 ~00121/~01121/~10121。每株每秋确实耗散本树叶源、蓄水到发芽，未登记其他倍数。",
+          "authored_mode1_ids": [
+            "H02-08~00121",
+            "H02-08~01121",
+            "H02-08~02121",
+            "H02-08~10121",
+            "H02-08~11111",
+            "H02-08~12111",
+            "H02-08~20111",
+            "H02-08~21111",
+            "H02-08~22101"
+          ],
+          "new_observed_candidates": []
+        },
+        "observed_exact_receipts": {
+          "log": "exact-autumn.log",
+          "lines": [
+            "receipt H02-08~00121 d22020 min427"
+          ],
+          "run": "isolated compiled registry using real untouched save copies"
+        }
+      },
+      "registered_ids": [
+        "H02-08",
+        "H02-08~00121",
+        "H02-08~01121",
+        "H02-08~10121"
+      ]
+    },
+    {
+      "id": "H02-09",
+      "authored": {
+        "title": "种一圈授粉引花",
+        "trigger": "苹果树现蕾，近旁地边还有空位",
+        "action": "树旁多出几株低花，小花粉点随风过树冠",
+        "outcome": "只维持当前花期，下一阶段多保留一个果点，采收后清理"
+      },
+      "decision": "现有真蜂授粉，但无实耗引花、伴种与收后清理",
+      "status": "needs_domain",
+      "registered_ids": []
+    },
+    {
+      "id": "H02-10",
+      "authored": {
+        "title": "给菜畦盖夜霜草罩",
+        "trigger": "日落前收到霜冻预警且菜畦有幼叶",
+        "action": "黄昏罩上弧形草席，日出后卷起，下面叶尖保持绿色",
+        "outcome": "占用一个当夜防护标记，吸收一次轻霜损伤，次晨释放"
+      },
+      "decision": "无实霜预报与一次可消耗护罩的幼叶霜伤",
+      "status": "needs_domain",
+      "registered_ids": []
+    },
+    {
+      "id": "H03-01",
+      "authored": {
+        "title": "拉线验工地",
+        "trigger": "新建筑地块露出且还没定边界",
+        "action": "四角钉上矮桩，拉出细线，偏斜角被重新摆正",
+        "outcome": "写入该工地的一份已测量标记，地基可进入正式工序"
+      },
+      "decision": "现有真四角拉绳由家人认领；木匠还需独占实际新房订单和同一根库存绳，逐角核验后使这一地基单凭证生效，不重复发家人丈量收据",
+      "status": "needs_domain",
+      "registered_ids": []
+    },
+    {
+      "id": "H03-02",
+      "authored": {
+        "title": "开料配长短",
+        "trigger": "待建框架缺板且木料架有原板",
+        "action": "锯台上从一条长板分出成对短板，碎屑落入篮",
+        "outcome": "把原板换成一组定尺件，数量受当前工地的木料格上限约束"
+      },
+      "decision": "已接，适配既有受损粮架，原定尺建框单未登记",
+      "status": "registered",
+      "capability": {
+        "actor": {
+          "Resident": 2
+        },
+        "producer": "residents.rs::do_work(RI022)",
+        "site_relative": "屋旁粮架实测→作坊加工→原粮架实装",
+        "parcel": "Nearby",
+        "runtime_mode": 1,
+        "legacy_variant_modes": [],
+        "ordinary_time_weather_season": "正常日间场地可达",
+        "old_context_allowlists": {},
+        "required_old_partner": null,
+        "actual_partner": null,
+        "world_effect": "现场定尺即记录，扣一份原木且修理后减真实磨损",
+        "changed_for_1_1_7": false,
+        "native_state_snapshots": [],
+        "registry_state": "release_row",
+        "mode1_audit": {
+          "disposition": "~10001/~11001 站时可达。现行粮架定尺阶段没有旧 Build 的工程加进度效果，后续修粮架是另外结果。",
+          "authored_mode1_ids": [
+            "H03-02~10001",
+            "H03-02~11001",
+            "H03-02~12221",
+            "H03-02~20221",
+            "H03-02~21221",
+            "H03-02~22121"
+          ],
+          "new_observed_candidates": []
+        }
+      },
+      "registered_ids": [
+        "H03-02"
+      ]
+    },
+    {
+      "id": "H03-03",
+      "authored": {
+        "title": "在地面试合门框",
+        "trigger": "工具棚具备定尺件但还没立框",
+        "action": "两根边柱和横梁在地面扣合，对不上时重新拼接",
+        "outcome": "保存一个通过试合的门框，下一班才能把它立起来"
+      },
+      "decision": "无独立能装拆的门框试配和量规",
+      "status": "needs_domain",
+      "registered_ids": []
+    },
+    {
+      "id": "H03-04",
+      "authored": {
+        "title": "逐排扣好棚顶瓦",
+        "trigger": "棚顶骨架已立且没有降雨",
+        "action": "裸横梁从一边开始被瓦片盖住，最后补齐脊线",
+        "outcome": "屋顶完工位保持防漏，后续轻雨不会把棚内料架淋湿"
+      },
+      "decision": "作者要求无雨而来源表标雨，且无可分瓦脊/漏水",
+      "status": "needs_domain",
+      "registered_ids": []
+    },
+    {
+      "id": "H03-05",
+      "authored": {
+        "title": "给温室装活动铰链",
+        "trigger": "温室门架完工但门扇未活动",
+        "action": "门扇先卡住，校正后能推开与关上",
+        "outcome": "温室获得可动门，今后阴雨关门、晴热可开缝通风"
+      },
+      "decision": "无可活动温室门和气候通风",
+      "status": "needs_domain",
+      "registered_ids": []
+    },
+    {
+      "id": "H03-06",
+      "authored": {
+        "title": "补装斜向抗风撑",
+        "trigger": "收到强风提示且露天框架没有斜撑",
+        "action": "方框内出现两根交叉斜木，风起时摇晃幅度变小",
+        "outcome": "该工地保留一个加固状态，可降低下一次风暴的框架损失"
+      },
+      "decision": "无强风、可摇框架及可减免结构损伤",
+      "status": "needs_domain",
+      "registered_ids": []
+    },
+    {
+      "id": "H03-07",
+      "authored": {
+        "title": "逐块更换断板",
+        "trigger": "风暴后有可见断板且损伤已标记",
+        "action": "碎木被抬出，缺口留下，之后换上较浅的新板",
+        "outcome": "消耗一组定尺件并恢复一段结构进度，换过的板保留修补色"
+      },
+      "decision": "无风暴断板实体及特定修板变色",
+      "status": "needs_domain",
+      "registered_ids": []
+    },
+    {
+      "id": "H03-08",
+      "authored": {
+        "title": "把独轮车轮装回车架",
+        "trigger": "木料待搬且车轮轴已松脱",
+        "action": "车轮从靠墙状态回到车轴，推行后小车留下一段轮印",
+        "outcome": "可用车状态保留到再次损坏，下一次长距离送木可一次搬完"
+      },
+      "decision": "无可松脱的独轮车轴与容量提高车辆",
+      "status": "needs_domain",
+      "registered_ids": []
+    },
+    {
+      "id": "H03-09",
+      "authored": {
+        "title": "给工具箱补翻盖",
+        "trigger": "露天工具箱敞开且预报有雨",
+        "action": "一片新木盖扣上，工具从外露变成只露出把手",
+        "outcome": "此箱防溅，后续降雨只打湿箱外，工具不进入生锈状态"
+      },
+      "decision": "无真实预报、开合工具箱及锈损",
+      "status": "needs_domain",
+      "registered_ids": []
+    },
+    {
+      "id": "H03-10",
+      "authored": {
+        "title": "归拢余料到分类架",
+        "trigger": "工程完工且地上剩余木料遮路",
+        "action": "零散短板上架，横档与木条分别叠成两堆",
+        "outcome": "只记录两格余料供后续修补，腾出的路径可被动物重新使用"
+      },
+      "decision": "旧旧梁是初始样材，缺实际工程产生阻路余材和供后续修补的分类架",
+      "status": "needs_domain",
+      "registered_ids": []
+    },
+    {
+      "id": "H04-01",
+      "authored": {
+        "title": "挂出巡段灯签",
+        "trigger": "入夜后第一次走到各路段终点",
+        "action": "提灯停在节点，挂一枚小牌，夜色中依次亮起三处记号",
+        "outcome": "当夜最多三枚巡段记录，清晨汇总到一张巡夜手记"
+      },
+      "decision": "缺原巡夜人及夜组三段交接",
+      "status": "missing_role",
+      "registered_ids": []
+    },
+    {
+      "id": "H04-02",
+      "authored": {
+        "title": "压低空院门灯",
+        "trigger": "后半夜无客人、猫已休息且门灯自动运行",
+        "action": "门廊光从亮圈变成贴窗的小光点",
+        "outcome": "维持夜间弱灯到访客进入、有人敲窗或天亮，之后回到自动状态"
+      },
+      "decision": "缺原巡夜人及门灯自动亮度事件",
+      "status": "missing_role",
+      "registered_ids": []
+    },
+    {
+      "id": "H04-03",
+      "authored": {
+        "title": "扣上被风吹开的院门",
+        "trigger": "夜风持续且院门来回晃动",
+        "action": "扶住门扇并扣紧门闩，晃动和门下亮缝消失",
+        "outcome": "门闩维持到天亮或白天开门，动物暂从侧边入口通行"
+      },
+      "decision": "缺原巡夜人、动态风和门闩导航",
+      "status": "missing_role",
+      "registered_ids": []
+    },
+    {
+      "id": "H04-04",
+      "authored": {
+        "title": "围住悬挂断枝",
+        "trigger": "夜巡看见树枝断裂但尚未落地",
+        "action": "灯照到倾斜枝条，树下放两枚可见警桩",
+        "outcome": "当晚此处暂停通行，下一班园艺师收到唯一一条清理任务"
+      },
+      "decision": "缺原巡夜人及悬挂枝演变",
+      "status": "missing_role",
+      "registered_ids": []
+    },
+    {
+      "id": "H04-05",
+      "authored": {
+        "title": "比对新脚印",
+        "trigger": "夜里没有见到来客且软土上留有当夜足迹",
+        "action": "蹲在脚印旁比对形状，手记边出现一枚剪影",
+        "outcome": "只保存当夜最新一条来客线索，下一次自然到访可揭晓"
+      },
+      "decision": "缺原巡夜人及线索后续揭晓",
+      "status": "missing_role",
+      "registered_ids": []
+    },
+    {
+      "id": "H04-06",
+      "authored": {
+        "title": "摆石子提示绕行",
+        "trigger": "夜雨后入口台阶有积水且旁边仍可走",
+        "action": "三个浅色石点标出一条弯路，路过角色转向干边",
+        "outcome": "临时改动一个路径节点，台阶干燥后撤掉石点"
+      },
+      "decision": "缺原巡夜人及台阶与水位封路",
+      "status": "missing_role",
+      "registered_ids": []
+    },
+    {
+      "id": "H04-07",
+      "authored": {
+        "title": "给强风铃加软套",
+        "trigger": "夜风使风铃持续摆动且猫准备休息",
+        "action": "将一小圈布套在铃舌，风铃仍摇但不再冒声响记号",
+        "outcome": "夜间风铃保持安静，次日巡检取下布套"
+      },
+      "decision": "缺原巡夜人及风铃/音响遮套",
+      "status": "missing_role",
+      "registered_ids": []
+    },
+    {
+      "id": "H04-08",
+      "authored": {
+        "title": "擦掉木桥露珠",
+        "trigger": "黎明前木桥起露且桥板未破损",
+        "action": "提着干布从桥面擦过，亮水点逐段消失",
+        "outcome": "桥面从湿滑恢复通行，避免下一位慢走角色改走远路"
+      },
+      "decision": "缺原巡夜人及桥露水改变导航",
+      "status": "missing_role",
+      "registered_ids": []
+    },
+    {
+      "id": "H04-09",
+      "authored": {
+        "title": "把夜巡要点插进晨班板",
+        "trigger": "天亮前已有巡段记号或未解除警桩",
+        "action": "旧灯签收回，晨班板插上一张折好的短札",
+        "outcome": "晨班只看到最新一张交接札，处理后清空对应警示"
+      },
+      "decision": "缺原巡夜人及实际班次身份",
+      "status": "missing_role",
+      "registered_ids": []
+    },
+    {
+      "id": "H04-10",
+      "authored": {
+        "title": "把猫垫挪到避风处",
+        "trigger": "夜间冷风正吹过软垫且猫尚未睡下",
+        "action": "软垫从露天位置移到窗下，猫随后在新位置蜷起",
+        "outcome": "本夜睡觉位置改到窗下，天暖或晨班到场后还原"
+      },
+      "decision": "缺原巡夜人及睡垫可搬/冷风",
+      "status": "missing_role",
+      "registered_ids": []
+    },
+    {
+      "id": "H05-01",
+      "authored": {
+        "title": "读雨量筒刻度",
+        "trigger": "一轮降雨结束且雨量筒还没倒空",
+        "action": "举起透明筒，水线与刻度对齐，再倒入院边",
+        "outcome": "只保留最近一次雨量档，用于下一班的浇水安排"
+      },
+      "decision": "缺原气象观察员及能倒空的雨量筒与排水授权",
+      "status": "missing_role",
+      "registered_ids": []
+    },
+    {
+      "id": "H05-02",
+      "authored": {
+        "title": "对照风向袋和旗杆",
+        "trigger": "天气转风且观察台无积雪覆盖",
+        "action": "风向袋偏转，观察员把一枚箭头插到同一方向",
+        "outcome": "更新一个当班主风向，遮阳布与预警旗按此方向摆放"
+      },
+      "decision": "缺原气象观察员、动态风向风向袋",
+      "status": "missing_role",
+      "registered_ids": []
+    },
+    {
+      "id": "H05-03",
+      "authored": {
+        "title": "在低畦放最低温计",
+        "trigger": "寒夜到来前且低畦已揭出",
+        "action": "温计靠近土面竖起，清晨低温指针停在霜色区",
+        "outcome": "读数足够低时生成一条下一夜防霜提示，读完即回收温计"
+      },
+      "decision": "缺原气象观察员、独立低畦温度/有效霜预报",
+      "status": "missing_role",
+      "registered_ids": []
+    },
+    {
+      "id": "H05-04",
+      "authored": {
+        "title": "用雪板测积雪深度",
+        "trigger": "新雪覆盖院子且雪板还能辨认边缘",
+        "action": "刷出雪板直边，插入短尺，记录后将板面清空",
+        "outcome": "更新积雪档并重置测雪起点，供巡夜人判断台阶是否绕行"
+      },
+      "decision": "缺原气象观察员、独立物理雪深及记录起点",
+      "status": "missing_role",
+      "registered_ids": []
+    },
+    {
+      "id": "H05-05",
+      "authored": {
+        "title": "按云层变化翻预报牌",
+        "trigger": "清晨可见云影且连续两次观测发生变化",
+        "action": "比对两张云图后翻牌，牌面出现晴、阴或雨的图标",
+        "outcome": "预报只覆盖下一个天气时段，可被更新观测替换"
+      },
+      "decision": "缺原气象观察员及预测消费者；已知当前云不预测下段",
+      "status": "missing_role",
+      "registered_ids": []
+    },
+    {
+      "id": "H05-06",
+      "authored": {
+        "title": "用日影标出曝晒区",
+        "trigger": "晴天接近正午且园艺师尚未安排遮阴",
+        "action": "短杆投影缩短，在三块地边留下光照点记号",
+        "outcome": "保留当天的曝晒位置，园艺师优先给对应幼苗撑布"
+      },
+      "decision": "缺原气象观察员和日影晒伤因果",
+      "status": "missing_role",
+      "registered_ids": []
+    },
+    {
+      "id": "H05-07",
+      "authored": {
+        "title": "标记池边最高水痕",
+        "trigger": "暴雨过后水位已开始下降",
+        "action": "在池沿擦掉浮泥，挂一枚对齐旧水线的短牌",
+        "outcome": "保存本轮最高水位，超过警戒格时通知修水工检查溢流"
+      },
+      "decision": "缺原气象观察员及动态池水位可校验水痕",
+      "status": "missing_role",
+      "registered_ids": []
+    },
+    {
+      "id": "H05-08",
+      "authored": {
+        "title": "探测根边湿度差",
+        "trigger": "同一块菜畦同时出现干边和深色湿斑",
+        "action": "用探针依次插进两边，牌面显示两个不同水滴符号",
+        "outcome": "当班为该畦留下湿度差记录，园艺师避开仍湿的那一侧"
+      },
+      "decision": "缺原气象观察员及同畦左右土湿差",
+      "status": "missing_role",
+      "registered_ids": []
+    },
+    {
+      "id": "H05-09",
+      "authored": {
+        "title": "给灾痕定发生范围",
+        "trigger": "风暴或积涝过后仍有清楚边界",
+        "action": "沿受影响地边插短旗，标出损伤区与正常区分界",
+        "outcome": "交接仅保留最新灾害范围图，修复完成后撤旗归档"
+      },
+      "decision": "缺原气象观察员及有界灾害区域",
+      "status": "missing_role",
+      "registered_ids": []
+    },
+    {
+      "id": "H05-10",
+      "authored": {
+        "title": "校对两支失准的仪表",
+        "trigger": "观测台两支表连续给出不一致读数",
+        "action": "将旧表和校准表并排，调针后指针齐平",
+        "outcome": "一轮内恢复可信读数，旧预报标记被下一条有效观测覆盖"
+      },
+      "decision": "缺原气象观察员、实体仪表误差及校准状态",
+      "status": "missing_role",
+      "registered_ids": []
+    },
+    {
+      "id": "H06-01",
+      "authored": {
+        "title": "温拌橘猫的晚餐",
+        "trigger": "晚饭时段将到且猫粮格有存货",
+        "action": "温碗冒一点热气，勺子把两种色块拌匀",
+        "outcome": "存下一份有效到当晚的猫餐，猫开饭时吃掉并清空"
+      },
+      "decision": "实际同日厨房餐、原盘与猫主动领取",
+      "status": "registered",
+      "capability": {
+        "actor": {
+          "Resident": 3
+        },
+        "producer": "residents_care.rs::cook(CatDinner)",
+        "site_relative": "真实厨房→橘子原饭盘",
+        "parcel": "Front",
+        "runtime_mode": 1,
+        "legacy_variant_modes": [],
+        "ordinary_time_weather_season": "17:00–20:59；实盘空手",
+        "old_context_allowlists": {},
+        "required_old_partner": null,
+        "actual_partner": null,
+        "world_effect": "陶盘实际被同一份苏灶私柜Food接入，猫之后闻并真吃；满碗原食送回",
+        "changed_for_1_1_7": true,
+        "native_state_snapshots": [
+          "exact-meal/cat-supper.json",
+          "exact-mature/cat-supper.json"
+        ],
+        "registry_state": "release_row",
+        "mode1_audit": {
+          "disposition": "和既有 H01-37 同类，旧模式一「备下一份餐」适配为实际已备一份食物的同一所有权移交，无新增库存。其余旧模式一需要精确不同方位或时段。",
+          "authored_mode1_ids": [
+            "H06-01~10041",
+            "H06-01~10231",
+            "H06-01~11041",
+            "H06-01~11131",
+            "H06-01~12131"
+          ],
+          "new_observed_candidates": [
+            {
+              "id": "H06-01~10041",
+              "log": "final-saucer-receipt.log",
+              "evidence": "晴春白昼，同一空盘得到一份厨师当天实做、从私柜扣除的晚餐。橘子会在原盘领取。"
+            },
+            {
+              "id": "H06-01~11041",
+              "log": "resident-modes-spring2.log",
+              "evidence": "阴春白昼，同一空盘得到一份厨师当天实做、从私柜扣除的晚餐。"
+            }
+          ]
+        },
+        "observed_exact_receipts": {
+          "log": "exact-meal.log",
+          "lines": [
+            "receipt H06-01 d1777 min1051"
+          ],
+          "run": "isolated compiled registry using real untouched save copies"
+        }
+      },
+      "registered_ids": [
+        "H06-01",
+        "H06-01~10041",
+        "H06-01~11041"
+      ]
+    },
+    {
+      "id": "H06-02",
+      "authored": {
+        "title": "按饭点预分干粮",
+        "trigger": "清晨厨房开门且今天的粮盒为空",
+        "action": "三个带饭点图标的小格各落入一撮颗粒",
+        "outcome": "每餐消耗对应一格，当天结束统一清掉剩余预约份"
+      },
+      "decision": "普通用餐无实名三个时段可消费配粮格与有界剩饭处理",
+      "status": "needs_domain",
+      "registered_ids": []
+    },
+    {
+      "id": "H06-03",
+      "authored": {
+        "title": "布置有遮檐的来客点心盘",
+        "trigger": "天气有雨且已邀请一位来客",
+        "action": "把点心盘挪到檐内，原来位置只留下空圆印",
+        "outcome": "本次客人的取食目标改到檐下，客离开后收回盘子"
+      },
+      "decision": "实雨、同一已预约来客改目标，原有实体托盘与实际一份熟食记账，空盘回原厨房",
+      "status": "registered",
+      "capability": {
+        "actor": {
+          "Resident": 3
+        },
+        "producer": "residents_care.rs::cook(Meal covered)",
+        "site_relative": "家厨房原盘→种摊檐下相邻两站→原厨房",
+        "parcel": "Nearby",
+        "runtime_mode": 1,
+        "legacy_variant_modes": [],
+        "ordinary_time_weather_season": "下雨、周集棚已存在、实际来客有保留时间；非周六装摊冲突日",
+        "old_context_allowlists": {},
+        "required_old_partner": null,
+        "actual_partner": "same authenticated guest, cannot issue a legacy pair variant for external identities",
+        "world_effect": "真实预约来客改走到檐下，消费一份自有熟食，同一空盘实回厨房；中止食物与盘均回源",
+        "changed_for_1_1_7": true,
+        "native_state_snapshots": [
+          "exact-meal/covered-meal.json",
+          "exact-meal/empty-tray-return.json"
+        ],
+        "registry_state": "release_row",
+        "mode1_audit": {
+          "disposition": "同一约客在雨檐吃一份真餐。已验春雨白昼左 ~12031，保留已食状态。秋晴 ~10131/春云 ~11031 未观察到雨起单、换天气后在合法时段确实完成。",
+          "authored_mode1_ids": [
+            "H06-03~10131",
+            "H06-03~11031",
+            "H06-03~12031",
+            "H06-03~13251"
+          ],
+          "new_observed_candidates": [
+            {
+              "id": "H06-03~12031",
+              "log": "exact-meal.log",
+              "evidence": "真雨春日 14:56，苏灶(89,44)在同一已改目标至檐下的来客(90,44)左侧，留存已食用及空托碟归还。"
+            }
+          ]
+        },
+        "observed_exact_receipts": {
+          "log": "exact-meal.log",
+          "lines": [
+            "receipt H06-03 d1819 min896"
+          ],
+          "run": "isolated compiled registry using real untouched save copies"
+        }
+      },
+      "registered_ids": [
+        "H06-03",
+        "H06-03~12031"
+      ]
+    },
+    {
+      "id": "H06-04",
+      "authored": {
+        "title": "把新菜收进凉柜",
+        "trigger": "菜畦刚收获且厨房仍有空储格",
+        "action": "洗净的一篮菜分开放到两层凉柜，门合上",
+        "outcome": "菜仅占一格食材储位，短期保鲜后用于下一次备餐"
+      },
+      "decision": "家庭凉藏格现有但没有来源同批采菜转厨师可识别冷藏期及下一次菜谱消费",
+      "status": "needs_domain",
+      "registered_ids": []
+    },
+    {
+      "id": "H06-05",
+      "authored": {
+        "title": "把菜皮送到堆肥桶",
+        "trigger": "备餐留下菜皮且堆肥桶空着",
+        "action": "厨房小篮倒出一层彩色菜皮，盖子压下",
+        "outcome": "留下一份可在次日取用的堆肥，桶满时不再堆积"
+      },
+      "decision": "已接，现行实际发酵/施用不是次日熟",
+      "status": "registered",
+      "capability": {
+        "actor": {
+          "Resident": 3
+        },
+        "producer": "residents_care.rs::cook(Scraps)",
+        "site_relative": "真做菜源厨房→原堆肥桶",
+        "parcel": "Front",
+        "runtime_mode": 1,
+        "legacy_variant_modes": [],
+        "ordinary_time_weather_season": "正常日间；实际桶有空",
+        "old_context_allowlists": {},
+        "required_old_partner": null,
+        "actual_partner": null,
+        "world_effect": "真菜皮入肥堆，混翻成熟后可入田",
+        "changed_for_1_1_7": false,
+        "native_state_snapshots": [],
+        "registry_state": "release_row",
+        "mode1_audit": {
+          "disposition": "原 Tidy 模式一期待站目标的左侧或右侧，实际倒菜皮为与指定真堆肥脚重合。真实肥效保留在基础。",
+          "authored_mode1_ids": [
+            "H06-05~10031",
+            "H06-05~11251",
+            "H06-05~12251"
+          ],
+          "new_observed_candidates": []
+        }
+      },
+      "registered_ids": [
+        "H06-05"
+      ]
+    },
+    {
+      "id": "H06-06",
+      "authored": {
+        "title": "晒一架南瓜片",
+        "trigger": "收获南瓜且预报有足够晴时",
+        "action": "切片排成一排，颜色从湿橙变为干橙",
+        "outcome": "入柜一份耐存点心，阴雨中可取用，架清空后才接下一批"
+      },
+      "decision": "无实际南瓜品种及晴天预测，普通小麦或鲜菜晒干不等价",
+      "status": "needs_domain",
+      "registered_ids": []
+    },
+    {
+      "id": "H06-07",
+      "authored": {
+        "title": "打包指定客人的礼篮",
+        "trigger": "有到访预约且储柜中有对应点心",
+        "action": "小纸盒装进带角色图案的篮子，盖上扎带",
+        "outcome": "只为当前预约保留一盒，客人取走或预约过期后释放"
+      },
+      "decision": "已接，同一来客实际取餐、原货取消回柜",
+      "status": "registered",
+      "capability": {
+        "actor": {
+          "Resident": 3
+        },
+        "producer": "residents_care.rs::cook(Meal)",
+        "site_relative": "苏灶厨房→实际已约来客工位旁",
+        "parcel": "Nearby",
+        "runtime_mode": 1,
+        "legacy_variant_modes": [],
+        "ordinary_time_weather_season": "正常工作时，领用前可跨入黄昏；真实干天预约",
+        "old_context_allowlists": {},
+        "required_old_partner": null,
+        "actual_partner": "same authenticated guest",
+        "world_effect": "原私人份交确切来客并真吃，无故取消回原柜",
+        "changed_for_1_1_7": false,
+        "native_state_snapshots": [],
+        "registry_state": "release_row",
+        "mode1_audit": {
+          "disposition": "真实一份礼篮食物预备、保管、交接符合适配 Food 模式一。其余实际完成时的天气、站位元组未证实，冬雨则不发生。",
+          "authored_mode1_ids": [
+            "H06-07~10251",
+            "H06-07~11151",
+            "H06-07~12151",
+            "H06-07~12241",
+            "H06-07~13241"
+          ],
+          "new_observed_candidates": [
+            {
+              "id": "H06-07~10251",
+              "log": "resident-modes-guest.log",
+              "evidence": "晴冬白昼，实际从苏灶私柜拿的一份熟食已交同一预约来客并吃掉，厨师站位相对于来客在右。"
+            },
+            {
+              "id": "H06-07~11151",
+              "log": "resident-modes-guest.log",
+              "evidence": "阴秋白昼，同一约客取得实际一份熟餐，厨师站位相对于来客在右。"
+            }
+          ]
+        }
+      },
+      "registered_ids": [
+        "H06-07",
+        "H06-07~10251",
+        "H06-07~11151"
+      ]
+    },
+    {
+      "id": "H06-08",
+      "authored": {
+        "title": "给低矮餐台加托碟",
+        "trigger": "地面潮湿且食盆将放到院里",
+        "action": "食盆下垫起浅碟，湿泥留在托碟边缘",
+        "outcome": "当前餐具离开潮地，吃完连托碟一起撤下"
+      },
+      "decision": "一只实际托碟支起点心碗避开真实泥地，吃完方撤原碟回库；未吃取消返同一份",
+      "status": "registered",
+      "capability": {
+        "actor": {
+          "Resident": 3
+        },
+        "producer": "residents_care.rs::cook(SaucerStage::Eating)",
+        "site_relative": "原厨房→市场软地碟86,44；苏灶85,44／同一客87,44→原厨房",
+        "parcel": "Nearby",
+        "runtime_mode": 1,
+        "legacy_variant_modes": [],
+        "ordinary_time_weather_season": "周集棚已启用，真雨泥地在入场与放下实查；共享托碟已从上一檐预约归库或檐位不可用",
+        "old_context_allowlists": {},
+        "required_old_partner": null,
+        "actual_partner": null,
+        "world_effect": "唯一托碟真实放下后离手，抬离泥地的一份点心给同一预约客，吃完才拾回原碟；未吃取消原物都回炉",
+        "changed_for_1_1_7": true,
+        "native_state_snapshots": [
+          "native-saucer-fine/saucer-carry.json",
+          "native-saucer-fine/saucer-on-mud.json",
+          "native-saucer-fine/saucer-empty.json",
+          "final-saucer-receipt/saucer-return.json"
+        ],
+        "registry_state": "release_row",
+        "mode1_audit": {
+          "disposition": "同一实际一份已备点心与托碟确能兑现 Food 模式一。只有旧 ~12131 允许真雨的左侧站位。实拍是春季雨落泥后 15:00 晴时吃毕并拾回，保留基础。",
+          "authored_mode1_ids": [
+            "H06-08~12041",
+            "H06-08~12051",
+            "H06-08~12131",
+            "H06-08~12141",
+            "H06-08~12231",
+            "H06-08~12241"
+          ],
+          "new_observed_candidates": []
+        },
+        "observed_exact_receipts": {
+          "log": "final-saucer-receipt.log",
+          "lines": [
+            "receipt H06-08 d1819 min900"
+          ],
+          "run": "isolated compiled registry using real untouched save copies"
+        }
+      },
+      "registered_ids": [
+        "H06-08"
+      ]
+    },
+    {
+      "id": "H06-09",
+      "authored": {
+        "title": "根据存货挂出今日厨房牌",
+        "trigger": "早班到达且储柜同时有两类食材",
+        "action": "把两个食材图标翻成一道点心和一份备餐",
+        "outcome": "只排定今日两项厨房工作，食材被用掉后不重复预定"
+      },
+      "decision": "已接，适配真实熟食与当日两预约，原两类食材各做一工作未登记",
+      "status": "registered",
+      "capability": {
+        "actor": {
+          "Resident": 3
+        },
+        "producer": "residents_legacy.rs::update_menu",
+        "site_relative": "厨师在确切营业饭档",
+        "parcel": "Nearby",
+        "runtime_mode": 1,
+        "legacy_variant_modes": [],
+        "ordinary_time_weather_season": "周集或固定饭档实际营业",
+        "old_context_allowlists": {},
+        "required_old_partner": null,
+        "actual_partner": null,
+        "world_effect": "实际份数与两个有限预约随原存货",
+        "changed_for_1_1_7": false,
+        "native_state_snapshots": [],
+        "registry_state": "release_row",
+        "mode1_audit": {
+          "disposition": "Survey只登记实际柜台 “查看目标处”，新菜单反映现场原库存和两有效预约；所列两个与旧站向、天气和季节同时符合。",
+          "authored_mode1_ids": [
+            "H06-09~10151",
+            "H06-09~11241",
+            "H06-09~12051",
+            "H06-09~12141",
+            "H06-09~13231"
+          ],
+          "new_observed_candidates": [
+            {
+              "id": "H06-09~11241",
+              "log": "resident-modes-late.log",
+              "evidence": "阴冬白昼，柜台原站实际读现存熟食数量，照库存开放最多两个有效预约。"
+            },
+            {
+              "id": "H06-09~12141",
+              "log": "resident-modes-late.log",
+              "evidence": "雨秋白昼，棚下仍实际营业，原站点查看实有现货，不因登记增加熟菜。"
+            }
+          ]
+        }
+      },
+      "registered_ids": [
+        "H06-09",
+        "H06-09~11241",
+        "H06-09~12141"
+      ]
+    },
+    {
+      "id": "H06-10",
+      "authored": {
+        "title": "筛出打湿的颗粒",
+        "trigger": "点心受雨变深且盘中仍有干料",
+        "action": "细筛把结块留住，干颗粒落进备用小盘",
+        "outcome": "本次来客仍有一小份可取用，受潮部分移出储备"
+      },
+      "decision": "没有可局部进水的真实储备颗粒和筛除退变份",
+      "status": "needs_domain",
+      "registered_ids": []
+    },
+    {
+      "id": "H07-01",
+      "authored": {
+        "title": "从院门收走待寄短札",
+        "trigger": "清晨信箱出现未投递的短札",
+        "action": "信箱旗从立起落下，短札换到肩包外层",
+        "outcome": "只占一个投递格，直到送达、退回或当日结束"
+      },
+      "decision": "已接真实同一件待寄原信；黎明邮箱旗未加",
+      "status": "registered",
+      "capability": {
+        "actor": {
+          "Resident": 0
+        },
+        "producer": "residents.rs::do_work(RI002)",
+        "site_relative": "现地址门廊信件取件脚",
+        "parcel": "Nearby",
+        "runtime_mode": 1,
+        "legacy_variant_modes": [],
+        "ordinary_time_weather_season": "黎明预置；常规订单亦可白昼",
+        "old_context_allowlists": {},
+        "required_old_partner": null,
+        "actual_partner": null,
+        "world_effect": "同件短札实际移动至米信持有",
+        "changed_for_1_1_7": false,
+        "native_state_snapshots": [],
+        "registry_state": "release_row",
+        "mode1_audit": {
+          "disposition": "原表无模式一行。实际原信取走留基础。",
+          "authored_mode1_ids": [],
+          "new_observed_candidates": []
+        }
+      },
+      "registered_ids": [
+        "H07-01"
+      ]
+    },
+    {
+      "id": "H07-02",
+      "authored": {
+        "title": "按去向分开工具房和花畦的信",
+        "trigger": "同时有两张不同地址的院内短札",
+        "action": "用两块分格牌把信分到工具房和种植区",
+        "outcome": "给待送件排出两个停靠点，已完成的停靠点当次移除"
+      },
+      "decision": "现有托管一人一件，缺两件不同目的地和有效排序",
+      "status": "needs_domain",
+      "registered_ids": []
+    },
+    {
+      "id": "H07-03",
+      "authored": {
+        "title": "把天气急札交到手上",
+        "trigger": "存在待交预警且对应工人正在院里",
+        "action": "先找到角色位置，递出的红边札从肩包移到对方手里",
+        "outcome": "该预警从待交变为已知，收信人下一次工作可改用防护方案"
+      },
+      "decision": "市场营业警示已存在，缺实际天气信、同一受告人改变之后工作",
+      "status": "needs_domain",
+      "registered_ids": []
+    },
+    {
+      "id": "H07-04",
+      "authored": {
+        "title": "把怕雨的纸袋换成油纸包",
+        "trigger": "下雨且肩包里有未防水的种袋或短札",
+        "action": "檐下换包装，白纸变成带绳扣的深色纸封",
+        "outcome": "这一件行程中免受雨淋标记，签收或退回即解除包装状态"
+      },
+      "decision": "实雨弄湿同一件原信、回信或约见信，到原住宅檐下两分钟工作换可复用耐湿包",
+      "status": "registered",
+      "capability": {
+        "actor": {
+          "Resident": 0
+        },
+        "producer": "residents_services.rs::wrap_at_own_porch",
+        "site_relative": "行进湿原信→邮差自家原檐",
+        "parcel": "Nearby",
+        "runtime_mode": 1,
+        "legacy_variant_modes": [],
+        "ordinary_time_weather_season": "实际行进遇雨，返檐可雨可晴；工作时",
+        "old_context_allowlists": {},
+        "required_old_partner": null,
+        "actual_partner": null,
+        "world_effect": "同一实体油纸阻止后续雨湿且回库/交付拆除",
+        "changed_for_1_1_7": true,
+        "native_state_snapshots": [
+          "exact-mail/wrapped-letter.json",
+          "exact-mail/run/world-v4.json"
+        ],
+        "registry_state": "release_row",
+        "mode1_audit": {
+          "disposition": "旧 Deliver 模式一加种子。实际同一湿信加原油纸并没交种子。",
+          "authored_mode1_ids": [
+            "H07-04~12251",
+            "H07-04~22151",
+            "H07-04~22241"
+          ],
+          "new_observed_candidates": []
+        },
+        "observed_exact_receipts": {
+          "log": "exact-mail.log",
+          "lines": [
+            "receipt H07-04 d448 min499"
+          ],
+          "run": "isolated compiled registry using real untouched save copies"
+        }
+      },
+      "registered_ids": [
+        "H07-04"
+      ]
+    },
+    {
+      "id": "H07-05",
+      "authored": {
+        "title": "在投递木牌盖到达戳",
+        "trigger": "已把包裹交到收件人手中",
+        "action": "小戳落在木牌上，显出与收件角色匹配的图案",
+        "outcome": "只留最新一条已达回执，寄件人据此完成本次交换"
+      },
+      "decision": "已接同件真的当面交并盖一次回执",
+      "status": "registered",
+      "capability": {
+        "actor": {
+          "Resident": 0
+        },
+        "producer": "residents_legacy.rs::mail_transferred",
+        "site_relative": "家门站或谷芽门边",
+        "parcel": "Nearby",
+        "runtime_mode": 1,
+        "legacy_variant_modes": [],
+        "ordinary_time_weather_season": "真实会面；正常工作时",
+        "old_context_allowlists": {},
+        "required_old_partner": null,
+        "actual_partner": null,
+        "world_effect": "原信实际移交后真实到达戳",
+        "changed_for_1_1_7": false,
+        "native_state_snapshots": [],
+        "registry_state": "release_row",
+        "mode1_audit": {
+          "disposition": "旧 Deliver 模式一加种子。实际盖戳交同一封信，无种子换手。",
+          "authored_mode1_ids": [
+            "H07-05~10031",
+            "H07-05~22151"
+          ],
+          "new_observed_candidates": []
+        }
+      },
+      "registered_ids": [
+        "H07-05"
+      ]
+    },
+    {
+      "id": "H07-06",
+      "authored": {
+        "title": "退回过期的约见信",
+        "trigger": "到约定时段末仍找不到收件人",
+        "action": "把未拆信放回发信格并挂灰色退信签",
+        "outcome": "结束这次等待，释放投递格，发信人之后可重新约一次"
+      },
+      "decision": "已接实过期、原件原址退回",
+      "status": "registered",
+      "capability": {
+        "actor": {
+          "Resident": 0
+        },
+        "producer": "residents_legacy.rs::mail_returned",
+        "site_relative": "谷芽家原预约件取件地址",
+        "parcel": "Nearby",
+        "runtime_mode": 1,
+        "legacy_variant_modes": [],
+        "ordinary_time_weather_season": "有真实两小时到期并到原址",
+        "old_context_allowlists": {},
+        "required_old_partner": null,
+        "actual_partner": null,
+        "world_effect": "原件两小时到期后原地从米信移回原主",
+        "changed_for_1_1_7": false,
+        "native_state_snapshots": [],
+        "registry_state": "release_row",
+        "mode1_audit": {
+          "disposition": "旧 Deliver 模式一加种子。实际把同件原信还寄件人，无种子换手。",
+          "authored_mode1_ids": [
+            "H07-06~11251",
+            "H07-06~21151",
+            "H07-06~22241"
+          ],
+          "new_observed_candidates": []
+        }
+      },
+      "registered_ids": [
+        "H07-06"
+      ]
+    },
+    {
+      "id": "H07-07",
+      "authored": {
+        "title": "把种苗转交到空畦",
+        "trigger": "收到包裹地址与当前轮种安排匹配",
+        "action": "沿小径把带叶片图标的盒子交到对应地边",
+        "outcome": "标记本次预订种苗已抵达，目标地块下一次播种可取用"
+      },
+      "decision": "现种包无被目标真实播种消费的定位保管格",
+      "status": "needs_domain",
+      "registered_ids": []
+    },
+    {
+      "id": "H07-08",
+      "authored": {
+        "title": "把临时地址改到避雨棚",
+        "trigger": "雨势大且收件人刚从露天岗位撤走",
+        "action": "刮去地址板原来的一箭，朝工具棚重新画线",
+        "outcome": "只变更此件剩余目的地，下一张信重新读取正常地址"
+      },
+      "decision": "油纸折回是寄件人改路线，缺原收件人灾前转棚及同件指定地址改投",
+      "status": "needs_domain",
+      "registered_ids": []
+    },
+    {
+      "id": "H07-09",
+      "authored": {
+        "title": "给新扩建区挂牌编站",
+        "trigger": "首次露出一片可走的东侧或南侧扩建区",
+        "action": "在新路口插一枚小信牌，走一遍最短安全路径",
+        "outcome": "在固定站点表中激活一格，之后当地的投递能直达"
+      },
+      "decision": "ME084踏勘改公告无邮差携实牌及后续按真站取件",
+      "status": "needs_domain",
+      "registered_ids": []
+    },
+    {
+      "id": "H07-10",
+      "authored": {
+        "title": "并送两张同去向通知",
+        "trigger": "肩包两件都要送到同一间房且均未过期",
+        "action": "把两件扣在一个夹上，从一个入口一次交给两位收件人",
+        "outcome": "合并当前一次停靠，分别确认两件状态，交完拆掉夹子"
+      },
+      "decision": "现有单件所有权，缺双件、双收件人、同门互相精确到场",
+      "status": "needs_domain",
+      "registered_ids": []
+    },
+    {
+      "id": "H08-01",
+      "authored": {
+        "title": "捞起进水筛上的叶团",
+        "trigger": "池塘进水慢且入口出现堵塞记号",
+        "action": "提起方筛，抖落叶团后重新落位，水线开始流动",
+        "outcome": "进水口从堵塞恢复正常，池塘可在后续降雨回升"
+      },
+      "decision": "没有池塘入水口可堵筛和应用后的实流",
+      "status": "needs_domain",
+      "registered_ids": []
+    },
+    {
+      "id": "H08-02",
+      "authored": {
+        "title": "封住桶壁渗水裂缝",
+        "trigger": "储水桶水位下降且桶底出现连续滴水",
+        "action": "贴补一块颜色较浅的木片，滴水逐渐停下",
+        "outcome": "该桶恢复保水，可保持当前存水直到使用或溢流"
+      },
+      "decision": "同一个漏水桶真实损失水量后，一份实木从家庭仓搬到桶前定时修补，不提高当前水位",
+      "status": "registered",
+      "capability": {
+        "actor": {
+          "Resident": 16
+        },
+        "producer": "residents_rain.rs::schedule(Repair)",
+        "site_relative": "实际漏水桶→家仓装卸脚→同一屋檐桶",
+        "parcel": "Nearby",
+        "runtime_mode": 1,
+        "legacy_variant_modes": [],
+        "ordinary_time_weather_season": "邻里入住后，桶已经真漏并有不影响既有工程的木料；收据在现场完工",
+        "old_context_allowlists": {},
+        "required_old_partner": null,
+        "actual_partner": null,
+        "world_effect": "从真实家庭余量扣一木板、实际搬回并六分维修；同一桶不再漏，存量不多加",
+        "changed_for_1_1_7": true,
+        "native_state_snapshots": [
+          "exact-mature/barrel-leak.json",
+          "exact-mature/barrel-repair.json"
+        ],
+        "registry_state": "release_row",
+        "mode1_audit": {
+          "disposition": "旧 Water 模式一加水。实际付木修好正在漏的桶，只停止未来损失，不涨水量。",
+          "authored_mode1_ids": [
+            "H08-02~00231",
+            "H08-02~01041",
+            "H08-02~10131",
+            "H08-02~12031",
+            "H08-02~22251"
+          ],
+          "new_observed_candidates": []
+        },
+        "observed_exact_receipts": {
+          "log": "exact-mature.log",
+          "lines": [
+            "receipt H08-02 d21954 min616"
+          ],
+          "run": "isolated compiled registry using real untouched save copies"
+        }
+      },
+      "registered_ids": [
+        "H08-02"
+      ]
+    },
+    {
+      "id": "H08-03",
+      "authored": {
+        "title": "把屋檐落水引进收集桶",
+        "trigger": "已装集水桶且马上有一轮有效降雨",
+        "action": "旋转下水短管，对齐桶口后出现连续细水线",
+        "outcome": "在现有固定水量格中增加存水，装满即从原溢流口排走"
+      },
+      "decision": "实际屋檐桶，六分钟工作与真实有限雨入水，之后一桶可真实送入干田",
+      "status": "registered",
+      "capability": {
+        "actor": {
+          "Resident": 16
+        },
+        "producer": "residents_rain.rs::schedule",
+        "site_relative": "灌溉员实际檐/自家门",
+        "parcel": "Nearby",
+        "runtime_mode": 1,
+        "legacy_variant_modes": [],
+        "ordinary_time_weather_season": "Rain；合作期家庭建筑已开放",
+        "old_context_allowlists": {},
+        "required_old_partner": null,
+        "actual_partner": null,
+        "world_effect": "六世界分钟调准同一分管、真降雨才入水有限6，择干田带一实桶",
+        "changed_for_1_1_7": true,
+        "native_state_snapshots": [
+          "exact-mature/rain-intake.json"
+        ],
+        "registry_state": "release_row",
+        "mode1_audit": {
+          "disposition": "实际真雨积水且可供田，但旧模式一要求站目标的左或右，眼下管口精确同格。",
+          "authored_mode1_ids": [
+            "H08-03~02031",
+            "H08-03~12251",
+            "H08-03~22151"
+          ],
+          "new_observed_candidates": []
+        },
+        "observed_exact_receipts": {
+          "log": "exact-mature.log",
+          "lines": [
+            "receipt H08-03 d21952 min381"
+          ],
+          "run": "isolated compiled registry using real untouched save copies"
+        }
+      },
+      "registered_ids": [
+        "H08-03"
+      ]
+    },
+    {
+      "id": "H08-04",
+      "authored": {
+        "title": "开紧急排涝浅槽",
+        "trigger": "低畦有积水且靠外侧的排水边尚空",
+        "action": "用短锹开一条窄槽，积水沿小槽流向院边",
+        "outcome": "受涝地进入排水阶段，水退后填回槽，地边不永久占用"
+      },
+      "decision": "已接同一合法真积水田六分钟工作",
+      "status": "registered",
+      "capability": {
+        "actor": {
+          "Resident": 16
+        },
+        "producer": "residents_care.rs::irrigate",
+        "site_relative": "实际有积水已开田外侧，人与田地相邻",
+        "parcel": "Expanded",
+        "runtime_mode": 1,
+        "legacy_variant_modes": [],
+        "ordinary_time_weather_season": "实际田存在积水；工作时",
+        "old_context_allowlists": {},
+        "required_old_partner": null,
+        "actual_partner": null,
+        "world_effect": "取原工具驻足六分钟并去实际积水",
+        "changed_for_1_1_7": false,
+        "native_state_snapshots": [
+          "resident-modes-drain/run/world-v4.json"
+        ],
+        "registry_state": "release_row",
+        "mode1_audit": {
+          "disposition": "Drain模式一确实消掉原溢水位。候选 ~01221/~02121/~11121/~21021 可等待匹配的发单与完工天气。已见春晴白昼实际开槽，原表无此元组。~22201 冬雨不可达。",
+          "authored_mode1_ids": [
+            "H08-04~01221",
+            "H08-04~02121",
+            "H08-04~11121",
+            "H08-04~21021",
+            "H08-04~22201"
+          ],
+          "new_observed_candidates": []
+        },
+        "observed_exact_receipts": {
+          "log": "resident-modes-drain.log",
+          "lines": [
+            "receipt H08-04 d21840 min496"
+          ],
+          "run": "isolated compiled registry using real untouched save copies"
+        }
+      },
+      "registered_ids": [
+        "H08-04"
+      ]
+    },
+    {
+      "id": "H08-05",
+      "authored": {
+        "title": "疏通小喷泉的回水管",
+        "trigger": "池塘已建且喷口断续冒泡",
+        "action": "打开回水盖取出堵塞物，喷口恢复小圈波纹",
+        "outcome": "喷泉恢复循环，在当前水位允许时维持池边活动条件"
+      },
+      "decision": "没有喷泉回水管及水循环",
+      "status": "needs_domain",
+      "registered_ids": []
+    },
+    {
+      "id": "H08-06",
+      "authored": {
+        "title": "把步道边渗水导入草沟",
+        "trigger": "步道持续湿软且邻侧有可用草沟",
+        "action": "浅水线从石板缝改向草沟，石板逐格转回干色",
+        "outcome": "这一段步道可恢复通行，导槽保留到下一次施工改线"
+      },
+      "decision": "天气地面通路未湿封、缺段与单一草沟",
+      "status": "needs_domain",
+      "registered_ids": []
+    },
+    {
+      "id": "H08-07",
+      "authored": {
+        "title": "清走池底淤积",
+        "trigger": "积涝已退但池水仍浑浊",
+        "action": "分两次提起泥桶，棕色水面逐步回到浅蓝",
+        "outcome": "清掉这一轮淤积层，池塘下一次降雨按正常容量蓄水"
+      },
+      "decision": "无动态池底浑浊或两份真实泥桶",
+      "status": "needs_domain",
+      "registered_ids": []
+    },
+    {
+      "id": "H08-08",
+      "authored": {
+        "title": "寒夜前放空露天短管",
+        "trigger": "收到霜冻预警且管内还有水",
+        "action": "转开低处小阀，管下落出最后几滴，再挂防冻牌",
+        "outcome": "当夜排空的管段跳过一次冻裂判定，翌日再恢复供水"
+      },
+      "decision": "无冻裂/独立露管排空后恢复供水",
+      "status": "needs_domain",
+      "registered_ids": []
+    },
+    {
+      "id": "H08-09",
+      "authored": {
+        "title": "给水碗补水阀限流",
+        "trigger": "水碗已摆出且补水过满溅到草地",
+        "action": "把碗边浮杆放低一格，溅出水点变少",
+        "outcome": "碗补水停止在正常水位，直到碗收起或阀被拆下"
+      },
+      "decision": "有真猫碗但无此前真实溢水或一次性量控浮子",
+      "status": "needs_domain",
+      "registered_ids": []
+    },
+    {
+      "id": "H08-10",
+      "authored": {
+        "title": "调高池岸溢流缺口",
+        "trigger": "旧水痕频繁超过警戒线且雨已停",
+        "action": "换上一段更高的岸板，把排水缺口移到安全边",
+        "outcome": "保留一个新溢流位置，池满时先从远离菜畦的一侧泄水"
+      },
+      "decision": "无大池动态水位与可变溢流侧",
+      "status": "needs_domain",
+      "registered_ids": []
+    },
+    {
+      "id": "H09-01",
+      "authored": {
+        "title": "写生当季花色",
+        "trigger": "一块花畦首次成熟且画架空闲",
+        "action": "在画板上逐笔补出花的颜色，最后立在花畦旁",
+        "outcome": "观察手记获得一张当季图，画架只保留最后完成的一张"
+      },
+      "decision": "已接真实果树花期替代花畦",
+      "status": "registered",
+      "capability": {
+        "actor": {
+          "Resident": 8
+        },
+        "producer": "residents_art.rs::advance(Paint Blossom)",
+        "site_relative": "四棵实有果树之一的可步合法脚",
+        "parcel": "Expanded",
+        "runtime_mode": 1,
+        "legacy_variant_modes": [],
+        "ordinary_time_weather_season": "春季、晴或云、白昼",
+        "old_context_allowlists": {},
+        "required_old_partner": null,
+        "actual_partner": null,
+        "world_effect": "实际果树花期实体画板生成同一果花画",
+        "changed_for_1_1_7": false,
+        "native_state_snapshots": [],
+        "registry_state": "release_row",
+        "mode1_audit": {
+          "disposition": "确实把眼前的实际春季花画入真画板。旧模式一中春云要求黎明，但开单从07:30，其他候选是非春。",
+          "authored_mode1_ids": [
+            "H09-01~01001",
+            "H09-01~11221",
+            "H09-01~20221"
+          ],
+          "new_observed_candidates": []
+        }
+      },
+      "registered_ids": [
+        "H09-01"
+      ]
+    },
+    {
+      "id": "H09-02",
+      "authored": {
+        "title": "给室外画板涂透明防雨层",
+        "trigger": "画板刚干且下一段天气可能下雨",
+        "action": "刷过的位置短暂发亮，干后光泽均匀",
+        "outcome": "当前画板度过下一场雨后仍完整，之后需重新检查"
+      },
+      "decision": "现有四板实体但无透明耐雨耗材或下一波雨造成的原板褪损",
+      "status": "needs_domain",
+      "registered_ids": []
+    },
+    {
+      "id": "H09-03",
+      "authored": {
+        "title": "调出暮色试色条",
+        "trigger": "天色进入黄昏且还没有本季暮色记录",
+        "action": "在三格样板上并排涂出墙面、云影和草色",
+        "outcome": "记下最新一条暮色配色，下一张黄昏画沿用它"
+      },
+      "decision": "真实黄昏木墙/云色/季节草色的样条，下一张实际街景使用同一数据",
+      "status": "registered",
+      "capability": {
+        "actor": {
+          "Resident": 8
+        },
+        "producer": "residents_art.rs::advance(Paint DuskSwatches)",
+        "site_relative": "夏墨自家门廊",
+        "parcel": "Nearby",
+        "runtime_mode": 1,
+        "legacy_variant_modes": [],
+        "ordinary_time_weather_season": "黄昏18:00–19:40、晴或云",
+        "old_context_allowlists": {},
+        "required_old_partner": null,
+        "actual_partner": null,
+        "world_effect": "一季一张真样条，后续一次街景数据必须来自同一palette",
+        "changed_for_1_1_7": true,
+        "native_state_snapshots": [
+          "exact-mature/dusk-swatches.json",
+          "exact-mature/dusk-street.json",
+          "exact-mature/run/world-v4.json"
+        ],
+        "registry_state": "release_row",
+        "mode1_audit": {
+          "disposition": "绘制实际黄昏样色和下一张实际图用同一颜料。旧 Art 模式一两种都要求站目标右，工作台与门廊相同坐标。",
+          "authored_mode1_ids": [
+            "H09-03~20251",
+            "H09-03~21251"
+          ],
+          "new_observed_candidates": []
+        },
+        "observed_exact_receipts": {
+          "log": "exact-mature.log",
+          "lines": [
+            "receipt H09-03 d21924 min1089"
+          ],
+          "run": "isolated compiled registry using real untouched save copies"
+        }
+      },
+      "registered_ids": [
+        "H09-03"
+      ]
+    },
+    {
+      "id": "H09-04",
+      "authored": {
+        "title": "在空白踏石盖爪印图章",
+        "trigger": "新路石已干且猫刚走过相邻石面",
+        "action": "沿两块踏石压出深浅不同的爪印，猫停下来闻一闻",
+        "outcome": "当前路径保留最多两枚印记，石面翻修时一起消失"
+      },
+      "decision": "真实泥雪猫痕，但缺两枚真实刻石及猫主动回闻",
+      "status": "needs_domain",
+      "registered_ids": []
+    },
+    {
+      "id": "H09-05",
+      "authored": {
+        "title": "用粉线画出窗口投影",
+        "trigger": "晴天窗影跨过门前墙面且墙面平整",
+        "action": "顺窗影边缘画浅粉线，影子移开后仍能看到旧轮廓",
+        "outcome": "留下这面墙唯一一处日影刻度，下一季可以重画覆盖"
+      },
+      "decision": "无真实墙上按窗影位置记录一处粉线",
+      "status": "needs_domain",
+      "registered_ids": []
+    },
+    {
+      "id": "H09-06",
+      "authored": {
+        "title": "在池边描一格倒影",
+        "trigger": "水面平静且池中能映出新建筑",
+        "action": "将倒影与建筑原样画成一对小格，画板摆向水边",
+        "outcome": "保留一张当前池景记录，下一次画池景时换下旧板"
+      },
+      "decision": "已接看得到西屋的浅水倒影画",
+      "status": "registered",
+      "capability": {
+        "actor": {
+          "Resident": 8
+        },
+        "producer": "residents_art.rs::advance(Paint Reflection)",
+        "site_relative": "近宅池岸，目标为真实既有西屋",
+        "parcel": "Expanded",
+        "runtime_mode": 1,
+        "legacy_variant_modes": [],
+        "ordinary_time_weather_season": "白昼、晴或云、实际西屋等级2–4",
+        "old_context_allowlists": {},
+        "required_old_partner": null,
+        "actual_partner": null,
+        "world_effect": "在池岸同名实体板绘制房屋倒影",
+        "changed_for_1_1_7": false,
+        "native_state_snapshots": [],
+        "registry_state": "release_row",
+        "mode1_audit": {
+          "disposition": "Art真实在有效西屋旁池岸作倒影，秋黎明 ~00121 早于正常发单。春云白昼 ~11021 已由独立定向夹具完成原精确编号，现场取板、连贯行路、绘制和同板回挂。",
+          "authored_mode1_ids": [
+            "H09-06~00121",
+            "H09-06~11021"
+          ],
+          "new_observed_candidates": [
+            {
+              "id": "H09-06~11021",
+              "log": "resident-mode1-reflection-focused.log",
+              "evidence": "定向夹具仅准备已建二级西屋和已到真实村龄。生产调度让夏墨自主携板沿路到池岸(13,29)，白昼春云09:38对西屋(12,16)完成倒影，同一画板再回挂。"
+            }
+          ]
+        }
+      },
+      "registered_ids": [
+        "H09-06",
+        "H09-06~11021"
+      ]
+    },
+    {
+      "id": "H09-07",
+      "authored": {
+        "title": "把落叶拓成叶脉卡",
+        "trigger": "树畦收获后有完整落叶且桌面干燥",
+        "action": "把叶片压在纸下，擦出与树种匹配的叶脉",
+        "outcome": "只收藏当前轮作的一张叶脉卡，可在观察手记查看"
+      },
+      "decision": "真实同株果子摘清的树旁拾一枚完整叶，走回干桌拓印，一轮一卡，失败把原叶放回原树",
+      "status": "registered",
+      "capability": {
+        "actor": {
+          "Resident": 8
+        },
+        "producer": "residents_art.rs::advance_leaf",
+        "site_relative": "真实摘空果树侧站→夏墨原干桌",
+        "parcel": "Nearby",
+        "runtime_mode": 1,
+        "legacy_variant_modes": [],
+        "ordinary_time_weather_season": "秋季晴或云；原树确为实际摘空而非日历阶段，下一场雨会取消",
+        "old_context_allowlists": {},
+        "required_old_partner": null,
+        "actual_partner": null,
+        "world_effect": "拿取并携带同一整叶到真桌，拓成这一轮唯一卡；遇雨/超时物件走回原果树再归家",
+        "changed_for_1_1_7": true,
+        "native_state_snapshots": [
+          "second-leaf-distinct/orchard-leaf-carry.json",
+          "second-leaf-distinct/leaf-card-rubbing.json",
+          "second-leaf-distinct/finished-leaf-card.json"
+        ],
+        "registry_state": "release_row",
+        "mode1_audit": {
+          "disposition": "Art实体整叶拓印符合绘制模式效果。四旧场景均不达：秋黎明扩田 ~00121、春白昼扩田 ~10021、冬黄昏任意 ~20201、春黄昏前地 ~21011。实际秋季白昼在自家非扩田干桌。",
+          "authored_mode1_ids": [
+            "H09-07~00121",
+            "H09-07~10021",
+            "H09-07~20201",
+            "H09-07~21011"
+          ],
+          "new_observed_candidates": []
+        },
+        "observed_exact_receipts": {
+          "log": "second-exact.log",
+          "lines": [
+            "receipt H09-07 d5322 min647"
+          ],
+          "run": "isolated compiled registry using real untouched save copies"
+        }
+      },
+      "registered_ids": [
+        "H09-07"
+      ]
+    },
+    {
+      "id": "H09-08",
+      "authored": {
+        "title": "修补风雨褪色的墙画",
+        "trigger": "灾后墙体已修复且图案有明显掉色",
+        "action": "先在斑驳处补底色，再补缺失花纹",
+        "outcome": "修复现有图案的完整状态，原画位置不另增收藏格"
+      },
+      "decision": "无实际旧墙画及曾受风雨损伤、恢复原位",
+      "status": "needs_domain",
+      "registered_ids": []
+    },
+    {
+      "id": "H09-09",
+      "authored": {
+        "title": "画一枚会换名的地块牌",
+        "trigger": "空畦将播新植物且已有牌杆",
+        "action": "换上带新叶或果形图标的插牌，旧牌撤到工具箱",
+        "outcome": "此地块的牌面跟本轮种类一致，下一轮只替换这枚牌"
+      },
+      "decision": "普通菜田无品种码；小麦/根菜已有确指，但需跟同一轮种计划及实际活牌",
+      "status": "needs_domain",
+      "registered_ids": []
+    },
+    {
+      "id": "H09-10",
+      "authored": {
+        "title": "轮换门廊的三幅小展画",
+        "trigger": "门廊空闲且已有可展画板",
+        "action": "把三幅不同小画挂到一排，换下的画移入平箱",
+        "outcome": "展位上限三格，下一批展出时逐格换画"
+      },
+      "decision": "已接实绘制后物理换三格",
+      "status": "registered",
+      "capability": {
+        "actor": {
+          "Resident": 8
+        },
+        "producer": "residents_art.rs::advance(CarryHome)",
+        "site_relative": "夏墨门廊正面，at=target",
+        "parcel": "Nearby",
+        "runtime_mode": 1,
+        "legacy_variant_modes": [
+          1
+        ],
+        "ordinary_time_weather_season": "既有精确变体晴春白昼，其余条件只保留基础",
+        "old_context_allowlists": {
+          "places": "4",
+          "weather": "0,1",
+          "periods": "1",
+          "seasons": "0,1,2"
+        },
+        "required_old_partner": null,
+        "actual_partner": null,
+        "world_effect": "把刚完成同一原画板替我们同一三格之一",
+        "changed_for_1_1_7": false,
+        "native_state_snapshots": [],
+        "registry_state": "release_row",
+        "mode1_audit": {
+          "disposition": "已有原 ~10041，春晴白昼实物画板回绘架。旧 ~00141 要秋黎明，本轮尚未见归板延到次日黎明；~21031 需要左位，原家画架脚重合。",
+          "authored_mode1_ids": [
+            "H09-10~00141",
+            "H09-10~10041",
+            "H09-10~21031"
+          ],
+          "new_observed_candidates": []
+        }
+      },
+      "registered_ids": [
+        "H09-10",
+        "H09-10~10041"
+      ]
+    },
+    {
+      "id": "H10-01",
+      "authored": {
+        "title": "打开当日种匣清点格子",
+        "trigger": "首次到院且摊位可用",
+        "action": "把种匣抽屉逐格拉开，缺货格翻成空叶标记",
+        "outcome": "刷新当前这一次到访的有限货架，离开时收回未换种袋"
+      },
+      "decision": "已接真实当日批次开箱盘点",
+      "status": "registered",
+      "capability": {
+        "actor": {
+          "Resident": 1
+        },
+        "producer": "residents_legacy.rs::seed_counter",
+        "site_relative": "真稻种货架门铺商人脚",
+        "parcel": "Nearby",
+        "runtime_mode": 1,
+        "legacy_variant_modes": [],
+        "ordinary_time_weather_season": "家门移动市/周集实际营业",
+        "old_context_allowlists": {},
+        "required_old_partner": null,
+        "actual_partner": null,
+        "world_effect": "装盘后到摊且营业才清点",
+        "changed_for_1_1_7": false,
+        "native_state_snapshots": [],
+        "registry_state": "release_row",
+        "mode1_audit": {
+          "disposition": "真开箱清点与摆实有种子，旧 SeedTrade 模式一要出售/交种子。不能在尚未卖时记交易。",
+          "authored_mode1_ids": [
+            "H10-01~10051",
+            "H10-01~10241",
+            "H10-01~11051",
+            "H10-01~11141",
+            "H10-01~20141",
+            "H10-01~20231",
+            "H10-01~21041"
+          ],
+          "new_observed_candidates": []
+        }
+      },
+      "registered_ids": [
+        "H10-01"
+      ]
+    },
+    {
+      "id": "H10-02",
+      "authored": {
+        "title": "收一份果蔬换当季种袋",
+        "trigger": "储物格有可交换的收获物且摊上有同季种袋",
+        "action": "秤盘从一份果蔬换成带当季标志的小袋",
+        "outcome": "减少一格指定收获物，增加一袋种子，种袋格满时不再交易"
+      },
+      "decision": "已接2菜/3种，固定旧mode1允许兼容，mode2/3未接",
+      "status": "registered",
+      "capability": {
+        "actor": {
+          "Resident": 1
+        },
+        "producer": "residents_legacy.rs::seed_exchanged",
+        "site_relative": "真摊商脚与买家站脚；Nearby变体不冒充方位",
+        "parcel": "Nearby",
+        "runtime_mode": 1,
+        "legacy_variant_modes": [
+          1
+        ],
+        "ordinary_time_weather_season": "只营业窗；既有变体限定精确天气时节",
+        "old_context_allowlists": {
+          "places": "0",
+          "weather": "0,1",
+          "periods": "1",
+          "seasons": "0,1,2"
+        },
+        "required_old_partner": null,
+        "actual_partner": "actual household buyer",
+        "world_effect": "2余菜从同一买家袋到种商，3真种子互交",
+        "changed_for_1_1_7": false,
+        "native_state_snapshots": [],
+        "registry_state": "release_row",
+        "mode1_audit": {
+          "disposition": "已接原 ~10101，真买主交2余菜、拿3种。~20001 要春晴黄昏，柜台在16:30前关闭。",
+          "authored_mode1_ids": [
+            "H10-02~10101",
+            "H10-02~20001"
+          ],
+          "new_observed_candidates": []
+        }
+      },
+      "registered_ids": [
+        "H10-02",
+        "H10-02~10101"
+      ]
+    },
+    {
+      "id": "H10-03",
+      "authored": {
+        "title": "换出下一轮轮作包",
+        "trigger": "有一块地将收获且园艺师尚未定下轮种",
+        "action": "把互补植物的小袋扣在一起，挂到目标地牌旁",
+        "outcome": "只预约该地下一轮的种类，开始播种后自动释放预约"
+      },
+      "decision": "当前小麦/根菜真实品种，但无种商可交易的同品种轮作包与待播计划占有",
+      "status": "needs_domain",
+      "registered_ids": []
+    },
+    {
+      "id": "H10-04",
+      "authored": {
+        "title": "用耐湿纸替换破袋",
+        "trigger": "送回的小袋受潮但种子还完整",
+        "action": "倒出种子到干盘，再灌进有新防潮封边的袋子",
+        "outcome": "替换原袋而保留同一货格，当前包裹在后续投递不再受潮"
+      },
+      "decision": "沿真实返程雨湿的原摊未售种袋在原檐换封，不添加种子；原库存下一次出售时沿用同一个包装",
+      "status": "registered",
+      "capability": {
+        "actor": {
+          "Resident": 1
+        },
+        "producer": "residents.rs::wrap_returned_seed_lot",
+        "site_relative": "真实摊位未售3种往回遇雨→原檐→下次真实摊位",
+        "parcel": "Nearby",
+        "runtime_mode": 1,
+        "legacy_variant_modes": [],
+        "ordinary_time_weather_season": "MarketStreet始；实际正规营业退回遇Rain，雨湿不可卖，归廊后可乾晴处理",
+        "old_context_allowlists": {},
+        "required_old_partner": null,
+        "actual_partner": null,
+        "world_effect": "同一3粒种留独立保管，有限三只封套，真到家四分钟换封，下次出摊受保护，正常卖出才交货买家",
+        "changed_for_1_1_7": true,
+        "native_state_snapshots": [
+          "second-market/seed-rewrap.json",
+          "second-market/sealed-seed-in-transit.json"
+        ],
+        "registry_state": "release_row",
+        "mode1_audit": {
+          "disposition": "雨湿未售同一袋走回换真实油纸。包装修好时并未成交，旧 SeedTrade 模式一不能记。",
+          "authored_mode1_ids": [
+            "H10-04~10001",
+            "H10-04~20221"
+          ],
+          "new_observed_candidates": []
+        },
+        "observed_exact_receipts": {
+          "log": "second-exact.log",
+          "lines": [
+            "receipt H10-04 d5330 min1030"
+          ],
+          "run": "isolated compiled registry using real untouched save copies"
+        }
+      },
+      "registered_ids": [
+        "H10-04"
+      ]
+    },
+    {
+      "id": "H10-05",
+      "authored": {
+        "title": "摆出一盒对照芽苗",
+        "trigger": "第一次出售一个不熟悉的品种且有试种位",
+        "action": "小盒中同批种子分成未发芽和已出芽两列",
+        "outcome": "为该批保留一个试芽结果，下一次到访更换样盒"
+      },
+      "decision": "旧RI013只读当前床态，缺首次售出具名种批与同批一盒发芽检查",
+      "status": "needs_domain",
+      "registered_ids": []
+    },
+    {
+      "id": "H10-06",
+      "authored": {
+        "title": "封好寄往扩建区的种包",
+        "trigger": "新地块可用但本次不能走过去交货",
+        "action": "在小盒上画东侧或南侧图标，再交给送信员",
+        "outcome": "只生成一件对应地块的待寄包裹，到达或超时后释放"
+      },
+      "decision": "旧RI019实际装种，但无跨工人封箱对应供地号的实际运单与田地消费",
+      "status": "needs_domain",
+      "registered_ids": []
+    },
+    {
+      "id": "H10-07",
+      "authored": {
+        "title": "把稀少种袋暂存柜后",
+        "trigger": "已有人预约且本次货架只剩最后一袋",
+        "action": "把该袋移到柜后并放一块有角色图标的牌",
+        "outcome": "保留一个限时预约格，领取后清除，次日仍无人领则恢复可换"
+      },
+      "decision": "已接真实末袋及同一已预约买主，交清/失败释放",
+      "status": "registered",
+      "capability": {
+        "actor": {
+          "Resident": 1
+        },
+        "producer": "residents_legacy.rs::reserve_last_seed",
+        "site_relative": "实际在场的种商营业站",
+        "parcel": "Nearby",
+        "runtime_mode": 1,
+        "legacy_variant_modes": [],
+        "ordinary_time_weather_season": "实际柜台开并有真实买主",
+        "old_context_allowlists": {},
+        "required_old_partner": null,
+        "actual_partner": null,
+        "world_effect": "同一末袋只为真实发货中的买家留，毁约归库",
+        "changed_for_1_1_7": false,
+        "native_state_snapshots": [],
+        "registry_state": "release_row",
+        "mode1_audit": {
+          "disposition": "保留真实最后种袋给已行路有真货的买主，随后才成交或退料，旧 SeedTrade 模式一不能在留袋时记。",
+          "authored_mode1_ids": [
+            "H10-07~10031",
+            "H10-07~11031",
+            "H10-07~21251"
+          ],
+          "new_observed_candidates": []
+        }
+      },
+      "registered_ids": [
+        "H10-07"
+      ]
+    },
+    {
+      "id": "H10-08",
+      "authored": {
+        "title": "用芽型核对错签种袋",
+        "trigger": "两个袋签与试芽形状对不上",
+        "action": "打开两袋比对芽形，交换错贴的图标再封好",
+        "outcome": "纠正这两格库存标签，未执行的种植预约同步更新"
+      },
+      "decision": "需同时两笔具名发芽库存和签错误可纠正",
+      "status": "needs_domain",
+      "registered_ids": []
+    },
+    {
+      "id": "H10-09",
+      "authored": {
+        "title": "回收园艺师封存的留种袋",
+        "trigger": "园艺师交来已完成保种的花袋",
+        "action": "在秤旁筛掉空壳，再把净种倒入同品种小匣",
+        "outcome": "补一格对应种类的下次货源，达到货格上限则留在保种处"
+      },
+      "decision": "旧收密封种包仅同物，不等于园艺师从真实成熟种荚留的花种",
+      "status": "needs_domain",
+      "registered_ids": []
+    },
+    {
+      "id": "H10-10",
+      "authored": {
+        "title": "收摊并结算未完成预约",
+        "trigger": "到访结束且仍有待兑现交换",
+        "action": "摊布折起，已换货与未换货分装，最后把预约牌取回",
+        "outcome": "只保留仍未过期的一项预约，下次来访前不累积更多摊位记录"
+      },
+      "decision": "已接原摊同一剩余库存入柜",
+      "status": "registered",
+      "capability": {
+        "actor": {
+          "Resident": 1
+        },
+        "producer": "residents_legacy.rs::seed_counter",
+        "site_relative": "原种子柜门真实归仓",
+        "parcel": "Nearby",
+        "runtime_mode": 1,
+        "legacy_variant_modes": [],
+        "ordinary_time_weather_season": "营业结束原货到家",
+        "old_context_allowlists": {},
+        "required_old_partner": null,
+        "actual_partner": null,
+        "world_effect": "实售加未售真实结平后关摊，失败买家原袋恢复",
+        "changed_for_1_1_7": false,
+        "native_state_snapshots": [],
+        "registry_state": "release_row",
+        "mode1_audit": {
+          "disposition": "同一柜台实销和未售归柜已守恒；关门步骤无新付货款/交种，旧 SeedTrade 模式一不能记。",
+          "authored_mode1_ids": [
+            "H10-10~10241",
+            "H10-10~11051",
+            "H10-10~11141",
+            "H10-10~20141",
+            "H10-10~20231",
+            "H10-10~21041",
+            "H10-10~21231"
+          ],
+          "new_observed_candidates": []
+        }
+      },
+      "registered_ids": [
+        "H10-10"
+      ]
+    }
+  ],
+  "final_registry_note": "1.1.7 final registered_ids below come from the compiled exact ID registry. Earlier candidate allowlists/observations are review evidence, not additional enabled IDs."
+}
