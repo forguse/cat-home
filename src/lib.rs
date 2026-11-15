@@ -17,3 +17,4 @@ pub mod chapter_catalog;
 pub mod widget_frame;
 pub mod viewport;
 pub mod landscape;
+pub mod legacy_content;

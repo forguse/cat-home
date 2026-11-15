@@ -41,6 +41,10 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Map validation failed' }
           python -m unittest discover -s tools -p test_compile_map.py
           if ($LASTEXITCODE -ne 0) { throw 'Map tests failed' }
+          python -X utf8 tools/compile_legacy_bindings.py --check
+          if ($LASTEXITCODE -ne 0) { throw 'Legacy behavior bindings are stale' }
+          python -X utf8 tools/audit_cast_rules.py --check
+          if ($LASTEXITCODE -ne 0) { throw 'Behavior audit table is stale' }
       - name: Test simulation and Windows adapter
         run: |
           cargo +stable test --locked --release --lib --bins

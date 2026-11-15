@@ -474,13 +474,13 @@ impl Resident {
         true
     }
 
-    fn stow_counter(&mut self) {
-        if let Some(batch) = self.counter.take() {
-            assert!(
-                self.incoming(batch.cargo),
-                "a packed lot keeps its private cupboard capacity"
-            );
-        }
+    fn stow_counter(&mut self) -> Option<CounterBatch> {
+        let batch = self.counter.take()?;
+        assert!(
+            self.incoming(batch.cargo),
+            "a packed lot keeps its private cupboard capacity"
+        );
+        Some(batch)
     }
 
     fn gather_produce(&mut self, goods: Cargo) -> bool {
@@ -889,6 +889,36 @@ fn animal_visible(id: usize, a: Animal, world: &LivingWorld) -> bool {
         }
 }
 
+fn routine_animal(id: usize, world: &LivingWorld, phase: u64) -> WildlifeVisual {
+    let animal = ANIMALS[id];
+    let cycle = 2 * (animal.path.len() - 1);
+    let step = (phase / animal.period) as usize;
+    let idx = |i: usize| {
+        if i % cycle < animal.path.len() { i % cycle } else { cycle - i % cycle }
+    };
+    let a = animal.path[idx(step)];
+    let b = animal.path[idx(step + 1)];
+    let shift = (phase % animal.period) as f32 / animal.period as f32;
+    let position = |(x, y): (u16, u16)| {
+        if id == 16 && phase_active(world.phase_mask(), "late") {
+            point(TilePos::new(x + 57, y + 77))
+        } else {
+            point(TilePos::new(x, y))
+        }
+    };
+    let start = position(a);
+    let end = position(b);
+    let position = Point { x: start.x + (end.x - start.x) * shift, y: start.y + (end.y - start.y) * shift };
+    let sprite = if id == wildlife::DUCK {
+        let x = (position.x / TILE_PX as f32).floor() as i32;
+        let y = (position.y / TILE_PX as f32).floor() as i32;
+        animal.frames[usize::from(world.ground(x, y) == Ground::Water)]
+    } else {
+        animal.frames[((phase / 24_000) % animal.frames.len() as u64) as usize]
+    };
+    WildlifeVisual { sprite, position, facing_left: b.0 < a.0 }
+}
+
 #[derive(Clone, Copy, Debug, Serialize, Deserialize, Eq, PartialEq)]
 struct Trip {
     actor: ActorKind,
@@ -1250,9 +1280,17 @@ struct LifeEvidence {
 use services::{ServiceLedger, ServiceOp};
 #[path = "residents_services.rs"]
 mod services;
+#[path = "residents_legacy.rs"]
+mod legacy;
+#[path = "residents_art.rs"]
+mod art;
+pub use art::{VillageArtSubject, VillageArtVisual};
 #[path = "social_story.rs"]
 mod social_story;
 pub use social_story::SocialProgress;
+#[path = "residents_wildlife.rs"]
+mod wildlife;
+pub(crate) use wildlife::{is_mouse_den as wildlife_is_mouse_den, layered_depth as wildlife_layered_depth};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -1286,8 +1324,14 @@ pub struct VillageLife {
     orders: [Option<WorkOrder>; 20],
     #[serde(default)]
     services: ServiceLedger,
+    #[serde(default, skip_serializing_if = "legacy::State::is_empty")]
+    legacy: legacy::State,
+    #[serde(default, skip_serializing_if = "art::State::empty")]
+    art: art::State,
     #[serde(default)]
     evidence: LifeEvidence,
+    #[serde(default, skip_serializing_if = "wildlife::State::empty")]
+    wildlife: wildlife::State,
     ecology: [EcoVisit; 19],
     last_production: Option<u64>,
     remaining_source: [u16; 8],
@@ -1371,7 +1415,10 @@ impl Default for VillageLife {
             pollination: 0,
             orders: [None; 20],
             services: ServiceLedger::default(),
+            legacy: legacy::State::default(),
+            art: art::State::default(),
             evidence: LifeEvidence::default(),
+            wildlife: wildlife::State::default(),
             ecology: [EcoVisit::default(); 19],
             remaining_source: [24, 36, 32, 0, 32, 32, 12, 24],
             setup: 0,
@@ -1594,6 +1641,9 @@ impl VillageLife {
                 _ => VisitorHeld::Parcel(asset),
             });
         }
+        if id == art::ARTIST && self.art.carries_panel() {
+            return Some(VisitorHeld::Parcel("art_panel"));
+        }
         if let Some(batch) = resident.counter.filter(|batch| {
             resident.walk.at != booth_slot(usize::from(batch.shop))
                 || resident.walk.state != State::AtWork
@@ -1723,10 +1773,13 @@ impl VillageLife {
             && self.market_outings <= self.trips
             && self.companionship_valid_for_ms(u64::MAX)
             && self.social.valid(world)
+            && self.wildlife.valid(now)
             && self.setup & !0b1111 == 0
             && self.site_status.iter().all(|&status| status <= 12)
             && self.pollination <= 12
             && self.services.validate(now)
+            && self.legacy.valid(self, now)
+            && self.art.valid(now)
             && self.services.carriers().all(|(owner, returning)| {
                 self.people.get(usize::from(owner)).is_some_and(|r| {
                     if returning {
@@ -1894,7 +1947,7 @@ impl VillageLife {
         if !self.initialized {
             return Some(now);
         }
-        let mut next = self.next_schedule.min(self.next_guest).min(self.next_trip);
+        let mut next = self.next_schedule.min(self.next_guest).min(self.next_trip).min(self.wildlife.deadline());
         if let Some(t) = self.trip {
             next = next.min(t.due);
             if let Some(due) = world.activity_deadline(t.actor) {
@@ -1952,6 +2005,23 @@ impl VillageLife {
             self.field_due = now + 5 * MINUTE;
             self.observe_household(world, now);
         }
+        if self.wildlife.needs_update(world) {
+            use crate::legacy_content::{LegacyActor, LegacyPlace};
+            let mut occupied = [TilePos::new(0, 0); VILLAGE_OCCUPANCY];
+            let count = self.write_occupied_tiles(&mut occupied);
+            for receipt in self.wildlife.advance(world, &occupied[..count]).into_iter().flatten() {
+                match receipt {
+                    wildlife::Receipt::Mouse { heard_at, alternate, cat } => {
+                        if cat { self.observe_native(79, now); }
+                        world.record_legacy_completion("A19-09", LegacyActor::Wildlife(wildlife::MOUSE as u8), heard_at, alternate, LegacyPlace::Nearby, 1, None);
+                    }
+                    wildlife::Receipt::Swallow => self.observe_native(78, now),
+                    wildlife::Receipt::Pond { calling, bank } => {
+                        world.record_legacy_completion("A08-10", LegacyActor::Wildlife(wildlife::FROG as u8), calling, bank, LegacyPlace::Nearby, 1, Some(LegacyActor::Wildlife(wildlife::DUCK as u8)));
+                    }
+                }
+            }
+        }
         if now >= self.next_guest {
             self.admit(world, mask, now);
         }
@@ -1973,6 +2043,7 @@ impl VillageLife {
                 Walker::new(house(id).door, State::Unsettled),
             );
             let laden = previous_state == State::MovingIn
+                || (id == art::ARTIST && self.art.carries_panel())
                 || self.people[id].counter.is_some()
                 || self.people[id].escrow.is_some()
                 || self.people[id].returning_cargo.is_some()
@@ -2141,6 +2212,7 @@ impl VillageLife {
         }) || !self.trip.is_none_or(|trip| open(trip.target))
             || !self.social.map_density_positions().all(open)
             || !self.services.map_density_positions().all(protected)
+            || self.art.subject_destination().is_some_and(|tile| !open(tile))
         {
             return false;
         }
@@ -2164,6 +2236,7 @@ impl VillageLife {
         self.people.iter().map(|r| &r.walk).chain(self.guests.iter().flatten().map(|g| &g.walk))
             .filter(|walker| walker.moving()).map(|walker| walker.target)
             .chain(self.trip.iter().map(|trip| trip.target)).chain(self.social.map_density_positions())
+            .chain(self.art.subject_destination())
     }
 
     pub fn map_density_preserves_wildlife() -> bool {
@@ -2225,11 +2298,15 @@ impl VillageLife {
             .iter()
             .enumerate()
             .filter_map(|(id, &animal)| {
-                if self.evidence.refuge[id].is_some_and(|until| until > now) {
+                if let Some(visual) = self.wildlife.visual(id, world) {
+                    return Some(visual);
+                }
+                if !matches!(id, wildlife::MOUSE | wildlife::SWALLOW)
+                    && self.evidence.refuge[id].is_some_and(|until| until > now)
+                {
                     let (sprite, where_at) = match id {
                         3 => ("wild_hedgehog_curl_0", TilePos::new(28, 87)),
                         5 => ("wild_frog_hop_0", TilePos::new(14, 31)),
-                        9 => ("wild_swallow_perch_0", TilePos::new(72, 40)),
                         13 => {
                             let hall = WILLOW_VILLAGE.building("commons_hall")?;
                             ("wild_white_pigeon_idle_0", hall.door.offset(0, -4)?)
@@ -2246,45 +2323,7 @@ impl VillageLife {
                 if !animal_visible(id, animal, world) {
                     return None;
                 }
-                let cycle = 2 * (animal.path.len() - 1);
-                let phase = now.saturating_add(1_951 * id as u64);
-                let step = (phase / animal.period) as usize;
-                let idx = |i: usize| {
-                    if i % cycle < animal.path.len() {
-                        i % cycle
-                    } else {
-                        cycle - i % cycle
-                    }
-                };
-                let a = animal.path[idx(step)];
-                let b = animal.path[idx(step + 1)];
-                let frame = ((phase / 24_000) % animal.frames.len() as u64) as usize;
-                let shift = (phase % animal.period) as f32 / animal.period as f32;
-                let position = |row: (u16, u16)| {
-                    if id == 16 && phase_active(world.phase_mask(), "late") {
-                        point(TilePos::new(row.0 + 57, row.1 + 77))
-                    } else {
-                        point(TilePos::new(row.0, row.1))
-                    }
-                };
-                let start = position(a);
-                let end = position(b);
-                let position = Point {
-                    x: start.x + (end.x - start.x) * shift,
-                    y: start.y + (end.y - start.y) * shift,
-                };
-                let sprite = if id == 10 {
-                    let x = (position.x / TILE_PX as f32).floor() as i32;
-                    let y = (position.y / TILE_PX as f32).floor() as i32;
-                    animal.frames[usize::from(world.ground(x, y) == Ground::Water)]
-                } else {
-                    animal.frames[frame]
-                };
-                Some(WildlifeVisual {
-                    sprite,
-                    position,
-                    facing_left: b.0 < a.0,
-                })
+                Some(routine_animal(id, world, self.wildlife.routine_phase(id, now)))
             })
             .collect()
     }
@@ -2340,6 +2379,10 @@ impl VillageLife {
             }
             let home = house(id).door;
             let state = self.people[id].walk.state;
+            if id == art::ARTIST && self.art.active() {
+                self.art.advance(world, &mut self.people[id].walk, now);
+                continue;
+            }
             if self.social.following(id)
                 || self.social.protect_trial_candidate(id) && state == State::Inside
             {
@@ -2355,6 +2398,9 @@ impl VillageLife {
             if !self.return_service_material(world, id, mask, now) {
                 continue;
             }
+            if id == 0 && self.people[id].job.is_some() && self.legacy.expire_mail(now) {
+                self.finish_daily_order(id, day);
+            }
             if let Some((asset, owner, original)) = self.services.returning_to(id as u8) {
                 let target = original.unwrap_or_else(|| {
                     if usize::from(owner) < RESIDENT_COUNT {
@@ -2365,6 +2411,9 @@ impl VillageLife {
                 });
                 if self.people[id].walk.at == target {
                     assert!(self.services.return_asset(asset, id as u8, target));
+                    if id == 0 {
+                        self.legacy.mail_returned(world, asset, target);
+                    }
                 } else {
                     if self.people[id].walk.target != target || !self.people[id].walk.moving() {
                         self.people[id].walk.redirect(target, State::Outbound, now);
@@ -2381,7 +2430,7 @@ impl VillageLife {
                 home
             };
             if state == State::Inside && !self.occupied(world, home, Some(id), None) {
-                self.people[id].stow_counter();
+                self.stow_resident_counter(id);
             }
             if self.people[id].walk.at == produce_store {
                 self.people[id].stow_produce();
@@ -2472,7 +2521,7 @@ impl VillageLife {
                 }
                 if minute >= QUEST_END[id] {
                     if state == State::Inside {
-                        self.people[id].stow_counter();
+                        self.stow_resident_counter(id);
                         self.people[id].tool = None;
                     }
                     let reserve = SHOPS
@@ -2489,6 +2538,23 @@ impl VillageLife {
             if state == State::MovingIn || state == State::Leaving {
                 continue;
             }
+            if id == 0 && state == State::Inside && minute < 450
+                && self.people[id].job.is_none() && self.people[id].break_day != Some(day)
+                && let Some(code) = self.morning_post(world, mask, now)
+            {
+                self.people[id].job = Some(code as u16);
+                self.people[id].job_stop = 0;
+                self.orders[id] = Some(WorkOrder { opened: now, attempts: 0 });
+            }
+            if id == art::ARTIST && state == State::Inside
+                && !self.occupied(world, home, Some(id), None)
+                && let Some((site, subject)) = self.art.candidate(world, now)
+                && !self.occupied(world, site, Some(id), None)
+                && !self.social.is_destination_reserved(site)
+                && self.art.collect(world, &mut self.people[id].walk, site, subject, now)
+            {
+                continue;
+            }
             if planning_guest == Some(id)
                 && self.people[id].escrow.is_none()
                 && self.people[id].service_material.is_none()
@@ -2500,7 +2566,7 @@ impl VillageLife {
                 self.people[id].job_stop = 0;
                 self.clear_order(id);
                 if self.people[id].walk.at == home {
-                    self.people[id].stow_counter();
+                    self.stow_resident_counter(id);
                 } else if self.people[id].walk.target != home || !self.people[id].walk.moving() {
                     self.people[id].walk.redirect(home, State::Outbound, now);
                 }
@@ -2588,7 +2654,10 @@ impl VillageLife {
                     return booth;
                 }
                 if seller.walk.at == home && seller.escrow.is_none() {
-                    seller.pack_counter(index, reserve);
+                    let cupboard = seller.count(shop(index).goods.item);
+                    if seller.pack_counter(index, reserve) && legacy::seed_trade(index) {
+                        self.legacy.seed_packed(now, seller.counter.unwrap(), cupboard);
+                    }
                     if seller.counter_goods(index) >= shop(index).goods.quantity {
                         return booth;
                     }
@@ -2616,7 +2685,7 @@ impl VillageLife {
                 && (minute < 650 || id == 10 && !phase_active(mask, "cooperative_farm"));
             let destination = if at_market.is_none() && counter_out {
                 if self.people[id].walk.at == home {
-                    self.people[id].stow_counter();
+                    self.stow_resident_counter(id);
                 }
                 Some(home)
             } else {
@@ -2693,6 +2762,7 @@ impl VillageLife {
                 };
             }
         }
+        self.update_legacy_counters(world, mask, now);
         if setup_window && self.setup == 0b1111 && world.activate_weekly_market() {
             self.evidence.weekly_day = Some(day);
             self.observe_native(50, now);
@@ -2722,6 +2792,48 @@ impl VillageLife {
         } else {
             self.evidence.fruit_worker = None;
         }
+    }
+
+    fn stow_resident_counter(&mut self, id: usize) {
+        if let Some(batch) = self.people[id].stow_counter()
+            && legacy::seed_trade(usize::from(batch.shop))
+        {
+            self.legacy.seed_returned(batch);
+        }
+    }
+
+    fn update_legacy_counters(&mut self, world: &mut LivingWorld, mask: PhaseMask, now: u64) {
+        if let Some(index) = self.legacy.seed_shop() {
+            let open = self.business_open(index, mask, now);
+            self.legacy.seed_counter(world, &self.people[1], open, self.trip);
+        }
+        let cook = &self.people[3];
+        let servings = if cook.walk.state == State::AtWork && cook.walk.edge.is_none()
+            && cook.walk.at == booth_slot(MEAL_SHOP) && self.business_open(MEAL_SHOP, mask, now)
+        {
+            cook.counter_goods(MEAL_SHOP)
+        } else {
+            0
+        };
+        self.legacy.update_menu(world, servings, self.trip);
+    }
+
+    pub fn kitchen_menu(&self, world: &LivingWorld) -> Option<(u16, u8)> {
+        let now = world.world_ms();
+        let cook = &self.people[3];
+        if cook.walk.state != State::AtWork || cook.walk.edge.is_some()
+            || cook.walk.at != booth_slot(MEAL_SHOP)
+            || !self.business_open(MEAL_SHOP, world.phase_mask(), now)
+        {
+            return None;
+        }
+        self.legacy.menu_offer(now / DAY_MS).filter(|(servings, _)| {
+            *servings == cook.counter_goods(MEAL_SHOP)
+        })
+    }
+
+    pub fn village_art_visuals(&self, world: &LivingWorld) -> impl Iterator<Item = VillageArtVisual> + '_ {
+        self.art.visuals(world.world_ms())
     }
 
     fn work_site(&self, id: usize, mask: PhaseMask, world: &LivingWorld, now: u64) -> TilePos {
@@ -3064,6 +3176,7 @@ impl VillageLife {
                         || i < MOBILE
                             && world.stock().count(s.goods.item)
                                 < if s.goods.item == Item::Crops { 4 } else { 6 })
+                    && (i != MEAL_SHOP || self.legacy.menu_can_book(now / DAY_MS))
                     && merchant.ready_to_exchange(i, i == MEAL_SHOP && weekly_meal)
                     && merchant.walk.state == State::AtWork
                     && merchant.walk.at == booth_slot(i)
@@ -3107,6 +3220,9 @@ impl VillageLife {
             self.services.acknowledge("market_hours");
             self.services.acknowledge("bridge_load");
         }
+        if index == MEAL_SHOP {
+            self.legacy.menu_booked(now);
+        }
         let regular_meal = index == MEAL_SHOP && weekly_meal;
         self.trip = Some(Trip {
             actor,
@@ -3127,6 +3243,11 @@ impl VillageLife {
     }
 
     fn advance_trip(&mut self, world: &mut LivingWorld) {
+        self.progress_trip(world);
+        self.legacy.sync_menu_trip(self.trip);
+    }
+
+    fn progress_trip(&mut self, world: &mut LivingWorld) {
         let Some(mut t) = self.trip.take() else {
             return;
         };
@@ -3288,6 +3409,9 @@ impl VillageLife {
                     assert_eq!(batch.cargo, t.incoming);
                     t.bag = Some(t.incoming);
                     t.accepted = true;
+                    if legacy::seed_trade(shop_id) {
+                        self.legacy.seed_exchanged(world, batch, t.actor);
+                    }
                     self.trades = self.trades.saturating_add(1);
                     self.services.wear(16);
                     if t.outgoing.item == Item::Crops {
@@ -3342,6 +3466,9 @@ impl VillageLife {
                     t.hold = false;
                 }
                 if received {
+                    if shop_id == MEAL_SHOP {
+                        self.legacy.menu_returned(t.started, t.accepted);
+                    }
                     if t.accepted {
                         world.note_village_surplus_trade(t.outgoing.item, t.outgoing.quantity);
                     }
@@ -3761,8 +3888,14 @@ impl VillageLife {
                 && !self.services.carried_by(asset, id as u8)
             {
                 let at = self.people[id].walk.at;
-                if self.asset_pickup_site(world, c, mask) == Some(at) {
-                    self.services.assign_carrier(asset, owner, id as u8, at);
+                if self.asset_pickup_site(world, c, mask) == Some(at)
+                    && self.services.assign_carrier(asset, owner, id as u8, at)
+                {
+                    if c.id == "RI005" {
+                        self.legacy.mail_picked_up(asset, at, now);
+                    } else if c.id == "RI002" {
+                        self.legacy.mail_collected(world, at);
+                    }
                 }
                 return;
             }
@@ -3799,6 +3932,8 @@ impl VillageLife {
             }
             if self.apply_contract(world, id, c, now) {
                 self.record(code, now);
+            } else if c.id == "RI005" && self.legacy.mail_waiting(now) {
+                return;
             } else if let Some(order) = &mut self.orders[id]
                 && order.attempts < 2
                 && now < order.opened + 3 * HOUR
@@ -3828,7 +3963,16 @@ impl VillageLife {
         } else {
             personal
         };
-        let candidate = std::iter::once(code)
+        let postal_round = match day % 3 {
+            0 => "RI002",
+            1 => "RI005",
+            _ => "RI001",
+        };
+        let post = (id == 0).then(|| {
+            contracts().enumerate().find(|(_, c)| c.id == postal_round).unwrap().0
+        });
+        let candidate = post.into_iter()
+            .chain(std::iter::once(code))
             .chain((0..10).map(|offset| id * 10 + (rotation as usize + offset) % 10))
             .find(|&candidate| {
                 contracts()
@@ -3933,6 +4077,14 @@ impl VillageLife {
         }
     }
 
+    fn morning_post(&self, world: &LivingWorld, mask: PhaseMask, now: u64) -> Option<usize> {
+        let sealed = if (now / DAY_MS).is_multiple_of(2) { "RI005" } else { "RI001" };
+        ["RI002", sealed].into_iter().find_map(|id| {
+            let (code, contract) = contracts().enumerate().find(|(_, c)| c.id == id)?;
+            self.can_accept_job(world, 0, contract, mask, now).then_some(code)
+        })
+    }
+
     fn clear_order(&mut self, id: usize) {
         self.orders[id] = None;
         self.services.request_return(id as u8);
@@ -4014,14 +4166,6 @@ impl VillageLife {
             self.evidence.refuge[5] = Some(now + HOUR);
             self.observe_native(76, now);
         }
-        if wet
-            && !self.evidence.rain
-            && world.season() != YardSeason::Winter
-            && (450..1050).contains(&time)
-        {
-            self.evidence.refuge[9] = Some(now + HOUR);
-            self.observe_native(78, now);
-        }
         self.evidence.rain = wet;
         if time >= 1140
             && !actors[1].inside()
@@ -4030,13 +4174,6 @@ impl VillageLife {
         {
             self.evidence.refuge[3] = Some(now + HOUR);
             self.observe_native(77, now);
-        }
-        if animal_visible(7, ANIMALS[7], world)
-            && distance(world.actor_tile(ActorKind::Orange), TilePos::new(15, 21)) <= 3
-            && self.evidence.refuge[7].is_none_or(|until| until <= now)
-        {
-            self.evidence.refuge[7] = Some(now + HOUR);
-            self.observe_native(79, now);
         }
         if animal_visible(2, ANIMALS[2], world)
             && world.season() == YardSeason::Autumn
@@ -4538,11 +4675,23 @@ impl VillageLife {
                 if c.id == "ME071" && !self.services.has_asset("lost_property", 9) {
                     return false;
                 }
-                self.services.carried_by(asset, id as u8)
+                let transferred = self.services.carried_by(asset, id as u8)
                     && transfer_near(to)
                     && self
                         .services
-                        .move_asset(asset, from, to, id as u8, position, now)
+                        .move_asset(asset, from, to, id as u8, position, now);
+                if transferred && id == 0 {
+                    use crate::legacy_content::LegacyActor;
+                    let recipient = if to == services::FROM_CUPBOARD {
+                        house.map(|actor| (LegacyActor::Household(actor as u8), world.actor_tile(actor)))
+                    } else if c.id == "ME062" && meet(usize::from(to)) {
+                        Some((LegacyActor::Resident(to), self.people[usize::from(to)].walk.at))
+                    } else {
+                        None
+                    };
+                    self.legacy.mail_transferred(world, &mut self.services, c.id, asset, position, to, recipient);
+                }
+                transferred
             }
             ServiceOp::Home(action, _) | ServiceOp::HomeStock(action, _) => {
                 if !world.apply_community(action, position) {
@@ -6365,6 +6514,44 @@ mod tests {
         for item in ITEMS {
             assert_eq!(world.stock().count(item), loaded_world.stock().count(item));
         }
+    }
+
+    #[test]
+    fn legacy_residents_artist_autonomously_collects_walks_paints_and_hangs_a_real_board() {
+        let mut world = LivingWorld::new_village_wall_ms(0);
+        world.set_test_town_age(60);
+        // This fixture starts with an already built WestHouse. Art itself has
+        // to use the ordinary residence schedule, navigation and time.
+        let mut saved = serde_json::to_value(world).unwrap();
+        let west = saved["buildings"].as_array_mut().unwrap().iter_mut()
+            .find(|entry| entry["kind"] == "WestHouse").unwrap();
+        west["level"] = 2.into();
+        let mut world: LivingWorld = serde_json::from_value(saved).unwrap();
+        let mut life = VillageLife::default();
+        let porch = house(art::ARTIST).door;
+        life.people[art::ARTIST].walk = Walker::new(porch, State::Inside);
+        let end = world.world_ms() + 3 * DAY_MS;
+        let mut saw_carry = false;
+        let mut saw_paint = false;
+        let mut saw_return = false;
+        let mut saw_display = false;
+        let mut saw_reflection = false;
+        run_until(&mut world, &mut life, end, |world, life| {
+            let walker = &life.people[art::ARTIST].walk;
+            let displays = life.village_art_visuals(world).collect::<Vec<_>>();
+            saw_carry |= matches!(life.resident_held(art::ARTIST), Some(VisitorHeld::Parcel("art_panel")))
+                && walker.edge.is_some() && walker.target != porch;
+            saw_paint |= displays.iter().any(|view| view.slot.is_none() && view.progress > 0
+                && view.tile == walker.at && walker.edge.is_none());
+            saw_return |= matches!(life.resident_held(art::ARTIST), Some(VisitorHeld::Parcel("art_panel")))
+                && walker.edge.is_some() && walker.target == porch && saw_paint;
+            saw_display |= displays.iter().any(|view| view.slot == Some(0) && view.tile == porch);
+            saw_reflection |= world.legacy_behaviors().recent().iter().any(|event| event.id().starts_with("H09-06"));
+        });
+        assert!(saw_carry && saw_paint && saw_return && saw_display,
+            "art stages: carrying={saw_carry} painting={saw_paint} returning={saw_return} display={saw_display}");
+        assert!(saw_reflection);
+        assert!(life.validate_for_world(&world));
     }
 
     #[test]

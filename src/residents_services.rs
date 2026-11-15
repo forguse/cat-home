@@ -97,6 +97,8 @@ struct Token {
     pickup: Option<TilePos>,
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     returning: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    postmark: Option<u64>,
 }
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize, Eq, PartialEq, Default)]
@@ -167,6 +169,7 @@ impl Default for ServiceLedger {
                 station: None,
                 pickup: None,
                 returning: false,
+                postmark: None,
             }),
             notices: [Notice::default(); NOTICES.len()],
             rapport: [0; 20],
@@ -303,7 +306,7 @@ pub(super) fn definitions() -> impl Iterator<Item = Definition> {
 impl ServiceLedger {
     pub fn validate(&self, now: u64) -> bool {
         self.wear.iter().all(|&d| d <= 8)
-            && self.assets.iter().all(|t| {
+            && self.assets.iter().enumerate().all(|(index, t)| {
                 t.owner <= PREMISES
                     && t.quantity <= 4
                     && t.changed.is_none_or(|time| time <= now)
@@ -312,6 +315,13 @@ impl ServiceLedger {
                     && t.pickup
                         .is_none_or(|tile| tile.index().is_some() && t.carrier.is_some())
                     && (!t.returning || t.carrier.is_some())
+                    && t.postmark.is_none_or(|time| {
+                        ASSETS[index] == "letter"
+                            && t.changed == Some(time)
+                            && time <= now
+                            && t.owner <= FROM_CUPBOARD
+                            && t.station.is_some()
+                    })
             })
             && (0..20).all(|person| {
                 self.assets
@@ -395,6 +405,7 @@ impl ServiceLedger {
         }
         asset.owner = to;
         asset.changed = Some(now);
+        asset.postmark = None;
         asset.carrier = None;
         asset.station = Some(at);
         asset.pickup = None;
@@ -410,8 +421,45 @@ impl ServiceLedger {
         self.assets.get(usize::from(asset))?.station
     }
 
+    pub fn is_custody(
+        &self,
+        name: &str,
+        asset: u8,
+        owner: u8,
+        carrier: u8,
+        source: TilePos,
+    ) -> bool {
+        find(&ASSETS, name) == Some(asset)
+            && self.assets[usize::from(asset)].quantity > 0
+            && self.assets[usize::from(asset)].owner == owner
+            && self.assets[usize::from(asset)].carrier == Some(carrier)
+            && self.assets[usize::from(asset)].pickup == Some(source)
+    }
+
+    pub fn stamp_letter(&mut self, asset: u8, recipient: u8, at: TilePos, now: u64) -> bool {
+        if find(&ASSETS, "letter") != Some(asset) {
+            return false;
+        }
+        let letter = &mut self.assets[usize::from(asset)];
+        if recipient == 0
+            || recipient > FROM_CUPBOARD
+            || letter.owner != recipient
+            || letter.carrier.is_some()
+            || letter.changed != Some(now)
+            || letter.station != Some(at)
+            || letter.postmark.is_some()
+            || letter.quantity != 1
+        {
+            return false;
+        }
+        letter.postmark = Some(now);
+        true
+    }
+
     pub fn map_density_positions(&self) -> impl Iterator<Item = TilePos> + '_ {
-        self.assets.iter().flat_map(|asset| [asset.station, asset.pickup].into_iter().flatten())
+        self.assets
+            .iter()
+            .flat_map(|asset| [asset.station, asset.pickup].into_iter().flatten())
     }
 
     pub fn assign_carrier(&mut self, asset: u8, owner: u8, carrier: u8, at: TilePos) -> bool {

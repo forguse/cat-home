@@ -23,6 +23,7 @@ use windows_sys::Win32::Storage::FileSystem::{
 
 const MAX_SNAPSHOT: usize = 256 * 1024;
 const LANDSCAPE_REVISION: u8 = 1;
+const BEHAVIOR_REVISION: u8 = 1;
 const V4_FILE: &str = "world-v4.json";
 const COMPAT_FILE: &str = "world-compat-v3.json";
 const LIVE_PUMP_BUDGET: Duration = Duration::from_millis(6);
@@ -55,6 +56,8 @@ struct SavedVillage {
     map_revision: u16,
     #[serde(default)]
     landscape_revision: u8,
+    #[serde(default)]
+    behavior_revision: u8,
     source_migration: Option<MigrationReceipt>,
     world: LivingWorld,
     scenes: SceneState,
@@ -152,6 +155,7 @@ impl HomeHost {
         let mut companionship_ms = 0;
         let mut map_migration_source = None;
         let mut landscape_migration_source = None;
+        let mut behavior_migration_source = None;
         let (mut world, scenes, camera, size, visitors, mut life, auto_camera) = if !preview
             && !compatibility
             && root.join(V4_FILE).try_exists()?
@@ -160,6 +164,8 @@ impl HomeHost {
             let mut saved: SavedVillage = serde_json::from_slice(&bytes)
                 .map_err(|e| error(format!("存档无法读取，原文件已保留：{e}")))?;
             if saved.schema != 4
+                || saved.behavior_revision > BEHAVIOR_REVISION
+                || (saved.behavior_revision == 0 && !saved.world.legacy_behaviors().is_empty())
                 || saved.landscape_revision > LANDSCAPE_REVISION
                 || !saved
                     .world
@@ -193,6 +199,9 @@ impl HomeHost {
                     return Err(error("无法接入可开垦地貌，原存档已保留。"));
                 }
                 landscape_migration_source = Some((saved.landscape_revision, bytes.clone()));
+            }
+            if saved.behavior_revision < BEHAVIOR_REVISION {
+                behavior_migration_source = Some(bytes.clone());
             }
             if saved.map_revision != WILLOW_VILLAGE.map_revision {
                 if !saved.world.migrate_village_map_revision(saved.map_revision) {
@@ -348,12 +357,16 @@ impl HomeHost {
             village_camera: VillageCamera::new(),
         };
         home.try_enable_map_density();
-        let upgraded = map_migration_source.is_some() || landscape_migration_source.is_some();
+        let upgraded = map_migration_source.is_some() || landscape_migration_source.is_some()
+            || behavior_migration_source.is_some();
         if let Some((revision, bytes)) = map_migration_source {
             keep_map_revision_backup(&home.root, revision, &bytes)?;
         }
         if let Some((revision, bytes)) = landscape_migration_source {
             keep_landscape_revision_backup(&home.root, revision, &bytes)?;
+        }
+        if let Some(bytes) = behavior_migration_source {
+            keep_revision_backup(&home.root, "behavior-r0", &bytes)?;
         }
         if upgraded {
             home.save()?;
@@ -569,6 +582,8 @@ impl HomeHost {
             self.view
                 .set_village_public_corner(self.life.social_public_corner());
             self.view.set_resident_presence(self.life.residents());
+            self.view.set_village_menu(self.life.kitchen_menu(&self.world));
+            self.view.set_village_art_boards(self.life.village_art_visuals(&self.world));
             let trip = self.life.trip_visual(&self.world);
             self.view.set_village_household_payload([
                 self.life
@@ -719,6 +734,7 @@ impl HomeHost {
                     layout_id: WILLOW_VILLAGE.layout_id.into(),
                     map_revision: WILLOW_VILLAGE.map_revision,
                     landscape_revision: LANDSCAPE_REVISION,
+                    behavior_revision: BEHAVIOR_REVISION,
                     source_migration: self.source_migration.clone(),
                     world: self.world.clone(),
                     scenes: self.scenes.state().clone(),
@@ -802,6 +818,8 @@ impl HomeHost {
         if self.world.is_village() {
             s.push_str("\n\n土地与资源：\n");
             s.push_str(&self.world.landscape_summary());
+            s.push_str("\n\n生活见闻：\n");
+            s.push_str(&self.world.legacy_behaviors().summary());
             s.push_str(&format!(
                 "\n\n城镇成长：已过 {} 个真实日 · {}",
                 self.world.town_real_days(),
@@ -1078,6 +1096,30 @@ mod landscape_save_tests {
         assert!(HomeHost::open(root.clone(), 0, false).is_err());
         assert_eq!(read_bytes(&root.join(V4_FILE)).unwrap(), original);
         assert_eq!(read_bytes(&backup).unwrap(), b"conflicting archive");
+    }
+
+    #[test]
+    fn behavior_upgrade_preserves_exact_source_and_rejects_future_revision() {
+        let (root, original) = fixture("behavior-upgrade");
+        let mut old: serde_json::Value = serde_json::from_slice(&original).unwrap();
+        old.as_object_mut().unwrap().remove("behavior_revision");
+        let original = serde_json::to_vec_pretty(&old).unwrap();
+        fs::write(root.join(V4_FILE), &original).unwrap();
+        let host = HomeHost::open(root.clone(), 0, false).unwrap();
+        assert!(host.world.legacy_behaviors().is_empty());
+        drop(host);
+        let backup = root.join(format!("world-v4-behavior-r0-{:x}.json",Sha3_256::digest(&original)));
+        assert_eq!(read_bytes(&backup).unwrap(),original);
+        let saved = read_bytes(&root.join(V4_FILE)).unwrap();
+        let host = HomeHost::open(root.clone(),0,false).unwrap();
+        drop(host);
+        assert_eq!(read_bytes(&root.join(V4_FILE)).unwrap(),saved);
+        let mut future:serde_json::Value=serde_json::from_slice(&saved).unwrap();
+        future["behavior_revision"]=serde_json::json!(BEHAVIOR_REVISION+1);
+        let future=serde_json::to_vec(&future).unwrap();
+        fs::write(root.join(V4_FILE),&future).unwrap();
+        assert!(HomeHost::open(root.clone(),0,false).is_err());
+        assert_eq!(read_bytes(&root.join(V4_FILE)).unwrap(),future);
     }
 }
 

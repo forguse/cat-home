@@ -50,6 +50,8 @@ fn main() -> io::Result<()> {
     view.set_companionship_rewards(life.companionship_received());
     view.set_village_public_corner(life.social_public_corner());
     view.set_resident_presence(life.residents());
+    view.set_village_menu(life.kitchen_menu(&world));
+    view.set_village_art_boards(life.village_art_visuals(&world));
     use cat_home::living_world::ActorKind;
     view.set_village_household_payload([life.household_held(ActorKind::Xiaohe),life.household_held(ActorKind::Ayu)]);
     println!("map revision {} source {} phases {}",cat_home::map_data::WILLOW_VILLAGE.map_revision,cat_home::map_data::WILLOW_VILLAGE.source_sha256,world.phase_mask().bits());

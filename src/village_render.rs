@@ -6,6 +6,7 @@ use crate::map_data::{
     ArtRect, BuildingDef, PhaseMask, ScenicKind, ScenicObject, SlotPos, TilePos, TileRect,
     WILLOW_VILLAGE,
 };
+use crate::residents::{VillageArtSubject, VillageArtVisual};
 use crate::visitors::{VisitorHeld, VisitorPose, VisitorTool};
 
 const CHUNK_ART: i32 = 256;
@@ -585,6 +586,8 @@ enum Visible<'a> {
     Lamp(Point),
     Drain(Point),
     BridgeRail(TilePos, u8),
+    Menu(Point, u16, u8),
+    Artwork(Point, VillageArtVisual),
 }
 
 impl LivingView {
@@ -599,6 +602,110 @@ impl LivingView {
         let steps = dx.abs().max(dy.abs()).max(1);
         for step in 0..=steps {
             self.resource_texel((x + dx * step / steps, y + dy * step / steps), color);
+        }
+    }
+
+    fn village_hoe_mud(&mut self, world: &LivingWorld, actor: &Actor, origin: (i32, i32)) {
+        if !world.hoe_has_mud(actor.kind) || actor.has_moving_box() || actor.fishing_result().is_some() {
+            return;
+        }
+        let cleaning = world.hoe_cleaning_progress_ms(actor.kind);
+        if cleaning.is_none() && !matches!(actor.pose, Pose::Idle | Pose::Walk | Pose::Carry | Pose::Rest) {
+            return;
+        }
+        let now = world.world_ms();
+        let frame = actor.walking_progress(now).map_or((now / 8_000 % 3) as usize, |p| ((p * 3.0).floor() as usize).min(2));
+        let gender = if actor.kind == ActorKind::Xiaohe { "female" } else { "male" };
+        let key = format!("{gender}_{}_{frame}", village_actor_clip(actor));
+        let side = if actor.facing_left { -1 } else { 1 };
+        let (x, y) = local(actor.position, origin);
+        let hand = self.premium_hand_at_scale(&key, (x, y), actor.facing_left, Scale::new(3, 4))
+            .unwrap_or(((x + 3 * side) * 2, (y - if actor.pose == Pose::Rest { 0 } else { 7 }) * 2));
+        let blade = (hand.0 - 8 * side, hand.1 + 6);
+        let count = cleaning.map_or(6, |(elapsed, total)| (6 - (elapsed.saturating_mul(6) / total.max(1)).min(6)) as usize);
+        for (dx, dy) in [(-1,0),(0,1),(1,0),(0,0),(-1,-1),(1,1)].into_iter().take(count) {
+            self.resource_texel((blade.0 + side * dx, blade.1 + dy), [116, 76, 47]);
+        }
+        if let Some((elapsed, _)) = cleaning {
+            let sweep = [-1, 0, 1, 0][(elapsed / 25_000 % 4) as usize];
+            let palm = (blade.0 + sweep * side, blade.1 - 2);
+            self.resource_line((palm.0 + 4 * side, palm.1 - 3), (-4 * side, 3), [164, 105, 68]);
+            self.resource_line((palm.0 - side, palm.1), (2 * side, -1), [237, 183, 114]);
+            if count > 0 && elapsed / 25_000 % 4 == 2 {
+                self.resource_texel((blade.0 - 2 * side, blade.1 + 3), [120, 81, 54]);
+            }
+        }
+    }
+
+    fn village_menu_sign(&mut self, (x, y): (i32, i32), servings: u16, free: u8) {
+        let (x, y) = (x * 2, y * 2);
+        for dy in -15..-2 {
+            let ink = if (-13..=-5).contains(&dy) { [201, 164, 99] } else { [106, 67, 40] };
+            self.resource_line((x - 9, y + dy), (18, 0), ink);
+            self.resource_texel((x - 9, y + dy), [111, 69, 43]);
+            self.resource_texel((x + 9, y + dy), [111, 69, 43]);
+        }
+        self.resource_line((x - 5, y - 8), (8, 0), [242, 219, 159]);
+        self.resource_line((x - 4, y - 7), (6, 0), [230, 198, 131]);
+        if servings > 0 {
+            self.resource_line((x - 3, y - 10), (4, 0), [169, 87, 52]);
+            self.resource_line((x - 2, y - 11), (2, 0), [240, 179, 91]);
+        }
+        if servings > 0 && free > 0 {
+            self.resource_line((x + 5, y - 11), (1, 2), [70, 125, 70]);
+            self.resource_texel((x + 7, y - 12), [232, 213, 141]);
+        } else {
+            self.resource_line((x + 5, y - 10), (2, 0), [156, 74, 59]);
+            self.resource_line((x + 5, y - 9), (2, 0), [217, 129, 77]);
+        }
+        self.resource_line((x - 6, y - 2), (0, 3), [112, 77, 47]);
+        self.resource_line((x + 6, y - 2), (0, 3), [112, 77, 47]);
+    }
+
+    fn village_art_board(&mut self, (x, y): (i32, i32), board: VillageArtVisual) {
+        let (x, y) = (x * 2, y * 2);
+        if board.slot.is_none() {
+            self.resource_line((x, y - 7), (-8, 7), [119, 74, 45]);
+            self.resource_line((x, y - 7), (7, 7), [119, 74, 45]);
+            self.resource_line((x + 1, y - 16), (0, 12), [164, 111, 63]);
+        }
+        for row in 0..12 {
+            let color = if row == 0 || row == 11 { [119, 76, 43] } else { [229, 199, 145] };
+            self.resource_line((x - 8, y + row - 17), (16, 0), color);
+            self.resource_texel((x - 8, y + row - 17), [119, 76, 43]);
+            self.resource_texel((x + 8, y + row - 17), [119, 76, 43]);
+        }
+        if board.progress < 15 { return; }
+        match board.subject {
+            VillageArtSubject::Blossom(tree) => {
+                self.resource_line((x - 2,y - 7), (3,-6), [99, 75, 54]);
+                self.resource_line((x, y - 10), (-4,-4), [131, 89, 57]);
+                if board.progress >= 45 {
+                    let pink = [[220,142,132],[233,165,146],[236,179,144],[214,132,140]][usize::from(tree.min(3))];
+                    for (dx,dy) in [(-5,-14),(-4,-13),(-2,-15),(0,-14),(2,-13),(3,-15),(5,-12)] {
+                        self.resource_line((x+dx,y+dy), (1, 0), pink);
+                    }
+                }
+                if board.progress >= 80 {
+                    self.resource_texel((x-4,y-14), [250,221,168]);
+                    self.resource_texel((x+3,y-14), [248,218,168]);
+                    self.resource_line((x-5,y-8), (3,0), [139,148,88]);
+                }
+            }
+            VillageArtSubject::Reflection(level) => {
+                for dy in -11..=-7 {
+                    self.resource_line((x-7,y+dy),(14,0),if dy % 2 == 0 { [112,169,174] } else { [119,177,179] });
+                }
+                if board.progress >= 45 {
+                    self.resource_line((x-7,y-12),(14,0),[110,134,81]);
+                    self.resource_line((x-2,y-13),(5,0),[132,92,69]);
+                    self.resource_line((x-2,y-14),(3+ i32::from(level.min(4)) / 2,0),[152,104,70]);
+                }
+                if board.progress >= 80 {
+                    self.resource_line((x-2,y-9),(6,0),[216,203,152]);
+                    self.resource_line((x-6,y-8),(4,0),[161,189,172]);
+                }
+            }
         }
     }
 
@@ -1108,7 +1215,7 @@ impl LivingView {
                         })
                         .map_or(v.position.y as i32, |hall| point(hall.door).y as i32 + 1)
                 } else {
-                    v.position.y as i32
+                    crate::residents::wildlife_layered_depth(world, v).unwrap_or(v.position.y as i32)
                 };
                 push(depth, Visible::Wild(v));
             }
@@ -1216,6 +1323,29 @@ impl LivingView {
                 push(point(tile).y as i32 + 1, Visible::Prop(decoration, p));
             }
         }
+        if let Some((servings, free)) = self.village_menu
+            && let Some(stall) = WILLOW_VILLAGE.building("stall_meal")
+            && world.village_building_active(stall.id)
+        {
+            let door = point(stall.door);
+            let sign = Point { x: door.x + 14.0, y: door.y + 5.0 };
+            if clip(self, local(sign, origin), (13, 17), 3) {
+                push(door.y as i32 + 12, Visible::Menu(sign, servings, free));
+            }
+        }
+        for board in self.village_art_boards.into_iter().flatten() {
+            let foot = point(board.tile);
+            let (p, depth) = if let Some(slot @ 0..=2) = board.slot {
+                (Point { x: foot.x - 15.0 + f32::from(slot) * 10.0, y: foot.y - 11.0 }, foot.y as i32 + 1)
+            } else if board.slot.is_none() {
+                (Point { x: foot.x - 7.0, y: foot.y + 3.0 }, foot.y as i32 + 3)
+            } else {
+                continue;
+            };
+            if clip(self, local(p, origin), (13, 16), 3) {
+                push(depth, Visible::Artwork(p, board));
+            }
+        }
         drop(push);
         drawables.sort_by_key(|(depth, _)| *depth);
         let mut labels = Vec::with_capacity(12);
@@ -1230,6 +1360,21 @@ impl LivingView {
                 }
                 Visible::Wild(v) => {
                     let (x, y) = local(v.position, origin);
+                    if crate::residents::wildlife_is_mouse_den(v) {
+                        self.resource_line((x * 2 - 3, y * 2), (6, 0), [86, 79, 48]);
+                        self.resource_line((x * 2 - 2, y * 2 - 1), (4, 0), [60, 58, 40]);
+                        continue;
+                    }
+                    if v.sprite == "wild_frog_land_0" && world.ground(
+                        (v.position.x / TILE_PX as f32).floor() as i32,
+                        (v.position.y / TILE_PX as f32).floor() as i32,
+                    ) == Ground::Water
+                    {
+                        let ink = [153, 193, 173];
+                        self.resource_line((x * 2 - 3, y * 2 + 2), (6, 0), ink);
+                        self.resource_texel((x * 2 - 5, y * 2), ink);
+                        self.resource_texel((x * 2 + 5, y * 2), ink);
+                    }
                     self.draw_village_sprite(
                         Bank::Wildlife,
                         v.sprite,
@@ -1239,6 +1384,8 @@ impl LivingView {
                         Palette::Unchanged,
                     );
                 }
+                Visible::Menu(p, servings, free) => self.village_menu_sign(local(p, origin), servings, free),
+                Visible::Artwork(p, board) => self.village_art_board(local(p, origin), board),
                 Visible::Prop(key, p) => self.village_prop(key, p, world, origin),
                 Visible::DoorTrim(key, p) => {
                     let (x, y) = local(p, origin);
@@ -1291,7 +1438,8 @@ impl LivingView {
                     let actor = &world.actors()[i];
                     self.visible_motion |= actor.walking_segment().is_some()
                         && visible_character_motion(self, actor.position, origin);
-                    self.actor_at(actor, cx, cy, world.world_ms(), Some(world))
+                    self.actor_at(actor, cx, cy, world.world_ms(), Some(world));
+                    self.village_hoe_mud(world, actor, origin);
                 }
                 Visible::Legacy(Drawable::Building(b)) => {
                     self.building(b, cx, cy, world.minute_of_day())
@@ -2026,6 +2174,49 @@ mod fixtures;
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn kitchen_menu_pixels_distinguish_stock_from_booking_availability() {
+        let mut view = LivingView::new();
+        view.width = 64;
+        view.height = 64;
+        let render = |view: &mut LivingView, servings, slots| {
+            view.pixels = [79, 116, 64, 255].repeat(64 * 64);
+            view.village_menu_sign((16, 16), servings, slots);
+            view.pixels.clone()
+        };
+        let open = render(&mut view, 3, 1);
+        let booked = render(&mut view, 3, 0);
+        let empty = render(&mut view, 0, 0);
+        assert_ne!(open, booked);
+        assert_ne!(booked, empty);
+        assert_eq!(&open[0..4], &empty[0..4]);
+    }
+
+    #[test]
+    fn village_artwork_shows_actual_subjects_and_stage_on_a_bounded_panel() {
+        let mut view = LivingView::new();
+        view.width = 64;
+        view.height = 64;
+        let render = |view: &mut LivingView, subject, slot, progress| {
+            view.pixels = [79, 116, 64, 255].repeat(64 * 64);
+            let board = VillageArtVisual { tile: TilePos::new(12, 21), subject, slot, progress };
+            view.village_art_board((16, 16), board);
+            view.pixels.clone()
+        };
+        let fresh = render(&mut view, VillageArtSubject::Blossom(0), None, 0);
+        let bloom = render(&mut view, VillageArtSubject::Blossom(0), None, 100);
+        let pond = render(&mut view, VillageArtSubject::Reflection(2), None, 100);
+        let hung = render(&mut view, VillageArtSubject::Reflection(2), Some(0), 100);
+        assert_ne!(fresh, bloom);
+        assert_ne!(bloom, pond);
+        assert_ne!(pond, hung);
+        for (i, (panel, blank)) in hung.chunks_exact(4).zip([79, 116, 64, 255].repeat(64 * 64).chunks_exact(4)).enumerate() {
+            if panel != blank {
+                assert!((24..=40).contains(&(i % 64)) && (15..=26).contains(&(i / 64)));
+            }
+        }
+    }
 
     fn save_landscape_frames(path: &std::path::Path, view: &LivingView, frames: &[Vec<u8>]) {
         use std::io::{BufWriter, Write};

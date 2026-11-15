@@ -1,0 +1,66 @@
+old_id	base_id	kind	roles	period	weather	season	place	mode	partner	implementation
+A08-10	A08-10	base	A08						A10	Frog leaves real shared bank before the same duck lands; companion A10 required
+A19-09	A19-09	base	A19						-	Mouse hears a real nearby walker, pauses and follows a new safe grass route
+H01-20	H01-20	base	H01						-	Paid housing frame from its real front work stand; existing whole-frame animation
+H01-20~11141	H01-20	variant	H01	1	1	1	4	1	-	Paid housing frame from its real front work stand; existing whole-frame animation
+H01-20~12041	H01-20	variant	H01	1	2	0	4	1	-	Paid housing frame from its real front work stand; existing whole-frame animation
+H01-27	H01-27	base	H01						-	Actual dirty borrowed hoe brushed before returning; hoe adapts original spade
+H01-29	H01-29	base	H01						-	A borrowed rod reaches a real pond and casting starts
+H01-30	H01-30	base	H01						-	Caught fish deposited or unsuccessful rod personally returned
+H01-37	H01-37	base	H01						-	One owned meal delivered into actual cat bowl from its actual front stand
+H01-37~13241	H01-37	variant	H01	1	3	2	4	1	-	One owned meal delivered into actual cat bowl from its actual front stand
+H01-38	H01-38	base	H01						-	Actual dirty bowl cleaned and refilled from the real left-hand work stand
+H06-09	H06-09	base	H06						-	Two bounded menu entries reflect real counter stock and reservations
+H07-01	H07-01	base	H07						-	Collect the same owned outgoing letter from its physical source
+H07-05	H07-05	base	H07						-	One arrival receipt for the same delivered letter
+H07-06	H07-06	base	H07						-	Expired appointment letter physically returned to its original owner
+H09-01	H09-01	base	H09						-	Real orchard blossom painted onto a reusable owned board; adapts the old flower bed
+H09-06	H09-06	base	H09						-	Actual pond and existing home reflection painted at their safe shore
+H09-10	H09-10	base	H09						-	Painted board physically carried home and replaces one of three display boards
+H09-10~10041	H09-10	variant	H09	1	0	0	4	1	-	Painted board physically carried home and replaces one of three display boards
+H10-01	H10-01	base	H10						-	Count actual packed seed stock at the open counter
+H10-02	H10-02	base	H10						-	Actual crop-for-seed exchange; one bag means the real traded batch
+H10-02~10101	H10-02	variant	H10	1	0	1	0	1	-	Actual crop-for-seed exchange; one bag means the real traded batch
+H10-10	H10-10	base	H10						-	Remaining seed goods carried home and stale reservations released
+S02	S02	base	H01						-	Return to the one remembered successful rest spot during discretionary time, then release it
+S08	S08	base	H01,A01						-	Three contiguous real steps; actual shallow, wet or saturated ground gives tracks 30, 60 or 90 game minutes
+S08~02031	S08	variant	H01,A01	0	2	0	3	1	-	Three contiguous real steps; actual shallow, wet or saturated ground gives tracks 30, 60 or 90 game minutes
+S08~02043	S08	variant	H01,A01	0	2	0	4	3	-	Three contiguous real steps; actual shallow, wet or saturated ground gives tracks 30, 60 or 90 game minutes
+S08~02052	S08	variant	H01,A01	0	2	0	5	2	-	Three contiguous real steps; actual shallow, wet or saturated ground gives tracks 30, 60 or 90 game minutes
+S08~02131	S08	variant	H01,A01	0	2	1	3	1	-	Three contiguous real steps; actual shallow, wet or saturated ground gives tracks 30, 60 or 90 game minutes
+S08~02143	S08	variant	H01,A01	0	2	1	4	3	-	Three contiguous real steps; actual shallow, wet or saturated ground gives tracks 30, 60 or 90 game minutes
+S08~02152	S08	variant	H01,A01	0	2	1	5	2	-	Three contiguous real steps; actual shallow, wet or saturated ground gives tracks 30, 60 or 90 game minutes
+S08~02133	S08	variant	H01,A01	0	2	1	3	3	-	Three contiguous real steps; actual shallow, wet or saturated ground gives tracks 30, 60 or 90 game minutes
+S08~02142	S08	variant	H01,A01	0	2	1	4	2	-	Three contiguous real steps; actual shallow, wet or saturated ground gives tracks 30, 60 or 90 game minutes
+S08~12031	S08	variant	H01,A01	1	2	0	3	1	-	Three contiguous real steps; actual shallow, wet or saturated ground gives tracks 30, 60 or 90 game minutes
+S08~12043	S08	variant	H01,A01	1	2	0	4	3	-	Three contiguous real steps; actual shallow, wet or saturated ground gives tracks 30, 60 or 90 game minutes
+S08~12052	S08	variant	H01,A01	1	2	0	5	2	-	Three contiguous real steps; actual shallow, wet or saturated ground gives tracks 30, 60 or 90 game minutes
+S08~12033	S08	variant	H01,A01	1	2	0	3	3	-	Three contiguous real steps; actual shallow, wet or saturated ground gives tracks 30, 60 or 90 game minutes
+S08~12152	S08	variant	H01,A01	1	2	1	5	2	-	Three contiguous real steps; actual shallow, wet or saturated ground gives tracks 30, 60 or 90 game minutes
+S08~12133	S08	variant	H01,A01	1	2	1	3	3	-	Three contiguous real steps; actual shallow, wet or saturated ground gives tracks 30, 60 or 90 game minutes
+S08~12142	S08	variant	H01,A01	1	2	1	4	2	-	Three contiguous real steps; actual shallow, wet or saturated ground gives tracks 30, 60 or 90 game minutes
+S08~12151	S08	variant	H01,A01	1	2	1	5	1	-	Three contiguous real steps; actual shallow, wet or saturated ground gives tracks 30, 60 or 90 game minutes
+S08~22052	S08	variant	H01,A01	2	2	0	5	2	-	Three contiguous real steps; actual shallow, wet or saturated ground gives tracks 30, 60 or 90 game minutes
+S08~22042	S08	variant	H01,A01	2	2	0	4	2	-	Three contiguous real steps; actual shallow, wet or saturated ground gives tracks 30, 60 or 90 game minutes
+S08~22051	S08	variant	H01,A01	2	2	0	5	1	-	Three contiguous real steps; actual shallow, wet or saturated ground gives tracks 30, 60 or 90 game minutes
+S08~22142	S08	variant	H01,A01	2	2	1	4	2	-	Three contiguous real steps; actual shallow, wet or saturated ground gives tracks 30, 60 or 90 game minutes
+S08~22151	S08	variant	H01,A01	2	2	1	5	1	-	Three contiguous real steps; actual shallow, wet or saturated ground gives tracks 30, 60 or 90 game minutes
+S08~22132	S08	variant	H01,A01	2	2	1	3	2	-	Three contiguous real steps; actual shallow, wet or saturated ground gives tracks 30, 60 or 90 game minutes
+S08~32042	S08	variant	H01,A01	3	2	0	4	2	-	Three contiguous real steps; actual shallow, wet or saturated ground gives tracks 30, 60 or 90 game minutes
+S08~32051	S08	variant	H01,A01	3	2	0	5	1	-	Three contiguous real steps; actual shallow, wet or saturated ground gives tracks 30, 60 or 90 game minutes
+S08~32032	S08	variant	H01,A01	3	2	0	3	2	-	Three contiguous real steps; actual shallow, wet or saturated ground gives tracks 30, 60 or 90 game minutes
+S08~32151	S08	variant	H01,A01	3	2	1	5	1	-	Three contiguous real steps; actual shallow, wet or saturated ground gives tracks 30, 60 or 90 game minutes
+S08~32132	S08	variant	H01,A01	3	2	1	3	2	-	Three contiguous real steps; actual shallow, wet or saturated ground gives tracks 30, 60 or 90 game minutes
+S08~32141	S08	variant	H01,A01	3	2	1	4	1	-	Three contiguous real steps; actual shallow, wet or saturated ground gives tracks 30, 60 or 90 game minutes
+S08~32153	S08	variant	H01,A01	3	2	1	5	3	-	Three contiguous real steps; actual shallow, wet or saturated ground gives tracks 30, 60 or 90 game minutes
+S09	S09	base	H01						-	Real reclamation work leftovers removed from source and returned to stock
+S13	S13	base	H01						-	Briefly inspect a genuinely newly installed fixture from a legal stand, remember its version
+S14	S14	base	H01						-	Arrive at empty meal source, wait, then use a genuinely available alternative
+S18	S18	base	H01						-	Repaired expanded-district public well tested by its next actual use, with bounded result memory
+S18~01221	S18	variant	H01	0	1	2	2	1	-	Repaired expanded-district public well tested by its next actual use, with bounded result memory
+S18~10221	S18	variant	H01	1	0	2	2	1	-	Repaired expanded-district public well tested by its next actual use, with bounded result memory
+S18~11121	S18	variant	H01	1	1	1	2	1	-	Repaired expanded-district public well tested by its next actual use, with bounded result memory
+S18~12121	S18	variant	H01	1	2	1	2	1	-	Repaired expanded-district public well tested by its next actual use, with bounded result memory
+S18~20121	S18	variant	H01	2	0	1	2	1	-	Repaired expanded-district public well tested by its next actual use, with bounded result memory
+S18~21121	S18	variant	H01	2	1	1	2	1	-	Repaired expanded-district public well tested by its next actual use, with bounded result memory
+S18~22021	S18	variant	H01	2	2	0	2	1	-	Repaired expanded-district public well tested by its next actual use, with bounded result memory

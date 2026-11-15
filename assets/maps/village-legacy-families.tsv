@@ -1,0 +1,25 @@
+base	roles	variant_modes	places	weather	periods	seasons	binding
+H01-20	H01	1	4	0,1,2	0,1,2	0,1,2	Paid housing frame from its real front work stand; existing whole-frame animation
+H01-27	H01						Actual dirty borrowed hoe brushed before returning; hoe adapts original spade
+H01-29	H01						A borrowed rod reaches a real pond and casting starts
+H01-30	H01						Caught fish deposited or unsuccessful rod personally returned
+H01-37	H01	1	4	0,1,2,3	1,2	0,1,2	One owned meal delivered into actual cat bowl from its actual front stand
+H01-38	H01	1	3	0,1,2,3	0,1,2	0,1,2	Actual dirty bowl cleaned and refilled from the real left-hand work stand
+H06-09	H06						Two bounded menu entries reflect real counter stock and reservations
+H07-01	H07						Collect the same owned outgoing letter from its physical source
+H07-05	H07						One arrival receipt for the same delivered letter
+H07-06	H07						Expired appointment letter physically returned to its original owner
+H09-01	H09						Real orchard blossom painted onto a reusable owned board; adapts the old flower bed
+H09-06	H09						Actual pond and existing home reflection painted at their safe shore
+H09-10	H09	1	4	0,1	1	0,1,2	Painted board physically carried home and replaces one of three display boards
+H10-01	H10						Count actual packed seed stock at the open counter
+H10-02	H10	1	0	0,1	1	0,1,2	Actual crop-for-seed exchange; one bag means the real traded batch
+H10-10	H10						Remaining seed goods carried home and stale reservations released
+A08-10	A08						Frog leaves real shared bank before the same duck lands; companion A10 required
+A19-09	A19						Mouse hears a real nearby walker, pauses and follows a new safe grass route
+S02	H01						Return to the one remembered successful rest spot during discretionary time, then release it
+S08	H01,A01	1,2,3	3,4,5	2	0,1,2,3	0,1	Three contiguous real steps; actual shallow, wet or saturated ground gives tracks 30, 60 or 90 game minutes
+S09	H01						Real reclamation work leftovers removed from source and returned to stock
+S13	H01						Briefly inspect a genuinely newly installed fixture from a legal stand, remember its version
+S14	H01						Arrive at empty meal source, wait, then use a genuinely available alternative
+S18	H01	1	2	0,1,2,3	0,1,2	0,1,2	Repaired expanded-district public well tested by its next actual use, with bounded result memory

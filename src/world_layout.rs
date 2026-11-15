@@ -126,6 +126,8 @@ pub(super) struct State {
     pub density_holdouts: Vec<TilePos>,
     #[serde(default, skip_serializing_if = "scenic_resources::State::is_empty")]
     pub landscape: scenic_resources::State,
+    #[serde(default, skip_serializing_if = "super::legacy_yard_rules::HouseholdRules::is_empty")]
+    pub household_rules: super::legacy_yard_rules::HouseholdRules,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub inherited_landscape_house: Option<u8>,
     #[serde(default, skip_serializing_if = "is_false")]
@@ -384,6 +386,7 @@ impl State {
             revision: WILLOW_VILLAGE.map_revision,
             density_holdouts: Vec::new(),
             landscape: scenic_resources::State::default(),
+            household_rules: super::legacy_yard_rules::HouseholdRules::default(),
             inherited_landscape_house: None,
             imported_pedestrian_bridge: false,
             freight_inspected: false,

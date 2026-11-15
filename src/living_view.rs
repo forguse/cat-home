@@ -15,7 +15,7 @@ mod village_camera;
 pub use village_camera::VillageCamera;
 #[path = "village_render.rs"]
 mod village_render;
-use crate::residents::{StallVisual, WildlifeVisual};
+use crate::residents::{StallVisual, VillageArtVisual, WildlifeVisual};
 use village_render::VillageIndex;
 
 const PAGES: [&[u8]; 16] = [
@@ -270,6 +270,8 @@ pub struct LivingView {
     village_index: Option<VillageIndex>,
     companionship_rewards: u16,
     village_public_corner: Option<(crate::map_data::TilePos, u8)>,
+    village_menu: Option<(u16, u8)>,
+    village_art_boards: [Option<VillageArtVisual>; 4],
     indoor_reveals: [Option<(i32, i32)>; 2],
     awake_screen_feet: [Option<(i32, i32)>; 2],
     visible_motion: bool,
@@ -346,6 +348,8 @@ impl LivingView {
             village_index: None,
             companionship_rewards: 0,
             village_public_corner: None,
+            village_menu: None,
+            village_art_boards: [None; 4],
             indoor_reveals: [None; 2],
             awake_screen_feet: [None; 2],
             visible_motion: false,
@@ -379,6 +383,14 @@ impl LivingView {
 
     pub fn set_village_public_corner(&mut self, corner: Option<(crate::map_data::TilePos, u8)>) {
         self.village_public_corner = corner;
+    }
+
+    pub fn set_village_menu(&mut self, menu: Option<(u16, u8)>) {
+        self.village_menu = menu;
+    }
+
+    pub fn set_village_art_boards(&mut self, mut boards: impl Iterator<Item = VillageArtVisual>) {
+        self.village_art_boards = std::array::from_fn(|_| boards.next());
     }
 
     pub fn set_resident_presence(
