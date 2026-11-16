@@ -928,7 +928,11 @@ fn wildlife_keeps_density_paths(before: PhaseMask, after: PhaseMask) -> bool {
 fn animal_visible(id: usize, a: Animal, world: &LivingWorld) -> bool {
     use crate::living_world::YardSeason;
     let minute = world.world_ms() % DAY_MS / MINUTE;
-    let from = u64::from(a.active_from);
+    let from = if id == wildlife::SWALLOW && world.season() == YardSeason::Autumn {
+        420
+    } else {
+        u64::from(a.active_from)
+    };
     let to = u64::from(a.active_to);
     let time = if from <= to {
         (from..to).contains(&minute)
@@ -2183,7 +2187,7 @@ impl VillageLife {
                         }
                     }
                     wildlife::Receipt::Sparrow { at } => {
-                        world.record_legacy_completion("A04-10", LegacyActor::Wildlife(wildlife::SPARROW as u8), at, at, LegacyPlace::Front, 1, None);
+                        world.record_sparrow_call(at, None);
                     }
                     wildlife::Receipt::DuckPrint { first, last } => {
                         world.record_legacy_completion("A10-01", LegacyActor::Wildlife(wildlife::DUCK as u8), first, last, LegacyPlace::Nearby, 1, None);

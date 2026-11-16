@@ -41,7 +41,7 @@ class BindingBoundaryTests(unittest.TestCase):
         bases={r[0]:r for r in compiler.lines(compiler.ROOT / 'design/cast-rules.tsv')}
         paired=next(r[0] for r in scenes if r[7]!=bases[r[1]][5])
         winter_rain=next(r[0] for r in scenes if r[3]=='2' and r[4]=='2' and r[7]==bases[r[1]][5])
-        for code,reason in ((paired,'partner'),(winter_rain,'winter rain'),('bogus~12345','unknown exact')):
+        for code,reason in ((paired,'partner'),(winter_rain,'impossible climate'),('bogus~12345','unknown exact')):
             with self.subTest(code=code):
                 path=Mock()
                 path.exists.return_value=True

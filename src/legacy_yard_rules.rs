@@ -1,4 +1,4 @@
-use super::{Actor, DAY_MS, Fixture, HOUR, Item, MINUTE, Tool, scenic_resources};
+use super::{Actor, DAY_MS, Fixture, HOUR, Item, MINUTE, StepMark, Tool, scenic_resources};
 use crate::map_data::{TilePos, WILLOW_VILLAGE};
 use serde::{Deserialize, Serialize};
 
@@ -13,6 +13,8 @@ pub(super) enum CastResult {
 pub(super) struct EmptyMealSource {
     pub tile: TilePos,
     pub until: u64,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub track: Option<StepMark>,
 }
 
 pub(super) const EMPTY_MEAL_WINDOW: u64 = 4 * HOUR;
@@ -53,6 +55,8 @@ pub(super) struct HouseholdRules {
     pub muddy_hoe: [bool; 2],
     pub cast: [Option<CastResult>; 2],
     pub gathered_scenery: [Option<u16>; 2],
+    #[serde(default)]
+    pub gathered_from: [Option<TilePos>; 2],
     pub empty_meal_source: [Option<EmptyMealSource>; 2],
     pub well_needs_trial: bool,
     #[serde(default)]
@@ -93,6 +97,13 @@ impl HouseholdRules {
                 })
                 && self.empty_meal_source[i].is_none_or(|source| {
                     source.tile.index().is_some() && source.until <= now.saturating_add(EMPTY_MEAL_WINDOW)
+                        && source.track.is_none_or(|step| step.valid()
+                            && step.from.x.abs_diff(source.tile.x) + step.from.y.abs_diff(source.tile.y) <= 3)
+                })
+                && self.gathered_from[i].is_none_or(|foot| {
+                    foot.index().is_some() && self.gathered_scenery[i].is_some_and(|id| {
+                        WILLOW_VILLAGE.scenic.get(usize::from(id)).is_some_and(|source| scenic_resources::distance(foot, source.tile) == 1)
+                    })
                 })
                 && self.last_stop[i].is_none_or(|tile| tile.index().is_some())
                 && self.quiet_visit_day[i].is_none_or(|day| day <= now / DAY_MS)

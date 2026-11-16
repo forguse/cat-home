@@ -1,6 +1,6 @@
 use super::*;
 
-fn at(world: &mut LivingWorld, i: usize, tile: TilePos) {
+pub(super) fn at(world: &mut LivingWorld, i: usize, tile: TilePos) {
     assert!(
         world.can_walk(tile.x.into(), tile.y.into()),
         "inaccessible foot {tile:?}"
@@ -15,12 +15,12 @@ fn at(world: &mut LivingWorld, i: usize, tile: TilePos) {
     actor.inside = false;
 }
 
-fn set_time(world: &mut LivingWorld, now: u64) {
+pub(super) fn set_time(world: &mut LivingWorld, now: u64) {
     world.now_ms = now;
     world.target_ms = now;
 }
 
-fn time(season: YardSeason, minute: u64, weather: YardWeather) -> u64 {
+pub(super) fn time(season: YardSeason, minute: u64, weather: YardWeather) -> u64 {
     let season = match season {
         YardSeason::Spring => 0,
         YardSeason::Summer => 1,
@@ -52,7 +52,7 @@ fn clear_dusk(season: YardSeason, early_minutes: u64) -> u64 {
         - early_minutes * MINUTE
 }
 
-fn ready(now: u64) -> LivingWorld {
+pub(super) fn ready(now: u64) -> LivingWorld {
     let mut world = LivingWorld::new_village_wall_ms(0);
     set_time(&mut world, now);
     world.set_test_town_age(365);
@@ -85,12 +85,16 @@ fn ready(now: u64) -> LivingWorld {
 /// Use the real path pump, adjacent movement, Prepare and Work stages.
 /// Time is advanced to the actor's actual deadlines. Nonparticipating
 /// workers and unrelated simulation policies are left parked in this fixture.
-fn finish(world: &mut LivingWorld, i: usize, task: Task) {
+pub(super) fn finish(world: &mut LivingWorld, i: usize, task: Task) {
+    reach_stage(world, i, task, Stage::Finish);
+}
+
+pub(super) fn reach_stage(world: &mut LivingWorld, i: usize, task: Task, until: Stage) {
     assert_eq!(world.actors[i].task, Some(task));
     let mut previous = world.actors[i].cell;
     let mut steps = 0;
     for _ in 0..512 {
-        if world.actors[i].stage == Stage::Finish {
+        if world.actors[i].stage == until {
             assert_eq!(world.actors[i].cell, world.site(i, task));
             assert!(steps > 0, "did not walk to the actual target for {task:?}");
             return;
@@ -401,7 +405,7 @@ fn check_observation(world: &LivingWorld, kind: Observation, id: &str) {
     assert!(!reopened.active_village_observations().any(|other| other == note));
 }
 
-fn boundary(season: YardSeason, hour: u64, weather: YardWeather, early: u64) -> u64 {
+pub(super) fn boundary(season: YardSeason, hour: u64, weather: YardWeather, early: u64) -> u64 {
     let first = 21_504 + season as u64 * 28;
     (first..first + 28)
         .map(|day| day * DAY_MS + hour * HOUR)
@@ -413,7 +417,7 @@ fn boundary(season: YardSeason, hour: u64, weather: YardWeather, early: u64) -> 
         - early * MINUTE
 }
 
-fn tree_warning(id: &str, now: u64, bearing: u8) {
+pub(super) fn tree_warning(id: &str, now: u64, bearing: u8) {
     for tree in 0..TREES.len() {
         if tree_warning_at(id, now, bearing, tree) {
             return;

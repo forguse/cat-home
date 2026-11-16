@@ -31,6 +31,12 @@ A01-50	A01-50	base	A01						-	Walk to covered own entrance, stop under eaves six
 A01-51	A01-51	base	A01						-	Actual wetness consumed by a work shake beside active lamp. No claimant where decorative lights are unavailable. Base only.
 A01-55	A01-55	base	A01						-	A real foreground window-tap command only while awake and within 3 tiles of the occupied home window. First ears then gaze, then resumes the original patrol goal or remaining rest, no generated input.
 A04-10	A04-10	base	A04						-	Sparrow flies continuously to Ayu's real roof and perches to chirp once per dawn
+A04-10~00042	A04-10	variant	A04	0	0	0	4	2	-	Dawn call: real roof ridge and eave route, one minute of chirping, then a bounded signal at the same eave.
+A04-10+A09~00152	A04-10	variant	A04	0	0	1	5	2	A09	Dawn call: both birds approach, yield and perch on distinct rails; actual sparrow call with swallow present, then a fifteen-minute signal at the call site.
+A04-10~00241	A04-10	variant	A04	0	0	2	4	1	-	Dawn call: real roof ridge and eave route, one minute of chirping, then a bounded signal at the same eave.
+A04-10~01042	A04-10	variant	A04	0	1	0	4	2	-	Dawn call: real roof ridge and eave route, one minute of chirping, then a bounded signal at the same eave.
+A04-10+A09~01152	A04-10	variant	A04	0	1	1	5	2	A09	Dawn call: both birds approach, yield and perch on distinct rails; actual sparrow call with swallow present, then a fifteen-minute signal at the call site.
+A04-10~01241	A04-10	variant	A04	0	1	2	4	1	-	Dawn call: real roof ridge and eave route, one minute of chirping, then a bounded signal at the same eave.
 A05-01	A05-01	base	A05						-	Real bounded ecology custody and continuous route; producer residents_wildlife_ecology; base only.
 A05-01~10101	A05-01	variant	A05	1	0	1	0	1	-	Sow1: actual same autumn acorn stored into bounded earth cache; untouched 1.1.6 old-save upgrade d530 clear daytime actual deliveries 14:30 and 14:37.
 A05-02	A05-02	base	A05						-	Real bounded ecology custody and continuous route; producer residents_wildlife_ecology; base only.
@@ -65,6 +71,9 @@ H01-23~10001	H01-23	variant	H01	1	0	0	0	1	-	One existing paid timber input and h
 H01-23~20221	H01-23	variant	H01	2	0	2	2	1	-	One existing paid timber input and held hammer, in four persisted chunks of the same base shift. Only stage 1 actual commissioning emits. The existing planter shares modern geometry and does not track four independent items in stock.
 H01-27	H01-27	base	H01						-	Actual dirty borrowed hoe brushed before returning; hoe adapts original spade
 H01-29	H01-29	base	H01						-	A borrowed rod reaches a real pond and casting starts
+H01-29~20002	H01-29	variant	H01	2	0	0	0	2	-	Completed route: borrow the rod and reach the legal pond bank, cast into contiguous actual water, and leave a temporary cast ripple. The water and weather are checked at cast.
+H01-29~22101	H01-29	variant	H01	2	2	1	0	1	-	Completed route: borrow the rod and reach the legal pond bank, cast into contiguous actual water, and leave a temporary cast ripple. The water and weather are checked at cast.
+H01-29~23203	H01-29	variant	H01	2	3	2	0	3	-	Completed route: borrow the rod and reach the legal pond bank, cast into contiguous actual water, and leave a temporary cast ripple. The water and weather are checked at cast.
 H01-30	H01-30	base	H01						-	Caught fish deposited or unsuccessful rod personally returned
 H01-33	H01-33	base	H01						-	Two dry summer periods trigger one paid water bucket in three timed pours; spent water cannot be refunded
 H01-34	H01-34	base	H01						-	Household performs three on-site drainage phases before removing the actual plot flood flag
@@ -144,6 +153,47 @@ H10-04	H10-04	base	H10						-	同一3粒种留独立保管，有限三只封套�
 H10-07	H10-07	base	H10						-	Last actual seed batch reserved to the same booked buyer and trip; fulfillment or cancellation releases the bounded reservation
 H10-10	H10-10	base	H10						-	Remaining seed goods carried home and stale reservations released
 S01	S01	base	H01						-	Two protagonists meet on opposing real routes, step aside legally, preserve cargo and tasks, and both reach original goals before recording
+S01~00042	S01	variant	H01	0	0	0	4	2	-	Completed route: both original destinations reached after a real sidestep; print on its original soil or path tile.
+S01~00132	S01	variant	H01	0	0	1	3	2	-	Completed route: both original destinations reached after a real sidestep; print on its original soil or path tile.
+S01~00241	S01	variant	H01	0	0	2	4	1	-	Completed route: both original destinations reached after a real sidestep; print on its original soil or path tile.
+S01~00253	S01	variant	H01	0	0	2	5	3	-	Completed route: both original destinations reached after a real sidestep; print on its original soil or path tile.
+S01~01051	S01	variant	H01	0	1	0	5	1	-	Completed route: both original destinations reached after a real sidestep; print on its original soil or path tile.
+S01~01132	S01	variant	H01	0	1	1	3	2	-	Completed route: both original destinations reached after a real sidestep; print on its original soil or path tile.
+S01~02032	S01	variant	H01	0	2	0	3	2	-	Completed route: both original destinations reached after a real sidestep; print on its original soil or path tile.
+S01~02141	S01	variant	H01	0	2	1	4	1	-	Completed route: both original destinations reached after a real sidestep; print on its original soil or path tile.
+S01~02153	S01	variant	H01	0	2	1	5	3	-	Completed route: both original destinations reached after a real sidestep; print on its original soil or path tile.
+S01~03243	S01	variant	H01	0	3	2	4	3	-	Completed route: both original destinations reached after a real sidestep; print on its original soil or path tile.
+S01~10051	S01	variant	H01	1	0	0	5	1	-	Completed route: both original destinations reached after a real sidestep; print on its original soil or path tile.
+S01~10141	S01	variant	H01	1	0	1	4	1	-	Completed route: both original destinations reached after a real sidestep; print on its original soil or path tile.
+S01~10153	S01	variant	H01	1	0	1	5	3	-	Completed route: both original destinations reached after a real sidestep; print on its original soil or path tile.
+S01~11032	S01	variant	H01	1	1	0	3	2	-	Completed route: both original destinations reached after a real sidestep; print on its original soil or path tile.
+S01~11153	S01	variant	H01	1	1	1	5	3	-	Completed route: both original destinations reached after a real sidestep; print on its original soil or path tile.
+S01~11231	S01	variant	H01	1	1	2	3	1	-	Completed route: both original destinations reached after a real sidestep; print on its original soil or path tile.
+S01~11243	S01	variant	H01	1	1	2	4	3	-	Completed route: both original destinations reached after a real sidestep; print on its original soil or path tile.
+S01~12041	S01	variant	H01	1	2	0	4	1	-	Completed route: both original destinations reached after a real sidestep; print on its original soil or path tile.
+S01~12053	S01	variant	H01	1	2	0	5	3	-	Completed route: both original destinations reached after a real sidestep; print on its original soil or path tile.
+S01~13252	S01	variant	H01	1	3	2	5	2	-	Completed route: both original destinations reached after a real sidestep; print on its original soil or path tile.
+S01~13233	S01	variant	H01	1	3	2	3	3	-	Completed route: both original destinations reached after a real sidestep; print on its original soil or path tile.
+S01~20041	S01	variant	H01	2	0	0	4	1	-	Completed route: both original destinations reached after a real sidestep; print on its original soil or path tile.
+S01~20231	S01	variant	H01	2	0	2	3	1	-	Completed route: both original destinations reached after a real sidestep; print on its original soil or path tile.
+S01~20243	S01	variant	H01	2	0	2	4	3	-	Completed route: both original destinations reached after a real sidestep; print on its original soil or path tile.
+S01~21041	S01	variant	H01	2	1	0	4	1	-	Completed route: both original destinations reached after a real sidestep; print on its original soil or path tile.
+S01~21053	S01	variant	H01	2	1	0	5	3	-	Completed route: both original destinations reached after a real sidestep; print on its original soil or path tile.
+S01~21131	S01	variant	H01	2	1	1	3	1	-	Completed route: both original destinations reached after a real sidestep; print on its original soil or path tile.
+S01~21143	S01	variant	H01	2	1	1	4	3	-	Completed route: both original destinations reached after a real sidestep; print on its original soil or path tile.
+S01~21252	S01	variant	H01	2	1	2	5	2	-	Completed route: both original destinations reached after a real sidestep; print on its original soil or path tile.
+S01~23242	S01	variant	H01	2	3	2	4	2	-	Completed route: both original destinations reached after a real sidestep; print on its original soil or path tile.
+S01~30131	S01	variant	H01	3	0	1	3	1	-	Completed route: both original destinations reached after a real sidestep; print on its original soil or path tile.
+S01~30143	S01	variant	H01	3	0	1	4	3	-	Completed route: both original destinations reached after a real sidestep; print on its original soil or path tile.
+S01~30252	S01	variant	H01	3	0	2	5	2	-	Completed route: both original destinations reached after a real sidestep; print on its original soil or path tile.
+S01~30233	S01	variant	H01	3	0	2	3	3	-	Completed route: both original destinations reached after a real sidestep; print on its original soil or path tile.
+S01~31031	S01	variant	H01	3	1	0	3	1	-	Completed route: both original destinations reached after a real sidestep; print on its original soil or path tile.
+S01~31043	S01	variant	H01	3	1	0	4	3	-	Completed route: both original destinations reached after a real sidestep; print on its original soil or path tile.
+S01~31152	S01	variant	H01	3	1	1	5	2	-	Completed route: both original destinations reached after a real sidestep; print on its original soil or path tile.
+S01~31233	S01	variant	H01	3	1	2	3	3	-	Completed route: both original destinations reached after a real sidestep; print on its original soil or path tile.
+S01~32043	S01	variant	H01	3	2	0	4	3	-	Completed route: both original destinations reached after a real sidestep; print on its original soil or path tile.
+S01~32133	S01	variant	H01	3	2	1	3	3	-	Completed route: both original destinations reached after a real sidestep; print on its original soil or path tile.
+S01~33251	S01	variant	H01	3	3	2	5	1	-	Completed route: both original destinations reached after a real sidestep; print on its original soil or path tile.
 S02	S02	base	H01						-	Return to the one remembered successful rest spot during discretionary time, then release it
 S02~10141	S02	variant	H01	1	0	1	4	1	-	Rest1: actual autumn clear daytime rest at (25,17); same resting place and restoration retained.
 S02~11041	S02	variant	H01	1	1	0	4	1	-	Targeted real producer test (not a naturally observed random replay): Same remembered spatial rest; cloudy spring 08:00–17:59 has no guard conflict. Same tile at and target.
@@ -154,6 +204,11 @@ S02~20041	S02	variant	H01	2	0	0	4	1	-	Targeted real producer test (not a natural
 S02~21143	S02	variant	H01	2	1	1	4	3	-	Retained observation: returns to remembered rest spot and actually rests. Fixed slot with verified exact climate, site and mode lifetime.
 S02~23242	S02	variant	H01	2	3	2	4	2	-	Retained observation: returns to remembered rest spot and actually rests. Fixed slot with verified exact climate, site and mode lifetime.
 S04	S04	base	A01						-	Pauses only discretionary original patrol at a completed edge, physically visits eave, then visits exact same original continuing target. Adaptation uses real onset as first precipitation step, not a separate rain-intensity model. Old Rain-at-completion contexts withheld.
+S04~02041	S04	variant	A01	0	2	0	4	1	-	Outdoor observation: rain at actual eave arrival is retained, full original destination after rain is required for the receipt.
+S04~02043	S04	variant	A01	0	2	0	4	3	-	Outdoor observation: rain at actual eave arrival is retained, full original destination after rain is required for the receipt.
+S04~02143	S04	variant	A01	0	2	1	4	3	-	Outdoor observation: rain at actual eave arrival is retained, full original destination after rain is required for the receipt.
+S04~12043	S04	variant	A01	1	2	0	4	3	-	Outdoor observation: rain at actual eave arrival is retained, full original destination after rain is required for the receipt.
+S04~12143	S04	variant	A01	1	2	1	4	3	-	Outdoor observation: rain at actual eave arrival is retained, full original destination after rain is required for the receipt.
 S05	S05	base	A09						-	Requires sparrow as actual lower partner. Both arrive at the same real rail approach; swallow circles aside after sparrow occupies it and reaches a distinct adjacent rail.
 S08	S08	base	H01,A01						-	Three contiguous real steps; actual shallow, wet or saturated ground gives tracks 30, 60 or 90 game minutes
 S08~02031	S08	variant	H01,A01	0	2	0	3	1	-	Three contiguous real steps; actual shallow, wet or saturated ground gives tracks 30, 60 or 90 game minutes
@@ -186,7 +241,58 @@ S08~32132	S08	variant	H01,A01	3	2	1	3	2	-	Three contiguous real steps; actual sh
 S08~32141	S08	variant	H01,A01	3	2	1	4	1	-	Three contiguous real steps; actual shallow, wet or saturated ground gives tracks 30, 60 or 90 game minutes
 S08~32153	S08	variant	H01,A01	3	2	1	5	3	-	Three contiguous real steps; actual shallow, wet or saturated ground gives tracks 30, 60 or 90 game minutes
 S09	S09	base	H01						-	Real reclamation work leftovers removed from source and returned to stock
+S09~00041	S09	variant	H01	0	0	0	4	1	-	Completed route: existing debris removed at its actual work foot; materials stowed with quantity conserved; mode 2 requires at least two pieces.
+S09~00053	S09	variant	H01	0	0	0	5	3	-	Completed route: existing debris removed at its actual work foot; materials stowed with quantity conserved; mode 2 requires at least two pieces.
+S09~00243	S09	variant	H01	0	0	2	4	3	-	Completed route: existing debris removed at its actual work foot; materials stowed with quantity conserved; mode 2 requires at least two pieces.
+S09~01053	S09	variant	H01	0	1	0	5	3	-	Completed route: existing debris removed at its actual work foot; materials stowed with quantity conserved; mode 2 requires at least two pieces.
+S09~01131	S09	variant	H01	0	1	1	3	1	-	Completed route: existing debris removed at its actual work foot; materials stowed with quantity conserved; mode 2 requires at least two pieces.
+S09~01143	S09	variant	H01	0	1	1	4	3	-	Completed route: existing debris removed at its actual work foot; materials stowed with quantity conserved; mode 2 requires at least two pieces.
+S09~01252	S09	variant	H01	0	1	2	5	2	-	Completed route: existing debris removed at its actual work foot; materials stowed with quantity conserved; mode 2 requires at least two pieces.
+S09~02152	S09	variant	H01	0	2	1	5	2	-	Completed route: existing debris removed at its actual work foot; materials stowed with quantity conserved; mode 2 requires at least two pieces.
+S09~03242	S09	variant	H01	0	3	2	4	2	-	Completed route: existing debris removed at its actual work foot; materials stowed with quantity conserved; mode 2 requires at least two pieces.
+S09~10131	S09	variant	H01	1	0	1	3	1	-	Completed route: existing debris removed at its actual work foot; materials stowed with quantity conserved; mode 2 requires at least two pieces.
+S09~10143	S09	variant	H01	1	0	1	4	3	-	Completed route: existing debris removed at its actual work foot; materials stowed with quantity conserved; mode 2 requires at least two pieces.
+S09~10233	S09	variant	H01	1	0	2	3	3	-	Completed route: existing debris removed at its actual work foot; materials stowed with quantity conserved; mode 2 requires at least two pieces.
+S09~11031	S09	variant	H01	1	1	0	3	1	-	Completed route: existing debris removed at its actual work foot; materials stowed with quantity conserved; mode 2 requires at least two pieces.
+S09~11043	S09	variant	H01	1	1	0	4	3	-	Completed route: existing debris removed at its actual work foot; materials stowed with quantity conserved; mode 2 requires at least two pieces.
+S09~11152	S09	variant	H01	1	1	1	5	2	-	Completed route: existing debris removed at its actual work foot; materials stowed with quantity conserved; mode 2 requires at least two pieces.
+S09~11233	S09	variant	H01	1	1	2	3	3	-	Completed route: existing debris removed at its actual work foot; materials stowed with quantity conserved; mode 2 requires at least two pieces.
+S09~12043	S09	variant	H01	1	2	0	4	3	-	Completed route: existing debris removed at its actual work foot; materials stowed with quantity conserved; mode 2 requires at least two pieces.
+S09~12133	S09	variant	H01	1	2	1	3	3	-	Completed route: existing debris removed at its actual work foot; materials stowed with quantity conserved; mode 2 requires at least two pieces.
+S09~13251	S09	variant	H01	1	3	2	5	1	-	Completed route: existing debris removed at its actual work foot; materials stowed with quantity conserved; mode 2 requires at least two pieces.
+S09~20031	S09	variant	H01	2	0	0	3	1	-	Completed route: existing debris removed at its actual work foot; materials stowed with quantity conserved; mode 2 requires at least two pieces.
+S09~20043	S09	variant	H01	2	0	0	4	3	-	Completed route: existing debris removed at its actual work foot; materials stowed with quantity conserved; mode 2 requires at least two pieces.
+S09~20152	S09	variant	H01	2	0	1	5	2	-	Completed route: existing debris removed at its actual work foot; materials stowed with quantity conserved; mode 2 requires at least two pieces.
+S09~20133	S09	variant	H01	2	0	1	3	3	-	Completed route: existing debris removed at its actual work foot; materials stowed with quantity conserved; mode 2 requires at least two pieces.
+S09~20242	S09	variant	H01	2	0	2	4	2	-	Completed route: existing debris removed at its actual work foot; materials stowed with quantity conserved; mode 2 requires at least two pieces.
+S09~21052	S09	variant	H01	2	1	0	5	2	-	Completed route: existing debris removed at its actual work foot; materials stowed with quantity conserved; mode 2 requires at least two pieces.
+S09~21133	S09	variant	H01	2	1	1	3	3	-	Completed route: existing debris removed at its actual work foot; materials stowed with quantity conserved; mode 2 requires at least two pieces.
+S09~21251	S09	variant	H01	2	1	2	5	1	-	Completed route: existing debris removed at its actual work foot; materials stowed with quantity conserved; mode 2 requires at least two pieces.
+S09~22033	S09	variant	H01	2	2	0	3	3	-	Completed route: existing debris removed at its actual work foot; materials stowed with quantity conserved; mode 2 requires at least two pieces.
+S09~22142	S09	variant	H01	2	2	1	4	2	-	Completed route: existing debris removed at its actual work foot; materials stowed with quantity conserved; mode 2 requires at least two pieces.
+S09~23232	S09	variant	H01	2	3	2	3	2	-	Completed route: existing debris removed at its actual work foot; materials stowed with quantity conserved; mode 2 requires at least two pieces.
+S09~30052	S09	variant	H01	3	0	0	5	2	-	Completed route: existing debris removed at its actual work foot; materials stowed with quantity conserved; mode 2 requires at least two pieces.
+S09~30142	S09	variant	H01	3	0	1	4	2	-	Completed route: existing debris removed at its actual work foot; materials stowed with quantity conserved; mode 2 requires at least two pieces.
+S09~30251	S09	variant	H01	3	0	2	5	1	-	Completed route: existing debris removed at its actual work foot; materials stowed with quantity conserved; mode 2 requires at least two pieces.
+S09~31033	S09	variant	H01	3	1	0	3	3	-	Completed route: existing debris removed at its actual work foot; materials stowed with quantity conserved; mode 2 requires at least two pieces.
+S09~31142	S09	variant	H01	3	1	1	4	2	-	Completed route: existing debris removed at its actual work foot; materials stowed with quantity conserved; mode 2 requires at least two pieces.
+S09~31232	S09	variant	H01	3	1	2	3	2	-	Completed route: existing debris removed at its actual work foot; materials stowed with quantity conserved; mode 2 requires at least two pieces.
+S09~32042	S09	variant	H01	3	2	0	4	2	-	Completed route: existing debris removed at its actual work foot; materials stowed with quantity conserved; mode 2 requires at least two pieces.
+S09~32151	S09	variant	H01	3	2	1	5	1	-	Completed route: existing debris removed at its actual work foot; materials stowed with quantity conserved; mode 2 requires at least two pieces.
+S09~33253	S09	variant	H01	3	3	2	5	3	-	Completed route: existing debris removed at its actual work foot; materials stowed with quantity conserved; mode 2 requires at least two pieces.
 S12	S12	base	H01,A01						-	Real pause then subsequent planner restores ordinary schedule. This is the runtime cloud-strength step; no multiple wind/light physics modes and no fabricated signal trail.
+S12~00051	S12	variant	H01,A01	0	0	0	5	1	-	Outdoor observation: real transition from clouds to clear; actor faces the actual nearby lit tile and leaves a short visual cue.
+S12~00132	S12	variant	H01,A01	0	0	1	3	2	-	Outdoor observation: real transition from clouds to clear; actor faces the actual nearby lit tile and leaves a short visual cue.
+S12~00253	S12	variant	H01,A01	0	0	2	5	3	-	Outdoor observation: real transition from clouds to clear; actor faces the actual nearby lit tile and leaves a short visual cue.
+S12~10032	S12	variant	H01,A01	1	0	0	3	2	-	Outdoor observation: real transition from clouds to clear; actor faces the actual nearby lit tile and leaves a short visual cue.
+S12~10141	S12	variant	H01,A01	1	0	1	4	1	-	Outdoor observation: real transition from clouds to clear; actor faces the actual nearby lit tile and leaves a short visual cue.
+S12~10153	S12	variant	H01,A01	1	0	1	5	3	-	Outdoor observation: real transition from clouds to clear; actor faces the actual nearby lit tile and leaves a short visual cue.
+S12~10231	S12	variant	H01,A01	1	0	2	3	1	-	Outdoor observation: real transition from clouds to clear; actor faces the actual nearby lit tile and leaves a short visual cue.
+S12~10243	S12	variant	H01,A01	1	0	2	4	3	-	Outdoor observation: real transition from clouds to clear; actor faces the actual nearby lit tile and leaves a short visual cue.
+S12~20041	S12	variant	H01,A01	2	0	0	4	1	-	Outdoor observation: real transition from clouds to clear; actor faces the actual nearby lit tile and leaves a short visual cue.
+S12~20053	S12	variant	H01,A01	2	0	0	5	3	-	Outdoor observation: real transition from clouds to clear; actor faces the actual nearby lit tile and leaves a short visual cue.
+S12~20131	S12	variant	H01,A01	2	0	1	3	1	-	Outdoor observation: real transition from clouds to clear; actor faces the actual nearby lit tile and leaves a short visual cue.
+S12~20252	S12	variant	H01,A01	2	0	2	5	2	-	Outdoor observation: real transition from clouds to clear; actor faces the actual nearby lit tile and leaves a short visual cue.
 S13	S13	base	H01						-	Briefly inspect a genuinely newly installed fixture from a legal stand, remember its version
 S13~10032	S13	variant	H01	1	0	0	3	2	-	Retained observation: paid installed facility inspected from a valid sightline. Fixed slot with verified exact climate, site and mode lifetime.
 S13~10153	S13	variant	H01	1	0	1	5	3	-	Retained observation: paid installed facility inspected from a valid sightline. Fixed slot with verified exact climate, site and mode lifetime.
@@ -211,6 +317,19 @@ S13~22043	S13	variant	H01	2	2	0	4	3	-	Retained observation: paid installed facil
 S13~22152	S13	variant	H01	2	2	1	5	2	-	Retained observation: paid installed facility inspected from a valid sightline. Fixed slot with verified exact climate, site and mode lifetime.
 S13~23251	S13	variant	H01	2	3	2	5	1	-	Retained observation: paid installed facility inspected from a valid sightline. Fixed slot with verified exact climate, site and mode lifetime.
 S14	S14	base	H01						-	Arrive at empty meal source, wait, then use a genuinely available alternative
+S14~01032	S14	variant	H01	0	1	0	3	2	-	Completed route: actual empty source, walked new route, paid ingredients cooked; print from the first real edge near the original source.
+S14~01231	S14	variant	H01	0	1	2	3	1	-	Completed route: actual empty source, walked new route, paid ingredients cooked; print from the first real edge near the original source.
+S14~10231	S14	variant	H01	1	0	2	3	1	-	Completed route: actual empty source, walked new route, paid ingredients cooked; print from the first real edge near the original source.
+S14~11131	S14	variant	H01	1	1	1	3	1	-	Completed route: actual empty source, walked new route, paid ingredients cooked; print from the first real edge near the original source.
+S14~20131	S14	variant	H01	2	0	1	3	1	-	Completed route: actual empty source, walked new route, paid ingredients cooked; print from the first real edge near the original source.
+S14~21031	S14	variant	H01	2	1	0	3	1	-	Completed route: actual empty source, walked new route, paid ingredients cooked; print from the first real edge near the original source.
+S14~21233	S14	variant	H01	2	1	2	3	3	-	Completed route: actual empty source, walked new route, paid ingredients cooked; print from the first real edge near the original source.
+S14~22031	S14	variant	H01	2	2	0	3	1	-	Completed route: actual empty source, walked new route, paid ingredients cooked; print from the first real edge near the original source.
+S14~22133	S14	variant	H01	2	2	1	3	3	-	Completed route: actual empty source, walked new route, paid ingredients cooked; print from the first real edge near the original source.
+S14~30031	S14	variant	H01	3	0	0	3	1	-	Completed route: actual empty source, walked new route, paid ingredients cooked; print from the first real edge near the original source.
+S14~31133	S14	variant	H01	3	1	1	3	3	-	Completed route: actual empty source, walked new route, paid ingredients cooked; print from the first real edge near the original source.
+S14~32033	S14	variant	H01	3	2	0	3	3	-	Completed route: actual empty source, walked new route, paid ingredients cooked; print from the first real edge near the original source.
+S14~33232	S14	variant	H01	3	3	2	3	2	-	Completed route: actual empty source, walked new route, paid ingredients cooked; print from the first real edge near the original source.
 S15	S15	base	A09						-	Real bounded ecology custody and continuous route; producer residents_wildlife_ecology; base only.
 S18	S18	base	H01						-	Repaired expanded-district public well tested by its next actual use, with bounded result memory
 S18~00001	S18	variant	H01	0	0	0	0	1	-	Targeted real producer test (not a naturally observed random replay): Real pulse testing currently consumes four well water units and creates the actual 4-water carry; place 0 accepts Expanded. 08–13 dedicated trial proposal, but ordinary public GetWater can finish 06:00–07:30.
@@ -260,6 +379,9 @@ S22~10243	S22	variant	H01,A01	1	0	2	4	3	-	Retained observation: real tree fellin
 S22~11041	S22	variant	H01,A01	1	1	0	4	1	-	Retained observation: real tree felling, legal retreat by a different actor and a visible temporary ground warning.
 S22~11053	S22	variant	H01,A01	1	1	0	5	3	-	Retained observation: real tree felling, legal retreat by a different actor and a visible temporary ground warning.
 S22~11252	S22	variant	H01,A01	1	1	2	5	2	-	Retained observation: real tree felling, legal retreat by a different actor and a visible temporary ground warning.
+S22~12131	S22	variant	H01,A01	1	2	1	3	1	-	Outdoor observation: dry work begins before real weather changes; actual fall and other actor retreat leave the timed warning.
+S22~12143	S22	variant	H01,A01	1	2	1	4	3	-	Outdoor observation: dry work begins before real weather changes; actual fall and other actor retreat leave the timed warning.
+S22~13233	S22	variant	H01,A01	1	3	2	3	3	-	Outdoor observation: dry work begins before real weather changes; actual fall and other actor retreat leave the timed warning.
 S22~20041	S22	variant	H01,A01	2	0	0	4	1	-	Retained observation: real tree felling, legal retreat by a different actor and a visible temporary ground warning.
 S22~20053	S22	variant	H01,A01	2	0	0	5	3	-	Retained observation: real tree felling, legal retreat by a different actor and a visible temporary ground warning.
 S22~20131	S22	variant	H01,A01	2	0	1	3	1	-	Retained observation: real tree felling, legal retreat by a different actor and a visible temporary ground warning.
@@ -267,3 +389,7 @@ S22~20143	S22	variant	H01,A01	2	0	1	4	3	-	Retained observation: real tree fellin
 S22~20252	S22	variant	H01,A01	2	0	2	5	2	-	Retained observation: real tree felling, legal retreat by a different actor and a visible temporary ground warning.
 S22~21143	S22	variant	H01,A01	2	1	1	4	3	-	Retained observation: real tree felling, legal retreat by a different actor and a visible temporary ground warning.
 S22~21233	S22	variant	H01,A01	2	1	2	3	3	-	Retained observation: real tree felling, legal retreat by a different actor and a visible temporary ground warning.
+S22~22031	S22	variant	H01,A01	2	2	0	3	1	-	Outdoor observation: dry work begins before real weather changes; actual fall and other actor retreat leave the timed warning.
+S22~22043	S22	variant	H01,A01	2	2	0	4	3	-	Outdoor observation: dry work begins before real weather changes; actual fall and other actor retreat leave the timed warning.
+S22~22152	S22	variant	H01,A01	2	2	1	5	2	-	Outdoor observation: dry work begins before real weather changes; actual fall and other actor retreat leave the timed warning.
+S22~23242	S22	variant	H01,A01	2	3	2	4	2	-	Outdoor observation: dry work begins before real weather changes; actual fall and other actor retreat leave the timed warning.

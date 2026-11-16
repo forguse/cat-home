@@ -56,7 +56,8 @@ mod orchard_ground;
 mod yard_survey;
 #[path = "village_observations.rs"]
 mod village_observations;
-pub use village_observations::{Note as VillageObservationNote, Observation};
+pub use village_observations::{Evidence as ObservationEvidence, Note as VillageObservationNote, Observation};
+use village_observations::StepMark;
 use yard_mat::MatWork;
 pub use yard_mat::{MatPlacement, YardMatVisual};
 use crate::legacy_content::{BehaviorLedger, CompletedBehavior, LegacyActor, LegacyPlace};
@@ -2177,7 +2178,7 @@ impl LivingWorld {
         (spell ^ (spell >> 5)).wrapping_mul(0x9E37_79B9) % 20 < 3
     }
 
-    fn weather_at(world_ms: u64) -> YardWeather {
+    pub(crate) fn weather_at(world_ms: u64) -> YardWeather {
         let spell = world_ms / (3 * HOUR);
         let sample = (spell ^ (spell >> 5)).wrapping_mul(0x9E37_79B9) % 20;
         match sample {
@@ -2241,18 +2242,13 @@ impl LivingWorld {
             mode,
             partner,
             now_ms: self.now_ms,
-            weather: match self.weather() {
+            weather: match Self::weather_at(self.now_ms) {
                 YardWeather::Clear => 0,
                 YardWeather::Clouds => 1,
                 YardWeather::Rain => 2,
                 YardWeather::Snow => 3,
             },
-            season: match self.season() {
-                YardSeason::Spring => 0,
-                YardSeason::Summer => 1,
-                YardSeason::Autumn => 2,
-                YardSeason::Winter => 3,
-            },
+            season: ((self.now_ms / DAY_MS / 28) % 4) as u8,
         }
     }
 
@@ -2286,22 +2282,56 @@ impl LivingWorld {
         &mut self, kind: Observation, actor: LegacyActor, at: TilePos, target: TilePos,
         parcel: LegacyPlace,
     ) {
-        if !self.is_village() {
-            return;
-        }
-        let mut event = self.completion_context(kind.base(), actor, at, target, parcel, 1, None);
-        let Some(mode) = self.legacy_behaviors.retained_mode(event) else {
+        let event = self.completion_context(kind.base(), actor, at, target, parcel, 1, None);
+        self.record_observation_effect(kind, event, ObservationEvidence::Place);
+    }
+
+    pub(crate) fn record_sparrow_call(&mut self, at: TilePos, swallow: Option<TilePos>) {
+        let event = self.completion_context(
+            "A04-10", LegacyActor::Wildlife(8), at, swallow.unwrap_or(at),
+            LegacyPlace::Front, 1, swallow.map(|_| LegacyActor::Wildlife(9)),
+        );
+        self.record_observation_effect(Observation::SparrowCall, event, ObservationEvidence::Place);
+    }
+
+    fn record_observation_effect(
+        &mut self, kind: Observation, mut event: CompletedBehavior, evidence: ObservationEvidence,
+    ) {
+        if !self.is_village() { return; }
+        let modes = if kind == Observation::RainShelter { 0b1010 } else { evidence.modes() };
+        let Some(mode) = self.legacy_behaviors.scene_mode(event, modes) else {
+            event.now_ms = self.now_ms;
             self.legacy_behaviors.record_base(event);
             return;
         };
-        let Some(note) = self.village_observations.candidate(kind, actor, target, self.now_ms, mode)
+        let location = if kind == Observation::SparrowCall { event.at } else { event.target };
+        let Some(note) = self.village_observations.candidate(kind, event.actor, location, self.now_ms, mode, evidence)
         else {
+            event.now_ms = self.now_ms;
             self.legacy_behaviors.record_base(event);
             return;
         };
         event.mode = mode;
-        if self.legacy_behaviors.record(event) {
+        if self.legacy_behaviors.record_after_scene(event, self.now_ms) {
             self.village_observations.commit(note);
+        }
+    }
+
+    fn real_trackable_edge(&self, from: TilePos, to: TilePos) -> Option<StepMark> {
+        let step = StepMark { from, to };
+        (step.valid() && (matches!(self.ground(from.x.into(), from.y.into()), Ground::Soil | Ground::Path)
+            || self.soft_ground(Cell::from(from)).is_some())).then_some(step)
+    }
+
+    fn record_household_trail(
+        &mut self, kind: Observation, actor: usize, at: TilePos, target: TilePos,
+        parcel: LegacyPlace, partner: Option<LegacyActor>, step: Option<StepMark>,
+    ) {
+        let event = self.completion_context(kind.base(), LegacyActor::Household(actor as u8), at, target, parcel, 1, partner);
+        if let Some(step) = step {
+            self.record_observation_effect(kind, event, ObservationEvidence::Step(step));
+        } else {
+            self.legacy_behaviors.record_base(event);
         }
     }
 
@@ -2346,6 +2376,15 @@ impl LivingWorld {
             return;
         }
         self.observe_cat_weather_edge(kind, from, to);
+        let i = kind.index();
+        if i < 2 && self.actors[i].task == Some(Task::Cook)
+            && let Some(step) = self.real_trackable_edge(from.tile(), to.tile())
+            && let Some(source) = &mut self.village.as_mut().unwrap().household_rules.empty_meal_source[i]
+            && source.track.is_none() && self.now_ms < source.until
+            && from.distance(Cell::from(source.tile)) <= 3
+        {
+            source.track = Some(step);
+        }
         if let Some((snow, impression)) = self.soft_ground(from) {
             if self.footprints.add(from.tile(), to.tile(), kind, snow, impression, self.now_ms) {
                 let parcel = if self.in_household_region(from) { LegacyPlace::Front } else { LegacyPlace::Expanded };
@@ -6717,6 +6756,7 @@ impl LivingWorld {
                             state.household_rules.empty_meal_source[i] = Some(EmptyMealSource {
                                 tile: self.actors[i].cell.tile(),
                                 until: self.now_ms + EMPTY_MEAL_WINDOW,
+                                track: None,
                             });
                         }
                         self.idle(i, MINUTE);
@@ -6788,7 +6828,13 @@ impl LivingWorld {
                     Task::Detail(Detail::WaitUnderEave(_)) => Pose::Rest,
                     Task::Detail(Detail::WatchHarvest { .. }) => Pose::Rest,
                     Task::Detail(Detail::WatchEmptyHook { .. } | Detail::WaitAtRoadside(_)) => Pose::Rest,
-                    Task::Detail(Detail::NoticeLight { .. }) => Pose::Idle,
+                    Task::Detail(Detail::NoticeLight { focus, .. }) => {
+                        if let Some(focus) = focus {
+                            let actor = &mut self.actors[i];
+                            if actor.cell.0 != focus.x { actor.facing_left = focus.x < actor.cell.0; }
+                        }
+                        Pose::Idle
+                    }
                     Task::Detail(Detail::Startled { .. }) => Pose::Idle,
                     Task::Detail(_) => Pose::Work,
                     Task::CatProbeSnow { snow, .. } => {
@@ -6846,7 +6892,7 @@ impl LivingWorld {
                         .filter_map(|(x, y)| bank.offset(x, y))
                         .find(|point| self.ground(point.x.into(), point.y.into()) == Ground::Water)
                     {
-                        self.record_household_completion("H01-29", i, water, LegacyPlace::Nearby);
+                        self.record_household_observation(Observation::FishingWater, i, water, LegacyPlace::Front);
                     }
                 }
                 self.stage(i, Stage::Work, pose, duration);
@@ -7050,6 +7096,7 @@ impl LivingWorld {
             }
             if self.actors[i].carried.is_some() {
                 state.household_rules.gathered_scenery[i] = None;
+                state.household_rules.gathered_from[i] = None;
             }
             if self.actors[i].carried == Some(Item::Crops) {
                 state.family_routines.split_seed_pouch[i] = false;
@@ -7064,12 +7111,18 @@ impl LivingWorld {
         self.actors[i].traced_wood = None;
     }
 
-    fn finish_ground_cleanup(&mut self, i: usize) {
+    fn finish_ground_cleanup(&mut self, i: usize, deposited: u16) {
         if i < 2 && let Some(state) = &mut self.village
             && let Some(id) = state.household_rules.gathered_scenery[i].take()
         {
             let source = WILLOW_VILLAGE.scenic[usize::from(id)].tile;
-            self.record_household_completion("S09", i, source, LegacyPlace::Expanded);
+            let at = state.household_rules.gathered_from[i].take();
+            let Some(at) = at else {
+                self.record_household_completion("S09", i, source, LegacyPlace::Expanded);
+                return;
+            };
+            let event = self.completion_context("S09", LegacyActor::Household(i as u8), at, source, LegacyPlace::Expanded, 1, None);
+            self.record_observation_effect(Observation::ReclaimedGround, event, ObservationEvidence::Removed(deposited.min(3) as u8));
         }
     }
 
@@ -7136,7 +7189,9 @@ impl LivingWorld {
         if land_reuse::RECLAIMED_HOME.contains(source)
             || land_reuse::RESTORED_FIELDS.iter().any(|field| field.rect.contains(source))
         {
-            self.village.as_mut().expect("land clearance").household_rules.gathered_scenery[i] = Some(work.id);
+            let rules = &mut self.village.as_mut().expect("land clearance").household_rules;
+            rules.gathered_scenery[i] = Some(work.id);
+            rules.gathered_from[i] = Some(work.stand);
         }
     }
 
@@ -7358,7 +7413,7 @@ impl LivingWorld {
                     }) {
                         self.record_household_completion("H01-30", i, village::poi("home_fishing").tile(), LegacyPlace::Front);
                     }
-                    self.finish_ground_cleanup(i);
+                    self.finish_ground_cleanup(i, amount);
                     self.drop_carry(i);
                 }
             }
@@ -7369,8 +7424,9 @@ impl LivingWorld {
                 }
                 let landscape = &mut self.village.as_mut().expect("landscape fibre").landscape;
                 if landscape.fibre_held[i] > 0 && landscape.fibre_stock + landscape.fibre_held[i] <= scenic_resources::FIBRE_CAP {
-                    landscape.fibre_stock += std::mem::take(&mut landscape.fibre_held[i]);
-                    self.finish_ground_cleanup(i);
+                    let deposited = std::mem::take(&mut landscape.fibre_held[i]);
+                    landscape.fibre_stock += deposited;
+                    self.finish_ground_cleanup(i, u16::from(deposited));
                 }
             }
             Task::TwistLandscapeFibre => {
@@ -7417,7 +7473,8 @@ impl LivingWorld {
                         && let Some(source) = state.household_rules.empty_meal_source[i].take()
                         && source.until > self.now_ms && source.tile != self.actors[i].cell.tile()
                     {
-                        self.record_household_completion("S14", i, source.tile, LegacyPlace::Front);
+                        self.record_household_trail(Observation::KitchenDetour, i, self.actors[i].cell.tile(),
+                            source.tile, LegacyPlace::Front, None, source.track);
                     }
                     if let Some(state) = &mut self.village {
                         if cooked_fish {
@@ -8975,6 +9032,9 @@ fn update_position(actor: &mut Actor, now: u64) {
 #[cfg(test)]
 #[path = "legacy_household_variant_tests.rs"]
 mod legacy_household_variant_tests;
+#[cfg(test)]
+#[path = "legacy_route_variant_tests.rs"]
+mod legacy_route_variant_tests;
 
 #[cfg(test)]
 mod tests {

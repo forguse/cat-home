@@ -392,8 +392,9 @@ impl LivingWorld {
         if mark.reached == 0b11 {
             let completion = *mark;
             state.family_routines.passing = None;
-            self.record_legacy_completion("S01", LegacyActor::Household(completion.yielder), completion.goals[yielder],
-                completion.entry, LegacyPlace::Nearby, 1, Some(LegacyActor::Household((1 - yielder) as u8)));
+            let trail = self.real_trackable_edge(completion.entry, completion.shoulder);
+            self.record_household_trail(Observation::PassingTrail, yielder, completion.goals[yielder],
+                completion.entry, LegacyPlace::Nearby, Some(LegacyActor::Household((1 - yielder) as u8)), trail);
         }
     }
 }

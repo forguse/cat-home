@@ -245,31 +245,43 @@ impl BehaviorLedger {
         self.seen[n / 2048][n / 64 % 32] & (1 << (n % 64)) != 0
     }
     pub fn record(&mut self, event: CompletedBehavior) -> bool {
-        self.record_completion(event, true)
+        self.record_completion(event, event.now_ms, true)
     }
 
     pub(crate) fn record_base(&mut self, event: CompletedBehavior) -> bool {
-        self.record_completion(event, false)
+        self.record_completion(event, event.now_ms, false)
+    }
+
+    /// A route may be verified only after a later final leg. Its weather
+    /// context comes from the actual intermediate action, its receipt is
+    /// still ordered at the time the final leg completed.
+    pub(crate) fn record_after_scene(&mut self, event: CompletedBehavior, completed_at: u64) -> bool {
+        self.record_completion(event, completed_at, true)
     }
 
     /// Only producers that can deliver each of these effects should call this.
     /// The result proposes a mode for the real completion, it grants no effect.
-    pub(crate) fn retained_mode(&self, mut event: CompletedBehavior) -> Option<u8> {
+    pub(crate) fn retained_mode(&self, event: CompletedBehavior) -> Option<u8> {
+        self.scene_mode(event, 0b1110)
+    }
+
+    pub(crate) fn scene_mode(&self, mut event: CompletedBehavior, supported: u8) -> Option<u8> {
         let group = actor_group(event.base, event.actor)?;
         RULES[group.start + 1..group.start + group.len].iter()
             .filter(|rule| {
                 event.mode = rule.mode;
-                rule.matches(event)
+                supported & (1 << rule.mode) != 0 && rule.matches(event)
             })
             .min_by_key(|rule| (self.seen(rule.ordinal), rule.mode, rule.ordinal))
             .map(|rule| rule.mode)
     }
 
-    fn record_completion(&mut self, event: CompletedBehavior, variants: bool) -> bool {
+    fn record_completion(&mut self, event: CompletedBehavior, completed_at: u64, variants: bool) -> bool {
         let Some(group) = actor_group(event.base, event.actor) else {
             return false;
         };
-        if event.at.index().is_none()
+        if completed_at < event.now_ms
+            || event.at.index().is_none()
             || event.target.index().is_none()
             || event.weather > 3
             || event.season > 3
@@ -291,7 +303,7 @@ impl BehaviorLedger {
             .unwrap_or(&rows[0]);
         if self.recent.iter().any(|last| {
             last.actor == event.actor
-                && last.now_ms == event.now_ms
+                && last.now_ms == completed_at
                 && last.at == event.at
                 && rows.iter().any(|r| r.ordinal == last.id)
         }) {
@@ -315,7 +327,7 @@ impl BehaviorLedger {
             actor: event.actor,
             at: event.at,
             target: event.target,
-            now_ms: event.now_ms,
+            now_ms: completed_at,
         });
         true
     }

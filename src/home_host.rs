@@ -23,7 +23,7 @@ use windows_sys::Win32::Storage::FileSystem::{
 
 const MAX_SNAPSHOT: usize = 256 * 1024;
 const LANDSCAPE_REVISION: u8 = 1;
-const BEHAVIOR_REVISION: u8 = 4;
+const BEHAVIOR_REVISION: u8 = 5;
 const V4_FILE: &str = "world-v4.json";
 const COMPAT_FILE: &str = "world-compat-v3.json";
 const LIVE_PUMP_BUDGET: Duration = Duration::from_millis(6);

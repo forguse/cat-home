@@ -537,3 +537,41 @@ mod tests {
         assert_eq!(habitat.marks(&world).count(), 0);
     }
 }
+
+#[cfg(test)]
+mod legacy_call_tests {
+    use super::*;
+
+    #[test]
+    fn real_roof_calls_leave_a_time_limited_signal() {
+        for (first, weather, code, duration) in [
+            (0, YardWeather::Clear, "A04-10~00042", 15 * MINUTE),
+            (0, YardWeather::Clouds, "A04-10~01042", 15 * MINUTE),
+            (84, YardWeather::Clear, "A04-10~00241", 5 * MINUTE),
+            (84, YardWeather::Clouds, "A04-10~01241", 5 * MINUTE),
+        ] {
+            let start = (first.max(4)..first + 28).map(|day| day * DAY_MS + 6 * HOUR)
+                .find(|&at| at > 6 * HOUR && LivingWorld::weather_at(at) == weather).unwrap();
+            let mut world = LivingWorld::new_village_wall_ms(0);
+            let mut life = crate::residents::VillageLife::default();
+            let seek = |world: &mut LivingWorld, to| {
+                world.queue_world_time(to - world.world_ms());
+                while !world.advance_pending_to(to) {}
+            };
+            seek(&mut world, start);
+            let mut saw_call = false;
+            while world.world_ms() < start + 10 * MINUTE {
+                life.advance(&mut world);
+                if world.legacy_behaviors().observed_ids().any(|id| id == code) { break; }
+                saw_call |= life.wildlife.marks(&world).any(|v| v.sprite == "wild_sparrow_chirp");
+                let to = world.world_ms() + 10_000;
+                seek(&mut world, to);
+            }
+            assert!(saw_call, "no continuous roof visit for {code}");
+            assert!(world.legacy_behaviors().observed_ids().any(|id| id == code), "{code}");
+            let n = world.active_village_observations().find(|n| n.kind == crate::living_world::Observation::SparrowCall).unwrap();
+            assert_eq!(n.expires() - n.at, duration);
+            assert_eq!(n.target, tile(roof(&world, false).unwrap()));
+        }
+    }
+}

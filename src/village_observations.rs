@@ -25,6 +25,13 @@ pub enum Observation {
     HouseholdDrain,
     IrrigatorDrain,
     FallingTree,
+    PassingTrail,
+    KitchenDetour,
+    ReclaimedGround,
+    CloudBreak,
+    RainShelter,
+    FishingWater,
+    SparrowCall,
 }
 
 impl Observation {
@@ -47,6 +54,13 @@ impl Observation {
             Self::HouseholdDrain => "H01-34",
             Self::IrrigatorDrain => "H08-04",
             Self::FallingTree => "S22",
+            Self::PassingTrail => "S01",
+            Self::KitchenDetour => "S14",
+            Self::ReclaimedGround => "S09",
+            Self::CloudBreak => "S12",
+            Self::RainShelter => "S04",
+            Self::FishingWater => "H01-29",
+            Self::SparrowCall => "A04-10",
         }
     }
 
@@ -67,12 +81,20 @@ impl Observation {
             Self::OldNest => "春归时踏访旧燕巢",
             Self::HouseholdDrain | Self::IrrigatorDrain => "该畦已排涝",
             Self::FallingTree => "附近刚有树木倒下",
+            Self::PassingTrail => "让路后沿原计划前进，留下脚印",
+            Self::KitchenDetour => "空餐柜后改道开火，留下脚印",
+            Self::ReclaimedGround => "清出地块并收回物料",
+            Self::CloudBreak => "停步望见云散开",
+            Self::RainShelter => "在屋檐下避过这阵雨",
+            Self::FishingWater => "从岸上查看水面并下竿",
+            Self::SparrowCall => "黎明鸣叫后的一小段余音",
         }
     }
 
     fn retention(self, mode: u8) -> u64 {
         let minutes = match self {
-            Self::FallingTree => [5, 15, 30],
+            Self::FallingTree | Self::CloudBreak | Self::RainShelter | Self::SparrowCall | Self::FishingWater => [5, 15, 30],
+            Self::PassingTrail | Self::KitchenDetour => [30, 60, 90],
             Self::RestStop
             | Self::CatNap
             | Self::CatNight
@@ -92,6 +114,44 @@ pub struct Note {
     pub target: TilePos,
     pub at: u64,
     mode: u8,
+    #[serde(default, skip_serializing_if = "Evidence::plain")]
+    pub evidence: Evidence,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub enum Evidence {
+    #[default]
+    Place,
+    Step(StepMark),
+    Removed(u8),
+}
+
+impl Evidence {
+    fn plain(&self) -> bool { *self == Self::Place }
+
+    pub(super) fn modes(self) -> u8 {
+        match self {
+            Self::Removed(0) => 0,
+            Self::Removed(1) => 0b1010,
+            _ => 0b1110,
+        }
+    }
+}
+
+/// An actual contiguous edge. It is stored at fixed size until the corresponding
+/// physical task succeeds, at which point it is eligible for a rendered trace.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct StepMark {
+    pub from: TilePos,
+    pub to: TilePos,
+}
+
+impl StepMark {
+    pub(super) fn valid(self) -> bool {
+        self.from.index().is_some() && self.to.index().is_some()
+            && self.from.x.abs_diff(self.to.x) + self.from.y.abs_diff(self.to.y) == 1
+    }
 }
 
 impl Note {
@@ -122,6 +182,7 @@ impl Notes {
         target: TilePos,
         now: u64,
         mode: u8,
+        evidence: Evidence,
     ) -> Option<(usize, Note)> {
         let note = Note {
             kind,
@@ -129,12 +190,14 @@ impl Notes {
             target,
             at: now,
             mode,
+            evidence,
         };
         if let Some((id, previous)) = self.0.iter().enumerate().find_map(|(id, entry)| {
             let entry = (*entry)?;
             (entry.kind == kind
                 && entry.actor == actor
                 && entry.target == target
+                && entry.evidence == evidence
                 && entry.expires() > now)
                 .then_some((id, entry))
         }) {
@@ -165,6 +228,13 @@ impl Notes {
                 && note.at <= now
                 && note.target.index().is_some()
                 && crate::legacy_content::actor_can_record(note.kind.base(), note.actor)
+                && match (note.kind, note.evidence) {
+                    (Observation::PassingTrail | Observation::KitchenDetour, Evidence::Step(step)) => step.valid(),
+                    (Observation::ReclaimedGround, Evidence::Removed(amount)) => (1..=3).contains(&amount),
+                    (Observation::PassingTrail | Observation::KitchenDetour | Observation::ReclaimedGround, _) => false,
+                    (_, Evidence::Place) => true,
+                    _ => false,
+                }
         })
     }
 }

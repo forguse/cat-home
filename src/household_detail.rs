@@ -11,7 +11,7 @@ pub(super) enum Detail {
     Stretch(TilePos),
     Shelter(TilePos),
     DryCoat { stand: TilePos, lamp: TilePos },
-    NoticeLight { stand: TilePos, spell: u64 },
+    NoticeLight { stand: TilePos, spell: u64, #[serde(default)] focus: Option<TilePos> },
     RegisterHarvest(TilePos),
     FileRepair { stand: TilePos, plot: u8 },
     WatchHarvest { stand: TilePos, plot: u8, farmer: u8, ends: u64 },
@@ -431,6 +431,8 @@ impl Detail {
     pub(super) fn valid(self) -> bool {
         self.stand().index().is_some() && match self {
             Self::DryCoat { stand, lamp } => lamp.index().is_some() && Cell::from(stand).distance(Cell::from(lamp)) == 1,
+            Self::NoticeLight { stand, focus, .. } => focus.is_none_or(|tile|
+                tile.index().is_some() && Cell::from(stand).distance(Cell::from(tile)) <= 1),
             Self::FileRepair { plot, .. } => usize::from(plot) < village::ORIGINAL_VILLAGE_PLOTS && plot != grain::FIELD,
             Self::WatchHarvest { farmer, plot, .. } => farmer < 2 && usize::from(plot) < village::VILLAGE_PLOT_CAP
                 && plot != grain::FIELD,
@@ -535,7 +537,11 @@ struct CatYield { worker: u8, origin: TilePos, shoulder: TilePos, expires: u64, 
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
-struct RainPatrol { spot: u8, shelter: TilePos, expires: u64, arrived: bool, resumed: bool }
+struct RainPatrol {
+    spot: u8, shelter: TilePos, expires: u64, arrived: bool, resumed: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    arrived_at: Option<u64>,
+}
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -579,7 +585,9 @@ impl State {
                 && (!mark.passed || mark.aside) && mark.expires <= now.saturating_add(20 * MINUTE))
             && self.rain_patrol.is_none_or(|route| usize::from(route.spot) < village::VILLAGE_CAT_SPOTS
                 && route.expires <= now.saturating_add(6 * HOUR) && route.shelter.index().is_some()
-                && (!route.resumed || route.arrived))
+                && (!route.resumed || route.arrived)
+                && route.arrived_at.is_none_or(|at| route.arrived && at <= now && at <= route.expires
+                    && LivingWorld::weather_at(at) == YardWeather::Rain))
             && self.posted_shift.is_none_or(|(project, next)| usize::from(project) < CHAPTERS.len()
                 && next <= now.saturating_add(7 * DAY_MS))
             && self.planter_joints.iter().enumerate().all(|(i, progress)| progress.is_none_or(|(n, section)| {
@@ -732,7 +740,8 @@ impl LivingWorld {
         { return false; }
         if !self.begin(i, Task::Detail(Detail::Shelter(shelter.tile()))) { return false; }
         self.village.as_mut().unwrap().family_routines.detail.rain_patrol = Some(RainPatrol {
-            spot, shelter: shelter.tile(), expires: self.now_ms + 6 * HOUR, arrived: false, resumed: false,
+            spot, shelter: shelter.tile(), expires: self.now_ms + 6 * HOUR, arrived: false,
+            resumed: false, arrived_at: None,
         });
         true
     }
@@ -753,7 +762,16 @@ impl LivingWorld {
             && route.spot == spot && route.resumed && route.expires >= self.now_ms
         {
             state.family_routines.detail.rain_patrol = None;
-            self.record_household_completion("S04", i, route.shelter, LegacyPlace::Front);
+            if let Some(arrived_at) = route.arrived_at {
+                let mut event = self.completion_context("S04", LegacyActor::Household(i as u8),
+                    route.shelter, route.shelter, LegacyPlace::Front, 1, None);
+                event.now_ms = arrived_at;
+                event.weather = 2;
+                event.season = ((arrived_at / DAY_MS / 28) % 4) as u8;
+                self.record_observation_effect(Observation::RainShelter, event, ObservationEvidence::Place);
+            } else {
+                self.record_household_completion("S04", i, route.shelter, LegacyPlace::Front);
+            }
         }
     }
 
@@ -1046,7 +1064,7 @@ impl LivingWorld {
     fn current_bright_spell(&self) -> Option<u64> {
         let spell = self.now_ms / WEATHER_BLOCK;
         (spell > 0 && self.now_ms % WEATHER_BLOCK < 9 * MINUTE
-            && (6 * HOUR..18 * HOUR).contains(&(self.now_ms % DAY_MS))
+            && (6 * HOUR..19 * HOUR).contains(&(self.now_ms % DAY_MS))
             && Self::weather_at((spell - 1) * WEATHER_BLOCK) == YardWeather::Clouds
             && self.weather() == YardWeather::Clear).then_some(spell)
     }
@@ -1055,11 +1073,23 @@ impl LivingWorld {
         let actor = &self.actors[i];
         let state = self.village.as_ref()?;
         let spell = self.current_bright_spell()?;
-        (!actor.inside && !actor.outside && actor.carried.is_none() && actor.tool.is_none()
+        if !(!actor.inside && !actor.outside && actor.carried.is_none() && actor.tool.is_none()
             && actor.hunger < 60 && actor.thirst < 60
             && !matches!(self.ground(actor.cell.0.into(), actor.cell.1.into()), Ground::Building | Ground::Water)
-            && state.family_routines.detail.bright_seen[i] != Some(spell))
-            .then_some(Task::Detail(Detail::NoticeLight { stand: actor.cell.tile(), spell }))
+            && state.family_routines.detail.bright_seen[i] != Some(spell)) {
+            return None;
+        }
+        let stand = actor.cell.tile();
+        let rotation = (spell as usize + i) % 3;
+        let focus = [(0, 0), (-1, 0), (1, 0)].into_iter().cycle().skip(rotation).take(3)
+            .filter_map(|(dx, dy)| stand.offset(dx, dy))
+            .filter(|tile| matches!(self.ground(tile.x.into(), tile.y.into()), Ground::Path | Ground::Grass | Ground::Soil))
+            .find(|&tile| {
+                let event = self.completion_context("S12", LegacyActor::Household(i as u8),
+                    stand, tile, LegacyPlace::Front, 1, None);
+                self.legacy_behaviors.retained_mode(event).is_some()
+            });
+        Some(Task::Detail(Detail::NoticeLight { stand, spell, focus }))
     }
 
     pub(super) fn cat_detail(&self) -> Option<Task> {
@@ -1183,6 +1213,7 @@ impl LivingWorld {
                 detail.cat_shelter_spell = Some(spell);
                 if let Some(route) = &mut detail.rain_patrol && route.shelter == at && route.expires >= self.now_ms {
                     route.arrived = true;
+                    route.arrived_at.get_or_insert(self.now_ms);
                 }
                 ("A01-50", at)
             }
@@ -1191,9 +1222,9 @@ impl LivingWorld {
                 detail.cat_wet_at = None;
                 ("A01-51", lamp)
             }
-            Detail::NoticeLight { stand, spell } if light == Some(spell) && detail.bright_seen[i] != Some(spell) => {
+            Detail::NoticeLight { stand, spell, focus } if light == Some(spell) && detail.bright_seen[i] != Some(spell) => {
                 detail.bright_seen[i] = Some(spell);
-                ("S12", stand)
+                ("S12", focus.unwrap_or(stand))
             }
             Detail::RegisterHarvest(at) if at == village::poi("home_table").tile()
                 && matches!(weather, YardWeather::Clear | YardWeather::Clouds)
@@ -1271,6 +1302,7 @@ impl LivingWorld {
         } else { LegacyPlace::Front };
         let observation = match action {
             Detail::Groom(_) => Observation::GroomPause,
+            Detail::NoticeLight { .. } => Observation::CloudBreak,
             Detail::RegisterHarvest(_) => Observation::HarvestTally,
             Detail::WatchHarvest { .. } => Observation::CatWatchesHarvest,
             Detail::PostShift { .. } => Observation::WorkNotice,

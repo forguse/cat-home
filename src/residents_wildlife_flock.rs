@@ -4,7 +4,7 @@ use super::{
     route_tile, scenery_here,
 };
 use crate::{
-    living_world::{LivingWorld, Point, YardWeather},
+    living_world::{LivingWorld, Point, YardSeason, YardWeather},
     map_data::{TilePos, WILLOW_VILLAGE},
 };
 use serde::{Deserialize, Serialize};
@@ -21,6 +21,7 @@ enum Leg {
     Descent,
     Circle,
     Alternate,
+    DawnCall,
     Perched,
     Return,
 }
@@ -61,7 +62,7 @@ fn waypoint(leg: Leg) -> [Point; 2] {
         Leg::Approach => [overhead(-2, -8), overhead(6, -20)],
         Leg::Descent => [perch(RAIL), overhead(-4, -19)],
         Leg::Circle => [perch(RAIL), overhead(-20, -12)],
-        Leg::Alternate | Leg::Perched => [perch(RAIL), perch(ALTERNATE)],
+        Leg::Alternate | Leg::DawnCall | Leg::Perched => [perch(RAIL), perch(ALTERNATE)],
         Leg::Return => BIRDS.map(|id| point(route_tile(id, 0))),
     }
 }
@@ -109,8 +110,9 @@ impl Pair {
                 edges[0].end = end;
                 edges[1].end = end;
             }
-            Leg::Perched => {
-                edges = positions.map(|at| Edge::hold(at, now, 4 * MINUTE));
+            Leg::DawnCall | Leg::Perched => {
+                let duration = if leg == Leg::DawnCall { MINUTE } else { 4 * MINUTE };
+                edges = positions.map(|at| Edge::hold(at, now, duration));
             }
             _ => {}
         }
@@ -120,6 +122,16 @@ impl Pair {
     fn deadline(self) -> u64 {
         self.edges[0].end.max(self.edges[1].end)
     }
+}
+
+fn dawn_window(world: &LivingWorld) -> bool {
+    world.season() == YardSeason::Autumn && (420..450).contains(&world.minute_of_day())
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub(super) enum Landing {
+    Shared,
+    WithDawnCall,
 }
 
 impl State {
@@ -157,7 +169,7 @@ impl State {
         world: &LivingWorld,
         may_start: bool,
         sources: [Point; 2],
-    ) -> bool {
+    ) -> Option<Landing> {
         let now = world.world_ms();
         let day = now / DAY_MS;
         let can_fly = open(world)
@@ -167,13 +179,14 @@ impl State {
         let Some(pair) = self.birds else {
             if may_start
                 && self.observed_day != Some(day)
-                && (480..500).contains(&(now % DAY_MS / MINUTE))
+                && ((480..500).contains(&world.minute_of_day())
+                    || dawn_window(world) && world.minute_of_day() < 422)
                 && can_fly
             {
                 self.observed_day = Some(day);
                 self.birds = Some(Pair::transition(Leg::Approach, sources, now));
             }
-            return false;
+            return None;
         };
         if !can_fly && pair.leg != Leg::Return {
             self.birds = Some(Pair::transition(
@@ -181,16 +194,17 @@ impl State {
                 pair.edges.map(|edge| edge.position(now)),
                 now,
             ));
-            return false;
+            return None;
         }
         if now < pair.deadline() {
-            return false;
+            return None;
         }
         let next = match pair.leg {
             Leg::Approach => Leg::Descent,
             Leg::Descent => Leg::Circle,
             Leg::Circle => Leg::Alternate,
-            Leg::Alternate => Leg::Perched,
+            Leg::Alternate if dawn_window(world) => Leg::DawnCall,
+            Leg::Alternate | Leg::DawnCall => Leg::Perched,
             Leg::Perched => Leg::Return,
             Leg::Return => {
                 self.birds = None;
@@ -198,11 +212,23 @@ impl State {
                     at: now,
                     waypoint: 0,
                 });
-                return false;
+                return None;
             }
         };
         self.birds = Some(Pair::transition(next, pair.edges.map(|edge| edge.to), now));
-        next == Leg::Perched
+        (next == Leg::Perched).then_some(if pair.leg == Leg::DawnCall && dawn_window(world) {
+            Landing::WithDawnCall
+        } else {
+            Landing::Shared
+        })
+    }
+
+    pub(super) fn call_marker(&self) -> Option<WildlifeVisual> {
+        self.birds.filter(|pair| pair.leg == Leg::DawnCall).map(|_| WildlifeVisual {
+            sprite: "wild_sparrow_chirp",
+            position: perch(RAIL),
+            facing_left: false,
+        })
     }
 
     pub(super) fn visual(&self, id: usize, world: &LivingWorld) -> Option<WildlifeVisual> {
@@ -210,7 +236,7 @@ impl State {
         let pair = self.birds?;
         let now = world.world_ms();
         let edge = pair.edges[i];
-        let perched = pair.leg == Leg::Perched
+        let perched = matches!(pair.leg, Leg::DawnCall | Leg::Perched)
             || i == 0
                 && matches!(pair.leg, Leg::Descent | Leg::Circle | Leg::Alternate)
                 && now >= edge.end;
@@ -240,6 +266,51 @@ mod tests {
     use super::*;
 
     #[test]
+    fn autumn_flock_leaves_a_paired_signal_only_after_both_birds_land_and_hold() {
+        for (weather, code) in [
+            (YardWeather::Clear, "A04-10+A09~00152"),
+            (YardWeather::Clouds, "A04-10+A09~01152"),
+        ] {
+            let (day, until) = (56..84).map(|day| (day, day * DAY_MS + 7 * 60 * MINUTE))
+                .find(|&(_, at)| LivingWorld::weather_at(at) == weather).unwrap();
+            let mut world = LivingWorld::new_village_wall_ms(0);
+            let mut life = crate::residents::VillageLife::default();
+            let seek = |world: &mut LivingWorld, to| {
+                world.queue_world_time(to - world.world_ms());
+                while !world.advance_pending_to(to) {}
+            };
+            seek(&mut world, until - 60 * MINUTE);
+            life.advance(&mut world);
+            while world.world_ms() < until {
+                let next = life.wildlife.deadline().min(until);
+                seek(&mut world, next);
+                life.advance(&mut world);
+            }
+            assert!(!world.legacy_behaviors().observed_ids().any(|id| id == code));
+            // Retain normal resident/wildlife scheduling through the full ascent,
+            // shared approach, yielding to the lower bird, and minute-long call.
+            let mut saw_call = false;
+            while world.world_ms() < day * DAY_MS + 450 * MINUTE {
+                let to = world.world_ms() + 10_000;
+                seek(&mut world, to);
+                life.advance(&mut world);
+                if life.wildlife.flock.call_marker().is_some() {
+                    saw_call = true;
+                    assert_ne!(
+                        life.wildlife.visual(SPARROW, &world).unwrap().position,
+                        life.wildlife.visual(SWALLOW, &world).unwrap().position,
+                    );
+                }
+                if world.legacy_behaviors().observed_ids().any(|id| id == code) { break; }
+            }
+            assert!(saw_call, "both birds never reached the dawn call for {code}");
+            assert!(world.legacy_behaviors().observed_ids().any(|id| id == code), "{code}");
+            let note = world.active_village_observations().find(|n| n.kind == crate::living_world::Observation::SparrowCall).unwrap();
+            assert_eq!((note.target, note.expires() - note.at), (RAIL, 15 * MINUTE));
+        }
+    }
+
+    #[test]
     fn both_birds_can_land_only_after_the_high_one_clears_the_shared_rail() {
         let mut world = LivingWorld::new_village_wall_ms(0);
         let mut state = State::default();
@@ -260,7 +331,7 @@ mod tests {
             seek(&mut world, start + (i + 1) * DAY_MS);
         }
         let sources = BIRDS.map(|id| point(route_tile(id, 0)));
-        assert!(!state.advance(&world, true, sources));
+        assert_eq!(state.advance(&world, true, sources), None);
         assert_eq!(state.birds.unwrap().leg, Leg::Approach);
         for leg in [Leg::Descent, Leg::Circle, Leg::Alternate, Leg::Perched] {
             seek(&mut world, state.deadline());
@@ -269,7 +340,7 @@ mod tests {
                 serde_json::from_slice(&serde_json::to_vec(&state).unwrap()).unwrap();
             assert_eq!(
                 reopened.advance(&world, false, sources),
-                leg == Leg::Perched
+                (leg == Leg::Perched).then_some(Landing::Shared)
             );
             let after = BIRDS.map(|id| reopened.visual(id, &world).unwrap().position);
             assert_eq!(before, after);

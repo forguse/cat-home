@@ -1203,15 +1203,31 @@ impl LivingView {
                 self.pixel(x - dx, y - dy, ink);
             }
         }
-        for signal in world.active_village_observations().filter(|note| {
-            note.kind == crate::living_world::Observation::FallingTree
-        }) {
-            let (x, y) = local(point(signal.target), origin);
+        for signal in world.active_village_observations() {
+            use crate::living_world::{Observation, ObservationEvidence};
+            let (tile, ink) = match signal.evidence {
+                ObservationEvidence::Step(step) => (step.from, [125, 105, 74]),
+                ObservationEvidence::Removed(_) => (signal.target, [152, 120, 82]),
+                ObservationEvidence::Place => match signal.kind {
+                    Observation::FallingTree => (signal.target, [161, 116, 57]),
+                    Observation::CloudBreak => (signal.target, [205, 174, 101]),
+                    Observation::RainShelter => (signal.target, [133, 156, 149]),
+                    Observation::FishingWater => (signal.target, [120, 174, 173]),
+                    _ => continue,
+                },
+            };
+            let (x, y) = local(point(tile), origin);
             if clip(self, (x, y), (10, 8), 0) {
-                // A small ochre ground marker at the real landing point.
-                let ink = [161, 116, 57];
-                for (dx, dy) in [(-2, 2), (-1, 1), (0, 0), (1, 1), (2, 2), (0, 2)] {
+                if let ObservationEvidence::Step(step) = signal.evidence {
+                    let dx = (i32::from(step.to.x) - i32::from(step.from.x)).signum();
+                    let dy = (i32::from(step.to.y) - i32::from(step.from.y)).signum();
                     self.pixel(x + dx, y + dy, ink);
+                    self.pixel(x + dx * 2, y + dy * 2, ink);
+                    self.pixel(x - dx + dy, y - dy - dx, ink);
+                } else {
+                    for (dx, dy) in [(-2, 2), (-1, 1), (0, 0), (1, 1), (2, 2), (0, 2)] {
+                        self.pixel(x + dx, y + dy, ink);
+                    }
                 }
             }
         }

@@ -34,7 +34,7 @@ pub(in super::super) enum Proof {
     SnailDryRest,
     FireflyResume(TilePos, TilePos),
     FireflyDawn(TilePos),
-    SharedLanding,
+    SharedLanding { dawn_call: bool },
     Tailwind { from: TilePos, to: TilePos },
     Acorn(super::acorns::Proof),
     SwallowFoundation { source: TilePos, eave: TilePos },
@@ -52,7 +52,10 @@ impl Proof {
             Self::RabbitResumed { from, cover } => {
                 ("A07-09", rabbit::RABBIT, from, cover, LegacyPlace::Front)
             }
-            Self::SharedLanding => {
+            Self::SharedLanding { dawn_call } => {
+                if dawn_call {
+                    world.record_sparrow_call(super::flock::RAIL, Some(super::flock::ALTERNATE));
+                }
                 world.record_legacy_completion(
                     "S05",
                     LegacyActor::Wildlife(super::SWALLOW as u8),

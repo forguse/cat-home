@@ -11,6 +11,7 @@ GENERATED = ROOT / 'src/legacy_bindings.rs'
 REGISTER = ROOT / 'assets/maps/village-legacy-bindings.tsv'
 EXACT = ROOT / 'assets/maps/village-legacy-exact-scenes.tsv'
 IDENTITY_ORDER_SHA256 = '4f6828a20bce81b04b77daca418a9ad9da7385fa276b11bdaac08241a01c164f'
+VERIFIED_EXTRA_PARTNERS = {'A04-10+A09~00152', 'A04-10+A09~01152'}
 EXCLUDED_SCENES = {
     # Dusk ends at 20:00. The 18:00 rain spell cannot follow another wet
     # spell under the deterministic weather rule, and reaches 90-minute
@@ -60,8 +61,10 @@ def compile_tables(family_rows=None):
     for code in exact:
         assert code in scene_index, f'unknown exact scene {code}'
         original = bases[scene_index[code][1]]
-        assert scene_index[code][7] == original[5], f'unproven exact partner {code}'
-        assert not (scene_index[code][3] == '2' and scene_index[code][4] == '2'), f'impossible winter rain {code}'
+        partner = scene_index[code][7]
+        assert partner == original[5] or code in VERIFIED_EXTRA_PARTNERS, f'unproven exact partner {code}'
+        weather, season = scene_index[code][3:5]
+        assert not (weather == '2' and season == '2' or weather == '3' and season != '2'), f'impossible climate {code}'
         assert code not in EXCLUDED_SCENES, f'unreachable exact scene {code}'
     groups, rules, report = [], [], []
     labels = {}
@@ -102,7 +105,7 @@ def compile_tables(family_rows=None):
             if w == 2 and s == 2:
                 continue
             # No implicit nearby person can create a paired completed action.
-            if partner != original[5]:
+            if partner != original[5] and not (code in exact and code in VERIFIED_EXTRA_PARTNERS):
                 continue
             rules.append((code, ordinal[code], p, w, s, l, m,
                           255 if partner == '-' else role(partner), label))

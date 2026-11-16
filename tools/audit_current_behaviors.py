@@ -18,6 +18,21 @@ ROOT = Path(__file__).resolve().parents[1]
 REVIEWS = ROOT / 'docs/behavior-review-1.1.7'
 TABLE = ROOT / 'docs/current-behavior-audit.tsv'
 SUMMARY = ROOT / 'docs/current-behavior-counts.json'
+PREVIOUS_VARIANTS = 168
+PRIOR_SCOPE = 1296
+VARIANT_STATUSES = ('与现版气候矛盾', '待实现指定双方互动',
+                    '待匹配附加效果与时空条件', '待实现增强效果或持久痕迹')
+
+CURRENT_PRODUCERS = {
+    'S01': ('两位成员实际错身并继续各自路线', '确认双方各自到达原目标后，在走过的可留痕地面保留足迹。'),
+    'S04': ('猫在雨中实际抵达屋檐下', '雨后续走并到达原巡逻终点，依据到达檐下时的真实天气记下避雨。'),
+    'S09': ('实际清理、收集和搬运', '物资经有效库存手续归仓后，在清理点保存数量和现场痕迹。'),
+    'S12': ('真实天气由阴转晴时停步', '看向可达的附近位置，结束观察后保留短期记录。'),
+    'S14': ('空餐柜后实际改道做饭', '食材实际支付并完成做饭后，留下改道中走过的地面痕迹。'),
+    'H01-29': ('实际取鱼竿并在合法岸边下竿', '下竿时确认相邻真实水面，按当时情境留下短时涟漪。'),
+    'A04-10': ('麻雀飞过屋脊到檐边鸣叫，秋季可与燕子错落停在相邻栏杆', '鸣叫实际结束后才留下现场信号；双鸟场景要求燕子真的共同停栖。'),
+}
+
 
 
 def read(name):
@@ -68,6 +83,8 @@ def build():
     for old in authored:
         code, base = old['旧ID'], old['基础ID']
         supported, producer, detail, context = caps[base]
+        if base in CURRENT_PRODUCERS:
+            producer, detail = CURRENT_PRODUCERS[base]
         is_base = code == base
         if code in bound:
             status = '已接入基础行为' if is_base else '已接入精确条件变体'
@@ -111,10 +128,16 @@ def build():
                'remaining_variants': 4576 - variants,
                'previous_1_1_6': {'base': 46, 'variants': 41, 'total': 87, 'remaining': 4913},
                'previous_1_1_7': {'base': 100, 'variants': 80, 'total': 180, 'remaining': 4820},
+               'previous_1_1_8': {'base': 100, 'variants': PREVIOUS_VARIANTS, 'total': 268, 'remaining': 4732},
                'new_variants_since_1_1_7': variants - 80,
+               'new_variants_since_1_1_8': variants - PREVIOUS_VARIANTS,
+               'remaining_of_1296': {key: counts[key] for key in VARIANT_STATUSES},
+               'remaining_of_1296_total': sum(counts[key] for key in VARIANT_STATUSES),
                'newly_connected': base_count + variants - 87,
                'status_counts': dict(sorted(counts.items())),
                'counting_note': '基础行为为有实际执行流程的旧定义；精确变体复用动作但须额外条件/结果，不能说成独立动画。未接条目不是永久不能开发。'}
+    if version == '1.1.9':
+        assert summary['remaining_of_1296_total'] + summary['new_variants_since_1_1_8'] == PRIOR_SCOPE
     return rows, summary
 
 

@@ -551,7 +551,9 @@ impl State {
         let positions = [SPARROW, SWALLOW]
             .map(|id| super::routine_animal(id, world, self.routine_phase(id, now)).position);
         let yield_landing = self.flock.advance(world, probe && both, positions)
-            .then_some(Receipt::Route(routes::Proof::SharedLanding));
+            .map(|landing| Receipt::Route(routes::Proof::SharedLanding {
+                dawn_call: landing == flock::Landing::WithDawnCall,
+            }));
         let nest = self.nest.advance(
             world,
             occupied,
@@ -947,8 +949,17 @@ impl State {
         })
     }
 
-    pub(super) fn marks(&self, world: &LivingWorld) -> impl Iterator<Item = WildlifeVisual> + '_ {
-        self.habitat.marks(world).chain(self.routes.marks(world)).chain(self.nest.marks(world)).chain(self.acorns.marks(world).into_iter().flatten())
+    pub(super) fn marks<'a>(&'a self, world: &'a LivingWorld) -> impl Iterator<Item = WildlifeVisual> + 'a {
+        let calls = world.active_village_observations().filter_map(|note| {
+            (note.kind == crate::living_world::Observation::SparrowCall).then(|| WildlifeVisual {
+                sprite: "wild_sparrow_chirp",
+                position: Point { y: point(note.target).y - 6.0, ..point(note.target) },
+                facing_left: false,
+            })
+        });
+        self.habitat.marks(world).chain(self.flock.call_marker()).chain(calls)
+            .chain(self.routes.marks(world)).chain(self.nest.marks(world))
+            .chain(self.acorns.marks(world).into_iter().flatten())
     }
 }
 

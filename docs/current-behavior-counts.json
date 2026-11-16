@@ -1,13 +1,13 @@
 {
-  "version": "1.1.8",
+  "version": "1.1.9",
   "original_ids": 5000,
   "original_base": 424,
   "original_variants": 4576,
   "registered_base": 100,
-  "registered_variants": 168,
-  "registered_total": 268,
-  "remaining_total": 4732,
-  "remaining_variants": 4408,
+  "registered_variants": 294,
+  "registered_total": 394,
+  "remaining_total": 4606,
+  "remaining_variants": 4282,
   "previous_1_1_6": {
     "base": 46,
     "variants": 41,
@@ -20,17 +20,31 @@
     "total": 180,
     "remaining": 4820
   },
-  "new_variants_since_1_1_7": 88,
-  "newly_connected": 181,
+  "previous_1_1_8": {
+    "base": 100,
+    "variants": 168,
+    "total": 268,
+    "remaining": 4732
+  },
+  "new_variants_since_1_1_7": 214,
+  "new_variants_since_1_1_8": 126,
+  "remaining_of_1296": {
+    "与现版气候矛盾": 164,
+    "待实现指定双方互动": 223,
+    "待匹配附加效果与时空条件": 244,
+    "待实现增强效果或持久痕迹": 539
+  },
+  "remaining_of_1296_total": 1170,
+  "newly_connected": 307,
   "status_counts": {
     "与现版气候矛盾": 164,
     "依赖未完成的基础流程": 3112,
     "基础流程待开发": 324,
     "已接入基础行为": 100,
-    "已接入精确条件变体": 168,
-    "待匹配附加效果与时空条件": 285,
-    "待实现增强效果或持久痕迹": 622,
-    "待实现指定双方互动": 225
+    "已接入精确条件变体": 294,
+    "待匹配附加效果与时空条件": 244,
+    "待实现增强效果或持久痕迹": 539,
+    "待实现指定双方互动": 223
   },
   "counting_note": "基础行为为有实际执行流程的旧定义；精确变体复用动作但须额外条件/结果，不能说成独立动画。未接条目不是永久不能开发。"
 }
