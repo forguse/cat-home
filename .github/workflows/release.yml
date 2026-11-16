@@ -3,9 +3,9 @@ name: Build Windows and publish on request
 on:
   push:
     branches: [main]
-    paths: ['Cargo.*', build.rs, 'src/**', 'examples/**', 'assets/**', 'tools/**', .github/workflows/release.yml]
+    paths: ['Cargo.*', build.rs, 'src/**', 'examples/**', 'assets/**', 'tools/**', 'docs/legacy-cast-rule-audit.tsv', 'docs/current-behavior-*', .github/workflows/release.yml]
   pull_request:
-    paths: ['Cargo.*', build.rs, 'src/**', 'examples/**', 'assets/**', 'tools/**', .github/workflows/release.yml]
+    paths: ['Cargo.*', build.rs, 'src/**', 'examples/**', 'assets/**', 'tools/**', 'docs/legacy-cast-rule-audit.tsv', 'docs/current-behavior-*', .github/workflows/release.yml]
   workflow_dispatch:
 
 permissions:
