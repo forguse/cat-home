@@ -1269,6 +1269,17 @@ impl LivingWorld {
         let parcel = if matches!(action, Detail::PostShift { .. } | Detail::SmellBloom { .. }) {
             LegacyPlace::Expanded
         } else { LegacyPlace::Front };
-        self.record_household_completion(base, i, target, parcel);
+        let observation = match action {
+            Detail::Groom(_) => Observation::GroomPause,
+            Detail::RegisterHarvest(_) => Observation::HarvestTally,
+            Detail::WatchHarvest { .. } => Observation::CatWatchesHarvest,
+            Detail::PostShift { .. } => Observation::WorkNotice,
+            Detail::Startled { .. } => Observation::FallingTree,
+            _ => {
+                self.record_household_completion(base, i, target, parcel);
+                return;
+            }
+        };
+        self.record_household_observation(observation, i, target, parcel);
     }
 }

@@ -1203,6 +1203,18 @@ impl LivingView {
                 self.pixel(x - dx, y - dy, ink);
             }
         }
+        for signal in world.active_village_observations().filter(|note| {
+            note.kind == crate::living_world::Observation::FallingTree
+        }) {
+            let (x, y) = local(point(signal.target), origin);
+            if clip(self, (x, y), (10, 8), 0) {
+                // A small ochre ground marker at the real landing point.
+                let ink = [161, 116, 57];
+                for (dx, dy) in [(-2, 2), (-1, 1), (0, 0), (1, 1), (2, 2), (0, 2)] {
+                    self.pixel(x + dx, y + dy, ink);
+                }
+            }
+        }
         let phases = world.phase_mask();
         let rect = ArtRect {
             x: cx * 2,

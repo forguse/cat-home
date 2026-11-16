@@ -332,4 +332,41 @@ mod tests {
         assert_eq!(reopened.advance(&world, &[], true, false, root()), None);
         assert_eq!(reopened.courses, 1);
     }
+
+    #[test]
+    fn spring_revisit_records_the_same_occupied_nest_in_both_weather_windows() {
+        use crate::living_world::Observation;
+        let initial = LivingWorld::new_village_wall_ms(0);
+        let sample = |now: u64| {
+            let mut data = serde_json::to_value(&initial).unwrap();
+            data["now_ms"] = now.into();
+            data["target_ms"] = now.into();
+            serde_json::from_value::<LivingWorld>(data).unwrap()
+        };
+        for (id, weather) in [("A09-08~10042", YardWeather::Clear), ("A09-08~11042", YardWeather::Clouds)] {
+            let mut world = (112..123).map(|day| sample(day * DAY_MS + 10 * HOUR))
+                .find(|world| world.weather() == weather && animal_visible(SWALLOW, ANIMALS[SWALLOW], world))
+                .expect("regular spring visit window");
+            let mut nest = State {
+                wet: Some(false),
+                first_built_year: Some(0),
+                courses: 2,
+                ..State::default()
+            };
+            assert!(nest.valid(&world));
+            assert!(nest.advance(&world, &[], true, true, root()).is_none());
+            assert_eq!(nest.visit.unwrap().leg, Leg::Recognize);
+            world = sample(nest.deadline());
+            assert!(nest.advance(&world, &[], false, true, root()).is_none());
+            assert_eq!(nest.visit.unwrap().leg, Leg::Rest);
+            world = sample(nest.deadline());
+            nest.advance(&world, &[], false, true, root()).unwrap().record(&mut world);
+            assert!(world.legacy_behaviors().observed_ids().any(|seen| seen == id));
+            assert_eq!(nest.last_reused, Some(1));
+            assert_eq!(nest.courses, 2);
+            let note = world.active_village_observations().find(|note| note.kind == Observation::OldNest).unwrap();
+            assert_eq!(note.target, tile(ROOF.eave()));
+            assert_eq!(note.expires(), world.world_ms() + 4 * HOUR);
+        }
+    }
 }

@@ -225,6 +225,17 @@ fn group_of(ordinal: u16) -> Option<&'static Group> {
     })
 }
 
+fn actor_group(base: &str, actor: LegacyActor) -> Option<&'static Group> {
+    let role = actor.role()?;
+    let index = GROUPS.binary_search_by_key(&base, |g| g.base).ok()?;
+    let group = &GROUPS[index];
+    (group.roles & (1 << role) != 0).then_some(group)
+}
+
+pub(crate) fn actor_can_record(base: &str, actor: LegacyActor) -> bool {
+    actor_group(base, actor).is_some()
+}
+
 impl BehaviorLedger {
     pub fn is_empty(&self) -> bool {
         self.completed == 0
@@ -234,15 +245,31 @@ impl BehaviorLedger {
         self.seen[n / 2048][n / 64 % 32] & (1 << (n % 64)) != 0
     }
     pub fn record(&mut self, event: CompletedBehavior) -> bool {
-        let Some(role) = event.actor.role() else {
+        self.record_completion(event, true)
+    }
+
+    pub(crate) fn record_base(&mut self, event: CompletedBehavior) -> bool {
+        self.record_completion(event, false)
+    }
+
+    /// Only producers that can deliver each of these effects should call this.
+    /// The result proposes a mode for the real completion, it grants no effect.
+    pub(crate) fn retained_mode(&self, mut event: CompletedBehavior) -> Option<u8> {
+        let group = actor_group(event.base, event.actor)?;
+        RULES[group.start + 1..group.start + group.len].iter()
+            .filter(|rule| {
+                event.mode = rule.mode;
+                rule.matches(event)
+            })
+            .min_by_key(|rule| (self.seen(rule.ordinal), rule.mode, rule.ordinal))
+            .map(|rule| rule.mode)
+    }
+
+    fn record_completion(&mut self, event: CompletedBehavior, variants: bool) -> bool {
+        let Some(group) = actor_group(event.base, event.actor) else {
             return false;
         };
-        let Ok(index) = GROUPS.binary_search_by_key(&event.base, |g| g.base) else {
-            return false;
-        };
-        let group = &GROUPS[index];
-        if group.roles & (1 << role) == 0
-            || event.at.index().is_none()
+        if event.at.index().is_none()
             || event.target.index().is_none()
             || event.weather > 3
             || event.season > 3
@@ -259,7 +286,7 @@ impl BehaviorLedger {
         // are not invented to increase coverage.
         let selected = rows[1..]
             .iter()
-            .filter(|rule| rule.matches(event))
+            .filter(|rule| variants && rule.matches(event))
             .min_by_key(|rule| (self.seen(rule.ordinal), rule.ordinal))
             .unwrap_or(&rows[0]);
         if self.recent.iter().any(|last| {

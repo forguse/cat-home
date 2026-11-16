@@ -23,7 +23,7 @@ use windows_sys::Win32::Storage::FileSystem::{
 
 const MAX_SNAPSHOT: usize = 256 * 1024;
 const LANDSCAPE_REVISION: u8 = 1;
-const BEHAVIOR_REVISION: u8 = 3;
+const BEHAVIOR_REVISION: u8 = 4;
 const V4_FILE: &str = "world-v4.json";
 const COMPAT_FILE: &str = "world-compat-v3.json";
 const LIVE_PUMP_BUDGET: Duration = Duration::from_millis(6);
@@ -839,6 +839,19 @@ impl HomeHost {
             s.push_str(&self.world.landscape_summary());
             s.push_str("\n\n生活见闻：\n");
             s.push_str(&self.world.legacy_behaviors().summary());
+            let now = self.world.world_ms();
+            let mut observations = self.world.active_village_observations().collect::<Vec<_>>();
+            observations.sort_unstable_by_key(|note| std::cmp::Reverse(note.at));
+            if !observations.is_empty() {
+                s.push_str("\n\n仍可查看的现场记录：");
+            }
+            for note in observations.into_iter().take(6) {
+                let remaining = note.expires().saturating_sub(now).div_ceil(60_000);
+                s.push_str(&format!(
+                    "\n · {}：{}（地格 {}，{}，还保留 {} 分钟）",
+                    note.actor.name(), note.kind.label(), note.target.x, note.target.y, remaining,
+                ));
+            }
             if let Some((_, day)) = self.world.first_apple_bloom_note() {
                 s.push_str(&format!("\n花期手记：第 {} 个世界日，记下第一朵苹果花。", day));
             }
@@ -1205,7 +1218,7 @@ mod landscape_save_tests {
         let backup = root.join(format!("world-v4-behavior-r2-{:x}.json", Sha3_256::digest(&original)));
         assert_eq!(read_bytes(&backup).unwrap(), original);
         let saved = read_bytes(&root.join(V4_FILE)).unwrap();
-        assert_eq!(serde_json::from_slice::<serde_json::Value>(&saved).unwrap()["behavior_revision"], 3);
+        assert_eq!(serde_json::from_slice::<serde_json::Value>(&saved).unwrap()["behavior_revision"], BEHAVIOR_REVISION);
         let host = HomeHost::open(root.clone(), 0, false).unwrap();
         drop(host);
         assert_eq!(read_bytes(&root.join(V4_FILE)).unwrap(), saved);

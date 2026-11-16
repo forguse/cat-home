@@ -1,5 +1,5 @@
 //! Bounded continuity for the household's physical follow-up work.
-use super::{Actor, ActorKind, Cell, DAY_MS, Ground, HOUR, Item, LivingWorld, MINUTE, Outfit, Pose, Stage, Task, Tool, YardSeason, YardWeather, village};
+use super::{Actor, ActorKind, Cell, DAY_MS, Ground, HOUR, Item, LivingWorld, MINUTE, Observation, Outfit, Pose, Stage, Task, Tool, YardSeason, YardWeather, village};
 use crate::map_data::TilePos;
 use crate::legacy_content::{LegacyActor, LegacyPlace};
 use serde::{Deserialize, Serialize};
@@ -250,10 +250,10 @@ impl LivingWorld {
         if (6..21).contains(&hour) || !self.actors[i].inside || !self.is_village() {
             return;
         }
-        let (base, home) = if i < 2 && task == Task::Sleep {
-            ("H01-60", self.home_door(i))
+        let (observation, home) = if i < 2 && task == Task::Sleep {
+            (Observation::HouseholdNight, self.home_door(i))
         } else if i == ActorKind::Orange.index() && matches!(task, Task::CatSleepInside(_)) {
-            ("A01-10", self.home_door(0))
+            (Observation::CatNight, self.home_door(0))
         } else {
             return;
         };
@@ -262,7 +262,7 @@ impl LivingWorld {
         let state = &mut self.village.as_mut().expect("village sleep").family_routines;
         if state.night_entries[i] != Some(night) {
             state.night_entries[i] = Some(night);
-            self.record_household_completion(base, i, home.tile(), LegacyPlace::Front);
+            self.record_household_observation(observation, i, home.tile(), LegacyPlace::Front);
         }
     }
 
@@ -292,7 +292,7 @@ impl LivingWorld {
         {
             state.cat_napped_after = Some(meal);
             self.actors[i].stamina = self.actors[i].stamina.saturating_add(28).min(100);
-            self.record_household_completion("A01-08", i, at, LegacyPlace::Front);
+            self.record_household_observation(Observation::CatNap, i, at, LegacyPlace::Front);
         }
     }
 

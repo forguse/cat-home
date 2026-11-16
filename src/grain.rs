@@ -571,8 +571,9 @@ mod tests {
         let mut world = LivingWorld::new_village_wall_ms(0);
         let worker = ActorKind::Xiaohe.index();
         let plot = &WILLOW_VILLAGE.crops[usize::from(FIELD)];
-        world.now_ms = (5..30).map(|day| day * DAY_MS + 10 * HOUR)
-            .find(|&at| matches!(LivingWorld::weather_at(at), YardWeather::Clear | YardWeather::Clouds)).unwrap();
+        // Inspect an autumn-grown root before it is lifted in early winter.
+        world.now_ms = (84..98).map(|day| day * DAY_MS + 10 * HOUR)
+            .find(|&at| LivingWorld::weather_at(at) == YardWeather::Clouds).unwrap();
         let grain = &mut world.village.as_mut().unwrap().grain;
         grain.crop = Crop::RootGrowing;
         grain.growing_days = 3;
@@ -584,6 +585,9 @@ mod tests {
         let stock_before = world.stock.clone();
         world.commit(worker, inspect);
         assert_eq!(world.root_shoulder_visual(), Some((TilePos::new(plot.rect.x, plot.rect.y), 1)));
+        assert!(world.legacy_behaviors().observed_ids().any(|id| id == "H01-16~11202"));
+        let note = world.active_village_observations().find(|note| note.kind == Observation::RootCrop).unwrap();
+        assert_eq!(note.expires(), world.now_ms + 4 * HOUR);
         world.commit(worker, inspect);
         assert_eq!(world.stock, stock_before);
         let mut reopened: LivingWorld = serde_json::from_slice(&serde_json::to_vec(&world).unwrap()).unwrap();

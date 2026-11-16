@@ -54,22 +54,20 @@ impl Subject {
         valid_id && self.target.index().is_some() && self.easel.index().is_some()
     }
 
-    fn witness(self, world: &mut LivingWorld) {
+    fn witness(self, world: &mut LivingWorld) -> u64 {
         let (base, place) = match self.image {
             VillageArtSubject::Blossom(_) => ("H09-01", LegacyPlace::Expanded),
             VillageArtSubject::Reflection(_) => ("H09-06", LegacyPlace::Expanded),
-            VillageArtSubject::DuskSwatches(_) => ("H09-03", LegacyPlace::Nearby),
-            VillageArtSubject::DuskStreet(_) => return,
+            VillageArtSubject::DuskSwatches(_) => {
+                world.record_legacy_completion(
+                    "H09-03", LegacyActor::Resident(ARTIST as u8), self.easel,
+                    self.target, LegacyPlace::Nearby, 1, None,
+                );
+                return 0;
+            }
+            VillageArtSubject::DuskStreet(_) => return 0,
         };
-        world.record_legacy_completion(
-            base,
-            LegacyActor::Resident(ARTIST as u8),
-            self.easel,
-            self.target,
-            place,
-            1,
-            None,
-        );
+        world.record_village_exhibit(base, LegacyActor::Resident(ARTIST as u8), self.easel, self.target, place)
     }
 }
 
@@ -87,6 +85,8 @@ struct Work {
     stage: Stage,
     /// Panel 0..3 from the resident's own fixed reusable studio kit.
     panel: u8,
+    #[serde(default)]
+    display_days: u64,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
@@ -94,6 +94,8 @@ struct Work {
 struct Picture {
     image: VillageArtSubject,
     panel: u8,
+    #[serde(default)]
+    reserved_until: u64,
 }
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
@@ -166,6 +168,7 @@ impl State {
         for picture in self.gallery.iter().flatten() {
             if picture.panel >= 4
                 || panels & (1 << picture.panel) != 0
+                || picture.reserved_until > now.saturating_add(28 * DAY_MS)
                 || match picture.image {
                     VillageArtSubject::Blossom(tree) => tree >= 4,
                     VillageArtSubject::Reflection(level) => !(2..=4).contains(&level),
@@ -197,6 +200,8 @@ impl State {
             })
             && self.work.is_none_or(|work| {
                 work.panel < 4
+                    && matches!(work.display_days, 0 | 14 | 28)
+                    && (work.display_days == 0 || matches!(work.stage, Stage::CarryHome { finished: true }))
                     && panels & (1 << work.panel) == 0
                     && work.subject.valid()
                     && match work.stage {
@@ -208,6 +213,12 @@ impl State {
 
     pub(super) fn active(&self) -> bool {
         self.work.is_some() || self.leaf_work.is_some()
+    }
+
+    fn available_mount(&self, now: u64) -> Option<usize> {
+        let len = self.gallery.len();
+        (0..len).map(|offset| (usize::from(self.next_slot) + offset) % len)
+            .find(|&slot| self.gallery[slot].is_none_or(|picture| picture.reserved_until <= now))
     }
 
     pub(super) fn leaf_walk_valid(&self, walker: &Walker) -> bool {
@@ -396,11 +407,13 @@ impl State {
     ) -> Option<(TilePos, VillageArtSubject)> {
         if !self.active()
             && let Some(subject) = self.dusk_subject(world, now)
+            && (matches!(subject.image, VillageArtSubject::DuskSwatches(_)) || self.available_mount(now).is_some())
         {
             return Some((subject.easel, subject.image));
         }
         let day = now / DAY_MS;
         if self.active()
+            || self.available_mount(now).is_none()
             || self
                 .last_visit
                 .is_some_and(|last| day < last + MIN_VISIT_INTERVAL)
@@ -491,6 +504,9 @@ impl State {
         else {
             return false;
         };
+        if !matches!(subject.image, VillageArtSubject::DuskSwatches(_)) && self.available_mount(now).is_none() {
+            return false;
+        }
         // Three display mounts and one spare board. A fitted picture is never
         // used as the in-flight board. A retired picture returns to the same
         // porch rack at replacement, so tomorrow's work cannot create stock.
@@ -506,6 +522,7 @@ impl State {
             subject,
             stage: Stage::WalkToSubject,
             panel,
+            display_days: 0,
         });
         self.last_visit = Some(now / DAY_MS);
         walker.redirect(at, super::State::Outbound, now);
@@ -547,7 +564,7 @@ impl State {
             Stage::Paint { started }
                 if now >= started + DRAW_TIME && walker.at == work.subject.easel =>
             {
-                work.subject.witness(world);
+                work.display_days = work.subject.witness(world);
                 work.stage = Stage::CarryHome { finished: true };
                 walker.redirect(home, super::State::Outbound, now);
             }
@@ -558,29 +575,31 @@ impl State {
                         sampled_day: now / DAY_MS,
                         painted: false,
                     });
-                } else if finished {
+                } else if finished && let Some(slot) = self.available_mount(now) {
                     if let VillageArtSubject::DuskStreet(colors) = work.subject.image
                         && let Some(palette) = &mut self.palette
                         && palette.colors == colors
                     {
                         palette.painted = true;
                     }
-                    let replacement = self.gallery[usize::from(self.next_slot)].replace(Picture {
-                        image: work.subject.image,
-                        panel: work.panel,
-                    });
-                    self.next_slot = (self.next_slot + 1) % 3;
-                    if replacement.is_some() && self.gallery.iter().all(Option::is_some) {
-                        world.record_legacy_completion(
+                    let replacement_days = if self.gallery[slot].is_some() && self.gallery.iter().all(Option::is_some) {
+                        world.record_village_exhibit(
                             "H09-10",
                             LegacyActor::Resident(ARTIST as u8),
                             home,
                             home,
                             LegacyPlace::Nearby,
-                            1,
-                            None,
-                        );
-                    }
+                        )
+                    } else {
+                        0
+                    };
+                    let display_days = work.display_days.max(replacement_days);
+                    self.gallery[slot] = Some(Picture {
+                        image: work.subject.image,
+                        panel: work.panel,
+                        reserved_until: if display_days == 0 { 0 } else { now.saturating_add(display_days * DAY_MS) },
+                    });
+                    self.next_slot = ((slot + 1) % self.gallery.len()) as u8;
                 }
                 self.work = None;
                 walker.state = super::State::Inside;
@@ -747,6 +766,82 @@ mod tests {
             .unwrap();
         house["level"] = 2.into();
         serde_json::from_value(data).unwrap()
+    }
+
+    #[test]
+    fn weather_variants_keep_the_same_painted_board_on_display() {
+        use crate::living_world::YardWeather::{Clear, Clouds};
+        let cases = [
+            ("H09-01~11022", 0, 10, Clouds, 14),
+            ("H09-06~10102", 2, 10, Clear, 14),
+            ("H09-06~10223", 3, 10, Clear, 28),
+            ("H09-10~11143", 2, 10, Clouds, 28),
+            ("H09-10~21043", 0, 18, Clouds, 28),
+        ];
+        let mut initial = make_subjects(LivingWorld::new_village_wall_ms(0));
+        initial.set_test_town_age(60);
+        let home = house(ARTIST).door;
+        for (id, season, hour, weather, days) in cases {
+            let make_world = |now| {
+                let mut state = serde_json::to_value(&initial).unwrap();
+                state["now_ms"] = serde_json::Value::from(now);
+                state["target_ms"] = serde_json::Value::from(now);
+                serde_json::from_value::<LivingWorld>(state).unwrap()
+            };
+            let now = (21_505 + season * 28..21_504 + (season + 1) * 28)
+                .map(|day| day * DAY_MS + hour * HOUR + 10 * MINUTE)
+                .find(|&clock| make_world(clock).weather() == weather)
+                .unwrap();
+            let mut world = make_world(now);
+            let mut studio = State::default();
+            if id.starts_with("H09-10") {
+                studio.last_visit = Some(now / DAY_MS);
+                studio.gallery = [0, 1, 2].map(|panel| Some(Picture {
+                    image: VillageArtSubject::Blossom(panel),
+                    panel,
+                    reserved_until: 0,
+                }));
+            }
+            let subject = if hour == 18 {
+                studio.palette = Some(DuskPalette { colors: [1, 1, 0], sampled_day: now / DAY_MS - 1, painted: false });
+                let subject = studio.dusk_subject(&world, now).unwrap();
+                assert!(matches!(subject.image, VillageArtSubject::DuskStreet(_)));
+                subject
+            } else {
+                State::actual_subjects(&world).find(|subject| {
+                    if id.starts_with("H09-01") {
+                        matches!(subject.image, VillageArtSubject::Blossom(_))
+                    } else {
+                        matches!(subject.image, VillageArtSubject::Reflection(_))
+                    }
+                }).unwrap()
+            };
+            let mut walker = Walker::new(home, super::super::State::Inside);
+            assert!(studio.collect(&world, &mut walker, subject.easel, subject.image, now), "{id}");
+            let panel = studio.work.unwrap().panel;
+            assert_eq!(walker.target, subject.easel);
+            walker = Walker::new(subject.easel, super::super::State::AtWork);
+            studio.advance(&mut world, &mut walker, now);
+            let done = now + DRAW_TIME;
+            world = make_world(done);
+            studio.advance(&mut world, &mut walker, done);
+            assert_eq!(walker.target, home);
+            assert!(studio.carries_panel());
+            let bytes = serde_json::to_vec(&studio).unwrap();
+            let mut studio: State = serde_json::from_slice(&bytes).unwrap();
+            assert!(studio.valid(done));
+            walker = Walker::new(home, super::super::State::AtWork);
+            studio.advance(&mut world, &mut walker, done);
+            assert!(world.legacy_behaviors().observed_ids().any(|seen| seen == id), "{id}");
+            let slot = studio.gallery.iter().position(|entry| entry.is_some_and(|picture| picture.panel == panel)).unwrap();
+            let held = studio.gallery[slot].unwrap();
+            let until = done + days * DAY_MS;
+            assert_eq!(held.reserved_until, until, "{id}");
+            assert!(studio.visuals(done).any(|view| view.slot == Some(slot as u8) && view.subject == subject.image));
+            studio.next_slot = slot as u8;
+            assert_ne!(studio.available_mount(until - 1), Some(slot));
+            assert_eq!(studio.available_mount(until), Some(slot));
+        }
     }
 
     #[test]

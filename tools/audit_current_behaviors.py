@@ -9,6 +9,7 @@ import csv
 import io
 import json
 from pathlib import Path
+import tomllib
 
 import audit_cast_rules as original
 import compile_legacy_bindings as compiler
@@ -74,9 +75,10 @@ def build():
         elif not supported:
             status = '基础流程待开发' if is_base else '依赖未完成的基础流程'
             reason = detail
-        elif old['旧天气'] == 'rain' and old['旧季节'] == 'winter':
+        elif ((old['旧天气'] == 'rain' and old['旧季节'] == 'winter')
+              or (old['旧天气'] == 'snow' and old['旧季节'] != 'winter')):
             status = '与现版气候矛盾'
-            reason = '现版冬季降水为雪，不能仅改计数器声称发生冬雨场景。'
+            reason = '现版降水在冬季为雪，在其余季节为雨。'
         elif old['旧伴侣'] != base_authored[base]['旧伴侣']:
             status = '待实现指定双方互动'
             reason = '当前基础流程没有证明该指定角色与主体实际同场参与；现有主体独立完成不能代替这段双边互动。'
@@ -101,11 +103,15 @@ def build():
     counts = Counter(r['当前结论'] for r in rows)
     base_count = counts['已接入基础行为']
     variants = counts['已接入精确条件变体']
-    summary = {'version': '1.1.7', 'original_ids': 5000, 'original_base': 424,
+    version = tomllib.loads((ROOT / 'Cargo.toml').read_text(encoding='utf-8'))['package']['version']
+    summary = {'version': version, 'original_ids': 5000, 'original_base': 424,
                'original_variants': 4576, 'registered_base': base_count,
                'registered_variants': variants, 'registered_total': base_count + variants,
                'remaining_total': 5000 - base_count - variants,
+               'remaining_variants': 4576 - variants,
                'previous_1_1_6': {'base': 46, 'variants': 41, 'total': 87, 'remaining': 4913},
+               'previous_1_1_7': {'base': 100, 'variants': 80, 'total': 180, 'remaining': 4820},
+               'new_variants_since_1_1_7': variants - 80,
                'newly_connected': base_count + variants - 87,
                'status_counts': dict(sorted(counts.items())),
                'counting_note': '基础行为为有实际执行流程的旧定义；精确变体复用动作但须额外条件/结果，不能说成独立动画。未接条目不是永久不能开发。'}

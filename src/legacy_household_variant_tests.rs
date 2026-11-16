@@ -176,6 +176,7 @@ fn family_rest(id: &str, clock: u64) {
         Some(remembered)
     );
     verify(&world, id, ActorKind::Xiaohe);
+    check_observation(&world, Observation::RestStop, id);
 }
 
 #[test]
@@ -216,6 +217,10 @@ fn install(world: &mut LivingWorld, fixture: Fixture, i: usize, when: u64) {
 }
 
 fn inspect(id: &str, now: u64, left: bool) {
+    inspect_from(id, now, if left { (-1, 0) } else { (0, 1) });
+}
+
+fn inspect_from(id: &str, now: u64, side: (i32, i32)) {
     let mut world = ready(now);
     let builder = ActorKind::Xiaohe.index();
     let i = ActorKind::Ayu.index();
@@ -224,16 +229,8 @@ fn inspect(id: &str, now: u64, left: bool) {
     install(&mut world, fixture, builder, now - HOUR);
     set_time(&mut world, now);
     let anchor = world.improvement_site(fixture).tile();
-    let expected = if left {
-        anchor.offset(-2, 0).unwrap()
-    } else {
-        anchor.offset(0, 2).unwrap()
-    };
-    let start = if left {
-        anchor.offset(-3, 0).unwrap()
-    } else {
-        anchor.offset(0, 3).unwrap()
-    };
+    let expected = anchor.offset(side.0 * 2, side.1 * 2).unwrap();
+    let start = anchor.offset(side.0 * 3, side.1 * 3).unwrap();
     at(&mut world, i, start);
     assert!(world.has_fixture_sightline(anchor, expected));
     let version = world
@@ -273,6 +270,7 @@ fn inspect(id: &str, now: u64, left: bool) {
         Some(version)
     );
     verify(&world, id, ActorKind::Ayu);
+    check_observation(&world, Observation::Fixture, id);
 }
 
 #[test]
@@ -328,6 +326,19 @@ fn well(id: &str, now: u64) {
             .household_rules
             .well_needs_trial
     );
+    run_repaired_well(&mut world, stand);
+    if !world.legacy_behaviors().recent().iter().any(|note| note.id() == id) {
+        // Some old cases use a "nearby" site as well as the exact district.
+        // The later real repair can select the other lifetime at the same well.
+        set_time(&mut world, now + 10 * MINUTE);
+        world.drop_carry(ActorKind::Ayu.index());
+        run_repaired_well(&mut world, stand);
+    }
+    verify(&world, id, ActorKind::Ayu);
+    check_observation(&world, Observation::Well, id);
+}
+
+fn run_repaired_well(world: &mut LivingWorld, stand: TilePos) {
     world.story.improvements.used(Fixture::WellRope);
     assert!(world.apply_community(CommunityAction::Mend(Fixture::WellRope), stand));
     assert!(
@@ -339,12 +350,12 @@ fn well(id: &str, now: u64) {
             .well_needs_trial
     );
     at(
-        &mut world,
+        world,
         ActorKind::Xiaohe.index(),
         stand.offset(-2, 0).unwrap(),
     );
     let i = ActorKind::Ayu.index();
-    at(&mut world, i, stand.offset(0, 1).unwrap());
+    at(world, i, stand.offset(0, 1).unwrap());
     world.actors[i].tool = Some(Tool::WateringCan);
     world.actors[i].outfit = world.outfit_for(i, false);
     world.well = 5;
@@ -355,7 +366,7 @@ fn well(id: &str, now: u64) {
     assert_eq!(world.water_collection_task(i), Task::GetWater);
     assert_eq!(world.site(i, Task::GetWater).tile(), stand);
     world.plan(i);
-    finish(&mut world, i, Task::GetWater);
+    finish(world, i, Task::GetWater);
     assert!(world.has_carry(i, Item::Water, 4));
     assert_eq!(world.well, 1);
     assert_eq!(world.stock.count(Item::Water), 0);
@@ -367,7 +378,260 @@ fn well(id: &str, now: u64) {
             .household_rules
             .well_needs_trial
     );
+}
+
+fn check_observation(world: &LivingWorld, kind: Observation, id: &str) {
+    let note = world.active_village_observations().find(|note| note.kind == kind)
+        .unwrap_or_else(|| panic!("{id} must leave a live observation"));
+    let mode = id.as_bytes().last().unwrap() - b'0';
+    let minutes = match kind {
+        Observation::RestStop | Observation::CatNap | Observation::CatNight
+        | Observation::HouseholdNight | Observation::GroomPause => [30, 120, 360],
+        Observation::FallingTree => [5, 15, 30],
+        _ => [60, 240, 720],
+    };
+    let duration = minutes[usize::from(mode - 1)];
+    assert_eq!(note.expires(), note.at + duration * MINUTE);
+    let mut reopened: LivingWorld =
+        serde_json::from_slice(&serde_json::to_vec(world).unwrap()).unwrap();
+    assert!(reopened.active_village_observations().any(|other| other == note));
+    set_time(&mut reopened, note.expires() - 1);
+    assert!(reopened.active_village_observations().any(|other| other == note));
+    set_time(&mut reopened, note.expires());
+    assert!(!reopened.active_village_observations().any(|other| other == note));
+}
+
+fn boundary(season: YardSeason, hour: u64, weather: YardWeather, early: u64) -> u64 {
+    let first = 21_504 + season as u64 * 28;
+    (first..first + 28)
+        .map(|day| day * DAY_MS + hour * HOUR)
+        .find(|&at| {
+            LivingWorld::weather_at(at) == weather
+                && matches!(LivingWorld::weather_at(at - early * MINUTE), YardWeather::Clear | YardWeather::Clouds)
+        })
+        .expect("real dry start and matching completion weather")
+        - early * MINUTE
+}
+
+fn tree_warning(id: &str, now: u64, bearing: u8) {
+    for tree in 0..TREES.len() {
+        if tree_warning_at(id, now, bearing, tree) {
+            return;
+        }
+    }
+    panic!("no real tree and safe retreat for {id}");
+}
+
+fn tree_warning_at(id: &str, now: u64, bearing: u8, tree: usize) -> bool {
+    let mut world = ready(now);
+    let cutter = ActorKind::Ayu.index();
+    let watcher = ActorKind::Orange.index();
+    if world.trees[tree].protected || world.trees[tree].stage != TreeStage::Standing {
+        return false;
+    }
+    let origin = Cell::at(world.trees[tree].position).unwrap().tile();
+    let task = Task::FellTree(tree as u8);
+    let foot = world.site(cutter, task).tile();
+    if !world.can_walk(foot.x.into(), foot.y.into()) {
+        return false;
+    }
+    at(&mut world, cutter, foot);
+    world.actors[cutter].tool = Some(Tool::Axe);
+    // Consume the real normal work stage at the stump and only then offer retreat.
+    world.actors[cutter].task = Some(task);
+    world.stage(cutter, Stage::Work, Pose::Work, task.duration());
+    set_time(&mut world, now + task.duration());
+    world.step(cutter);
+    assert_eq!(world.trees[tree].stage, TreeStage::Felled);
+    let selection = (-5..=5).flat_map(|y| (-5..=5).filter_map(move |x| origin.offset(x, y)))
+        .filter(|tile| world.can_walk(tile.x.into(), tile.y.into()))
+        .collect::<Vec<_>>()
+        .into_iter()
+        .find_map(|tile| {
+            at(&mut world, watcher, tile);
+            let task = world.startled_task(watcher)?;
+            let stand = world.site(watcher, task).tile();
+            let matches = match bearing {
+                b'3' => stand.x < origin.x,
+                b'4' => stand.x == origin.x && stand.y >= origin.y,
+                b'5' => stand.x > origin.x,
+                _ => false,
+            };
+            matches.then_some((tile, task))
+        });
+    let Some((from, retreat)) = selection else { return false };
+    assert_ne!(from, world.site(watcher, retreat).tile());
+    assert!(world.begin(watcher, retreat));
+    finish(&mut world, watcher, retreat);
+    assert!(world.startled_task(watcher).is_none());
+    verify(&world, id, ActorKind::Orange);
+    check_observation(&world, Observation::FallingTree, id);
+    true
+}
+
+fn night_rest(id: &str, now: u64, kind: Observation) {
+    let mut world = ready(now);
+    let cat = kind == Observation::CatNight;
+    let role = if cat { ActorKind::Orange } else { ActorKind::Xiaohe };
+    let i = role.index();
+    let door = world.home_door(0).tile();
+    let approach = door.offset(0, 1).unwrap();
+    at(&mut world, i, approach);
+    world.actors[i].stamina = 25;
+    if !cat { world.actors[i].outfit = Outfit::Home; }
+    // The other resident must not be occupying the shared approach.
+    if cat { at(&mut world, ActorKind::Xiaohe.index(), TilePos::new(18, 21)); }
+    let task = if cat { Task::CatSleepInside(door) } else { Task::Sleep };
+    world.plan(i);
+    assert_eq!(world.actors[i].task, Some(task));
+    for _ in 0..64 {
+        let now = world.now_ms.max(world.actors[i].until);
+        set_time(&mut world, now);
+        if world.pending_route_actor() == Some(i) {
+            world.pump_route(i, &mut 64);
+        } else {
+            world.step(i);
+        }
+        if world.actors[i].stage == Stage::Work {
+            assert!(world.actors[i].inside);
+            verify(&world, id, role);
+            check_observation(&world, kind, id);
+            return;
+        }
+    }
+    panic!("did not enter the real bedroom");
+}
+
+fn cat_pause(id: &str, now: u64, kind: Observation) {
+    let mut world = ready(now);
+    let i = ActorKind::Orange.index();
+    let task = if kind == Observation::GroomPause {
+        let bowl = village::poi("cat_water").tile();
+        at(&mut world, i, bowl);
+        world.actors[i].thirst = 70;
+        world.bowl = 1;
+        world.commit(i, Task::Drink);
+        assert_eq!(world.bowl, 0);
+        assert!(matches!(world.cat_detail(), Some(Task::Detail(Detail::Groom(_)))));
+        world.cat_detail().unwrap()
+    } else {
+        let plate = world.site(0, Task::ServeCat).tile();
+        at(&mut world, 0, plate);
+        assert!(world.stock.add(Item::Food, 1));
+        assert!(world.take_stock(Item::Food, 1));
+        world.carry(0, Item::Food, 1);
+        world.commit(0, Task::ServeCat);
+        at(&mut world, 0, TilePos::new(12, 16));
+        let cat_plate = world.site(i, Task::CatEat).tile();
+        at(&mut world, i, cat_plate);
+        world.commit(i, Task::CatSmellMeal);
+        world.commit(i, Task::CatEat);
+        assert!(!world.cat_food_served());
+        world.cat_post_meal_nap().expect("actual meal qualifies for a nap")
+    };
+    assert!(world.begin(i, task));
+    if kind == Observation::GroomPause {
+        // Grooming works at the drink spot without moving away to return.
+        while world.actors[i].stage != Stage::Finish {
+            let now = world.now_ms.max(world.actors[i].until);
+            set_time(&mut world, now);
+            assert_ne!(world.actors[i].stage, Stage::Idle);
+            world.step(i);
+        }
+    } else {
+        finish(&mut world, i, task);
+    }
+    verify(&world, id, ActorKind::Orange);
+    check_observation(&world, kind, id);
+}
+
+fn confirm_project_notice(id: &str, now: u64) {
+    let mut world = ready(now);
+    let worker = ActorKind::Ayu.index();
+    let stand = village::poi("market_notice").tile();
+    let approach = stand.offset(0, 1).unwrap();
+    at(&mut world, worker, approach);
+    let phase = CHAPTERS.iter().position(|chapter| chapter.work_shifts >= 2).unwrap() as u8;
+    let next_shift = now + 2 * HOUR;
+    world.story.running = Some(Project { id: phase, begun: now, shifts: 1, next_shift });
+    let task = world.next_shift_notice_task(worker).expect("live partial project with a future shift");
+    assert!(world.begin(worker, task));
+    finish(&mut world, worker, task);
+    assert_eq!(world.yard_posted_construction_shift(), Some((stand, next_shift)));
+    let project = world.story.running.unwrap();
+    assert_eq!(project.shifts, 1);
+    assert_eq!(project.next_shift, next_shift);
     verify(&world, id, ActorKind::Ayu);
+    check_observation(&world, Observation::WorkNotice, id);
+}
+
+#[test]
+fn retained_observations_follow_production_tasks() {
+    let scenarios = include_str!("../assets/maps/village-legacy-exact-scenes.tsv");
+    let cases: Vec<_> = scenarios.lines()
+        .filter_map(|line| line.split_once('\t'))
+        .filter(|(_, evidence)| evidence.starts_with("Retained observation:"))
+        .collect();
+    assert!(!cases.is_empty());
+    let mut failed = Vec::new();
+    for (id, _) in cases {
+        let (base, dims) = id.split_once('~').unwrap();
+        let dims = dims.as_bytes();
+        let season = [YardSeason::Spring, YardSeason::Autumn, YardSeason::Winter][usize::from(dims[2] - b'0')];
+        let weather = [YardWeather::Clear, YardWeather::Clouds, YardWeather::Rain, YardWeather::Snow][usize::from(dims[1] - b'0')];
+        let result = std::panic::catch_unwind(|| match base {
+            "S18" => {
+                let minute = [6 * 60 + 30, 10 * 60, 18 * 60 + 30, 20 * 60 + 25][usize::from(dims[0] - b'0')];
+                well(id, time(season, minute, weather));
+            }
+            "S13" => {
+                let side = [(-1, 0), (0, 1), (1, 0)][usize::from(dims[3] - b'3')];
+                let now = if dims[0] == b'2' {
+                    boundary(season, 18, weather, 1)
+                } else if matches!(weather, YardWeather::Rain | YardWeather::Snow) {
+                    boundary(season, 12, weather, 1)
+                } else {
+                    time(season, 10 * 60, weather)
+                };
+                inspect_from(id, now, side);
+            }
+            "S02" => {
+                let now = if dims[0] == b'2' {
+                    boundary(season, 18, weather, 2)
+                } else if weather == YardWeather::Rain {
+                    boundary(season, 12, weather, 2)
+                } else {
+                    time(season, 10 * 60, weather)
+                };
+                family_rest(id, now);
+            }
+            "S22" => {
+                let now = if dims[0] == b'2' {
+                    boundary(season, 18, weather, 1)
+                } else {
+                    time(season, 10 * 60, weather)
+                };
+                let start = now.saturating_sub(Task::FellTree(0).duration());
+                tree_warning(id, start, dims[3]);
+            }
+            "A01-10" | "H01-60" => {
+                let kind = if base == "A01-10" { Observation::CatNight } else { Observation::HouseholdNight };
+                night_rest(id, time(season, 22 * 60, weather), kind);
+            }
+            "A01-04" | "A01-08" => {
+                let kind = if base == "A01-04" { Observation::GroomPause } else { Observation::CatNap };
+                cat_pause(id, time(season, 12 * 60 + 15, weather), kind);
+            }
+            "H01-34" => {
+                let hour = if dims[0] == b'0' { 6 } else { 18 };
+                drain_after_true_flood(id, season, hour, weather);
+            }
+            "H01-56" => confirm_project_notice(id, time(season, 14 * 60, weather)),
+            _ => panic!("unhandled test scenario {id}"),
+        });
+        if result.is_err() { failed.push(id); }
+    }
+    assert!(failed.is_empty(), "Unverified scenarios: {failed:?}");
 }
 
 #[test]
@@ -434,14 +698,20 @@ fn a01_49_front_pawprint_at_winter_dawn() {
 
 #[test]
 fn h01_34_dawn_after_true_flood() {
-    let day = (21_504..21_532)
-        .find(|&day| {
-            LivingWorld::weather_at(day * DAY_MS + 10 * MINUTE) == YardWeather::Rain
-                && LivingWorld::weather_at(day * DAY_MS + 6 * HOUR + 20 * MINUTE)
-                    == YardWeather::Clear
-        })
-        .expect("mature spring heavy rain followed by clear dawn");
-    let flood = day * DAY_MS + 10 * MINUTE;
+    drain_after_true_flood("H01-34~00001", YardSeason::Spring, 6, YardWeather::Clear);
+}
+
+fn drain_after_true_flood(id: &str, season: YardSeason, hour: u64, weather: YardWeather) {
+    let first = 21_504 + season as u64 * 28;
+    let (flood, work_time) = (first..first + 28).find_map(|day| {
+        let work_time = day * DAY_MS + hour * HOUR + 20 * MINUTE;
+        if LivingWorld::weather_at(work_time) != weather {
+            return None;
+        }
+        (0..hour / 3).rev().map(|spell| day * DAY_MS + spell * 3 * HOUR + 10 * MINUTE)
+            .find(|&clock| LivingWorld::weather_at(clock) == YardWeather::Rain && clock / (3 * HOUR) % 4 == 0)
+            .map(|flood| (flood, work_time))
+    }).expect("real flooding rain before eligible work time");
     let mut world = ready(flood);
     world.story.finished = 18;
     world.village.as_mut().unwrap().apply_development(18, false);
@@ -463,8 +733,8 @@ fn h01_34_dawn_after_true_flood() {
     world.next_needs = flood;
     world.environment();
     assert!(world.village_plot_is_flooded(plot as u8));
-    set_time(&mut world, day * DAY_MS + 6 * HOUR + 20 * MINUTE);
-    assert_eq!(world.weather(), YardWeather::Clear);
+    set_time(&mut world, work_time);
+    assert_eq!(world.weather(), weather);
     let nearby = [(0, 1), (-1, 0), (1, 0)]
         .iter()
         .filter_map(|&(x, y)| work.offset(x, y))
@@ -477,5 +747,6 @@ fn h01_34_dawn_after_true_flood() {
     finish(&mut world, i, task);
     assert!(!world.village_plot_is_flooded(plot as u8));
     assert!(world.hoe_has_mud(ActorKind::Xiaohe));
-    verify(&world, "H01-34~00001", ActorKind::Xiaohe);
+    verify(&world, id, ActorKind::Xiaohe);
+    check_observation(&world, Observation::HouseholdDrain, id);
 }

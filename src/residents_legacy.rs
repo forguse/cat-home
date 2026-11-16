@@ -466,7 +466,10 @@ impl State {
             menu.servings = servings;
             if newly_posted {
                 let at = booth_slot(MEAL_SHOP);
-                witness(world, "H06-09", COOK, at, at, None);
+                world.record_village_observation(
+                    crate::living_world::Observation::Menu,
+                    LegacyActor::Resident(COOK), at, at, LegacyPlace::Nearby,
+                );
             }
         }
     }
@@ -749,6 +752,37 @@ mod tests {
         assert!(!life.legacy.menu_can_book(day));
         assert!(life.legacy.menu_can_book(day + 1));
         assert_eq!(serde_json::to_vec(world.stock()).unwrap(), stock);
+    }
+
+    #[test]
+    fn real_menu_stock_has_the_requested_review_lifetime() {
+        use crate::living_world::{Observation, YardWeather};
+        let initial = LivingWorld::new_village_wall_ms(0);
+        for (id, season, weather, hours) in [
+            ("H06-09~10042", 0, YardWeather::Clear, 4),
+            ("H06-09~11042", 0, YardWeather::Clouds, 4),
+            ("H06-09~13243", 3, YardWeather::Snow, 12),
+        ] {
+            let (now, mut world) = (season * 28..(season + 1) * 28).find_map(|day| {
+                let now = day * DAY_MS + 12 * HOUR;
+                if !business_open(MEAL_SHOP, PhaseMask::ALL, now) { return None; }
+                let mut data = serde_json::to_value(&initial).unwrap();
+                data["now_ms"] = now.into();
+                data["target_ms"] = now.into();
+                let world: LivingWorld = serde_json::from_value(data).unwrap();
+                (world.weather() == weather).then_some((now, world))
+            }).unwrap();
+            let mut life = VillageLife::default();
+            let booth = booth_slot(MEAL_SHOP);
+            assert!(life.people[usize::from(COOK)].pack_counter(MEAL_SHOP, 0));
+            life.people[usize::from(COOK)].walk = Walker::new(booth, super::super::State::AtWork);
+            life.update_legacy_counters(&mut world, PhaseMask::ALL, now);
+            assert!(world.legacy_behaviors().observed_ids().any(|seen| seen == id));
+            let after = world.active_village_observations().find(|note| note.kind == Observation::Menu).unwrap();
+            assert_eq!(after.target, booth);
+            assert_eq!(after.expires(), now + hours * HOUR);
+            assert_eq!(life.legacy.menu_offer(now / DAY_MS), Some((life.people[usize::from(COOK)].counter_goods(MEAL_SHOP), 2)));
+        }
     }
 
     #[test]

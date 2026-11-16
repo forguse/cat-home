@@ -443,10 +443,9 @@ impl State {
                     let (target, _) = world
                         .village_subsoil(survey.plot)
                         .expect("surveyed a real field");
-                    courier_witness(
-                        world,
-                        "H02-01",
-                        ORCHARD_KEEPER,
+                    world.record_village_observation(
+                        crate::living_world::Observation::Soil,
+                        LegacyActor::Resident(ORCHARD_KEEPER as u8),
                         at,
                         target,
                         LegacyPlace::Expanded,
@@ -944,10 +943,9 @@ impl State {
                         .crops
                         .get(usize::from(order.plot))
                         .map_or(at, |crop| TilePos::new(crop.rect.x, crop.rect.y));
-                    courier_witness(
-                        world,
-                        "H08-04",
-                        IRRIGATOR,
+                    world.record_village_observation(
+                        crate::living_world::Observation::IrrigatorDrain,
+                        LegacyActor::Resident(IRRIGATOR as u8),
                         at,
                         target,
                         LegacyPlace::Expanded,

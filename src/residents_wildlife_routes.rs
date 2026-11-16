@@ -71,7 +71,13 @@ impl Proof {
                 source,
                 LegacyPlace::Front,
             ),
-            Self::SwallowOldNest(eave) => ("A09-08", super::SWALLOW, eave, eave, LegacyPlace::Front),
+            Self::SwallowOldNest(eave) => {
+                world.record_village_observation(
+                    crate::living_world::Observation::OldNest,
+                    LegacyActor::Wildlife(super::SWALLOW as u8), eave, eave, LegacyPlace::Front,
+                );
+                return;
+            }
             Self::Tailwind { from, to } => ("S15", super::SWALLOW, to, from, LegacyPlace::Nearby),
             Self::Acorn(proof) => {
                 let (base, animal, at, target) = proof.facts();

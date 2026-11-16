@@ -54,6 +54,9 @@ mod yard_mat;
 mod orchard_ground;
 #[path = "yard_survey.rs"]
 mod yard_survey;
+#[path = "village_observations.rs"]
+mod village_observations;
+pub use village_observations::{Note as VillageObservationNote, Observation};
 use yard_mat::MatWork;
 pub use yard_mat::{MatPlacement, YardMatVisual};
 use crate::legacy_content::{BehaviorLedger, CompletedBehavior, LegacyActor, LegacyPlace};
@@ -1098,6 +1101,8 @@ pub struct LivingWorld {
     crop_batches: CropBatches,
     #[serde(default, skip_serializing_if = "BehaviorLedger::is_empty")]
     legacy_behaviors: BehaviorLedger,
+    #[serde(default, skip_serializing_if = "village_observations::Notes::is_empty")]
+    village_observations: village_observations::Notes,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     village: Option<village::State>,
     #[serde(skip)]
@@ -1180,6 +1185,7 @@ impl LivingWorld {
             supply_requests: village::SupplyRequests::default(),
             footprints: footprints::Tracks::default(),
             legacy_behaviors: BehaviorLedger::default(),
+            village_observations: village_observations::Notes::default(),
         }
     }
 
@@ -2212,7 +2218,21 @@ impl LivingWorld {
         mode: u8,
         partner: Option<LegacyActor>,
     ) -> bool {
-        self.is_village() && self.legacy_behaviors.record(CompletedBehavior {
+        let event = self.completion_context(base, actor, at, target, parcel, mode, partner);
+        self.is_village() && self.legacy_behaviors.record(event)
+    }
+
+    fn completion_context(
+        &self,
+        base: &'static str,
+        actor: LegacyActor,
+        at: TilePos,
+        target: TilePos,
+        parcel: LegacyPlace,
+        mode: u8,
+        partner: Option<LegacyActor>,
+    ) -> CompletedBehavior {
+        CompletedBehavior {
             base,
             actor,
             at,
@@ -2233,7 +2253,63 @@ impl LivingWorld {
                 YardSeason::Autumn => 2,
                 YardSeason::Winter => 3,
             },
-        })
+        }
+    }
+
+    pub fn active_village_observations(&self) -> impl Iterator<Item = &VillageObservationNote> + '_ {
+        self.village_observations.active(self.now_ms)
+    }
+
+    /// The artist must carry this exact board home and apply the returned
+    /// display promise before the gallery can reuse that board.
+    pub(crate) fn record_village_exhibit(
+        &mut self, base: &'static str, actor: LegacyActor, at: TilePos, target: TilePos,
+        parcel: LegacyPlace,
+    ) -> u64 {
+        debug_assert!(matches!(base, "H09-01" | "H09-06" | "H09-10"));
+        if !self.is_village() {
+            return 0;
+        }
+        let mut event = self.completion_context(base, actor, at, target, parcel, 1, None);
+        event.mode = self.legacy_behaviors.retained_mode(event).unwrap_or(1);
+        if !self.legacy_behaviors.record(event) {
+            return 0;
+        }
+        match event.mode {
+            2 => 14,
+            3 => 28,
+            _ => 0,
+        }
+    }
+
+    pub(crate) fn record_village_observation(
+        &mut self, kind: Observation, actor: LegacyActor, at: TilePos, target: TilePos,
+        parcel: LegacyPlace,
+    ) {
+        if !self.is_village() {
+            return;
+        }
+        let mut event = self.completion_context(kind.base(), actor, at, target, parcel, 1, None);
+        let Some(mode) = self.legacy_behaviors.retained_mode(event) else {
+            self.legacy_behaviors.record_base(event);
+            return;
+        };
+        let Some(note) = self.village_observations.candidate(kind, actor, target, self.now_ms, mode)
+        else {
+            self.legacy_behaviors.record_base(event);
+            return;
+        };
+        event.mode = mode;
+        if self.legacy_behaviors.record(event) {
+            self.village_observations.commit(note);
+        }
+    }
+
+    fn record_household_observation(
+        &mut self, kind: Observation, actor: usize, target: TilePos, parcel: LegacyPlace,
+    ) {
+        let at = self.actors[actor].cell.tile();
+        self.record_village_observation(kind, LegacyActor::Household(actor as u8), at, target, parcel);
     }
 
     fn record_household_completion(&mut self, base: &'static str, actor: usize, target: TilePos, parcel: LegacyPlace) {
@@ -7230,7 +7306,7 @@ impl LivingWorld {
                         let head = WILLOW_VILLAGE.solid_props.iter()
                             .find(|prop| prop.reader_poi == Some("market_well"))
                             .expect("compiled public wellhead").tile;
-                        self.record_household_completion("S18", i, head, LegacyPlace::Expanded);
+                        self.record_household_observation(Observation::Well, i, head, LegacyPlace::Expanded);
                     }
                 }
             }
@@ -7389,7 +7465,7 @@ impl LivingWorld {
                                 && state.grain.reveal_root_shoulder(weather)
                         })
                     {
-                        self.record_household_completion("H01-16", i, TilePos::new(plot.rect.x, plot.rect.y), LegacyPlace::Front);
+                        self.record_household_observation(Observation::RootCrop, i, TilePos::new(plot.rect.x, plot.rect.y), LegacyPlace::Front);
                     }
                     return;
                 }
@@ -7881,7 +7957,7 @@ impl LivingWorld {
                     self.muddy_hoe_after_work(i, true);
                     let tile = self.actors[i].cell.tile();
                     let target = self.available_plot_rect(id).map_or(tile, |rect| TilePos::new(rect.x, rect.y));
-                    self.record_household_completion("H01-34", i, target, LegacyPlace::Front);
+                    self.record_household_observation(Observation::HouseholdDrain, i, target, LegacyPlace::Front);
                     self.finish_rain_shift(i, target);
                 }
                 return;
@@ -8195,7 +8271,7 @@ impl LivingWorld {
         match visit {
             QuietVisit::Pause(tile) if rules.last_stop[i] == Some(tile) => {
                 self.actors[i].stamina = self.actors[i].stamina.saturating_add(8).min(100);
-                self.record_household_completion("S02", i, tile, LegacyPlace::Front);
+                self.record_household_observation(Observation::RestStop, i, tile, LegacyPlace::Front);
             }
             QuietVisit::Inspect { version, stand }
                 if rules.new_fixture == Some(version) && self.fixture_recently_added(version)
@@ -8204,7 +8280,7 @@ impl LivingWorld {
                 let target = self.improvement_site(version.fixture);
                 if self.has_fixture_sightline(target.tile(), stand) {
                     self.village.as_mut().unwrap().household_rules.seen_fixture[i] = Some(version);
-                    self.record_household_completion("S13", i, target.tile(), LegacyPlace::Nearby);
+                    self.record_household_observation(Observation::Fixture, i, target.tile(), LegacyPlace::Nearby);
                 }
             }
             _ => {}
@@ -8276,7 +8352,8 @@ impl LivingWorld {
         };
         if self.plots.len() != expected_plots
             || !self.legacy_behaviors.validate(self.now_ms)
-            || !village && !self.legacy_behaviors.is_empty()
+            || !self.village_observations.validate(self.now_ms)
+            || !village && (!self.legacy_behaviors.is_empty() || !self.village_observations.is_empty())
             || self.village.as_ref().is_some_and(|state| {
                 state.revision != revision
                     || (!state.density_holdouts.is_empty() && !self.map_density_active())
