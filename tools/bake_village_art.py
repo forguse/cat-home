@@ -1,11 +1,12 @@
 """Bake Willow Village's generated structure sources and resident labels."""
+import argparse
 from pathlib import Path
 import json
 
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw
 
 from bake_premium_assets import ATLAS, Frame, NEAREST, pack, premultiply_bgra
-from build_visitor_nameplates import nameplate
+from build_visitor_nameplates import load_nameplate_font, nameplate
 
 
 def largest_piece(im, *, coverage=82):
@@ -185,6 +186,9 @@ def apple_phases(master):
 
 
 def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--font", type=Path, required=True, help="NotoSansSC-Bold.otf from Sans2.004")
+    font = load_nameplate_font(parser.parse_args().font, 36)
     source = ATLAS / "source" / "柳溪村建筑.png"
     master = Image.open(source).convert("RGBA")
     frames = [structure(master, key, cell, size, door) for key, cell, size, door in (
@@ -240,7 +244,6 @@ def main():
     draw.line((9, 13, 14, 13), fill="#87795d")
     draw.line((9, 15, 12, 15), fill="#87795d")
     frames.append(Frame("village_notice", notice, (12, 26), (), None))
-    font = ImageFont.truetype("msyhbd.ttc", 36)
     root = ATLAS.parent.parent
     data = json.loads((root / "assets/maps/willow-village-192x128-r1.json").read_text(encoding="utf-8"))
     frames.extend(resident_frames(Image.open(ATLAS / "source" / "柳溪村二十住户.png").convert("RGBA"), data["residents"]))

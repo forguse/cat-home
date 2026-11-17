@@ -1,6 +1,7 @@
 """Bake fixed-width UTF-8 visitor names into consecutive premultiplied BGRA frames."""
 
 import argparse
+import hashlib
 import json
 from pathlib import Path
 import re
@@ -13,6 +14,15 @@ from build_basketball_pack import NEAREST, ROOT, Frame, premultiply_bgra
 OUTPUT = ROOT / "assets" / "visitors"
 SIZE = (64, 12)
 ANCHOR = (32, 11)
+NOTO_BOLD_SHA256 = "c6cb5a93abaa9edc8ee7463b7ebb7f42d618d40e6ed2f7a5371c97b0b64767c0"
+
+
+def load_nameplate_font(path, size):
+    with path.open("rb") as font_file:
+        digest = hashlib.file_digest(font_file, "sha256").hexdigest()
+    if digest != NOTO_BOLD_SHA256:
+        raise ValueError("Use the Noto Sans SC Bold 2.004 file linked in CREDITS.md")
+    return ImageFont.truetype(str(path), size)
 
 
 def runtime_labels():
@@ -24,7 +34,8 @@ def runtime_labels():
     labels = dict(re.findall(r'Self::(\w+) => "([^"]+)"', labels_body))
     names_body = source.split("pub const fn asset_name(self) -> &'static str {", 1)[1].split("\n    }", 1)[0]
     names = dict(re.findall(r'Self::(\w+) => "([^"]+)"', names_body))
-    if len(order) != 10 or set(order) != set(labels) or set(order) != set(names):
+    if (len(order) != 10 or len(set(order)) != len(order)
+            or any(variant not in labels or variant not in names for variant in order)):
         raise ValueError("Visitor professions and nameplate label definitions differ")
     return [(names[variant], labels[variant]) for variant in order]
 
@@ -67,17 +78,18 @@ def preview(plates, output):
     board.convert("RGB").save(output)
 
 
-def label_frames(labels):
-    font = ImageFont.truetype("msyhbd.ttc", 36)
+def label_frames(labels, font):
     return [Frame(f"{job}_label", nameplate(text, font), ANCHOR) for job, text in labels]
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--font", type=Path, required=True, help="NotoSansSC-Bold.otf from Sans2.004")
     parser.add_argument("--preview", type=Path)
     args = parser.parse_args()
     labels = runtime_labels()
-    plates = [frame.image for frame in label_frames(labels)]
+    # Visitor plates include job titles as well as names.
+    plates = [frame.image for frame in label_frames(labels, load_nameplate_font(args.font, 32))]
     OUTPUT.mkdir(parents=True, exist_ok=True)
     (OUTPUT / "nameplates.bgra").write_bytes(b"".join(premultiply_bgra(plate) for plate in plates))
     index = {"width": SIZE[0], "height": SIZE[1], "anchor": ANCHOR,

@@ -107,12 +107,17 @@ https://kenney.nl/assets/tiny-town
 https://creativecommons.org/publicdomain/zero/1.0/
 新增柳溪村素材及图标使用图像生成工具和项目绘图脚本制作。详细出处见 CREDITS.md。
 
+字体 · Noto Sans SC 2.004 · SIL Open Font License 1.1
+村民和访客的姓名牌、小红书七图使用该字体制作。交付内容为固定文字图片。
+https://github.com/notofonts/noto-cjk/releases/tag/Sans2.004
+下方附字体版权及完整许可。
+
 官方 Windows 发布版使用 Visual Studio C++ 可再发行静态运行库。
 https://learn.microsoft.com/en-us/visualstudio/releases/2022/redistribution
 
 项目与完整素材说明
 https://github.com/forguse/cat-home/blob/main/CREDITS.md
-""", read(ROOT / "LICENSE")]
+""", read(ROOT / "LICENSE"), read(ROOT / "assets/fonts/OFL-NotoSansSC.txt")]
     repeated = {}
     for title, notices in dependency_notices(toolchain, offline):
         sections.append(f"{'=' * 64}\n{title}")

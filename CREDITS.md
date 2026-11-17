@@ -7,5 +7,13 @@
 - Rust 的 Win32 API 绑定来自 Microsoft **windows-rs** 的 `windows-sys`，本项目按 MIT 许可使用，版权声明见 `LICENSE`。[windows-rs 的 MIT 许可](https://github.com/microsoft/windows-rs/blob/master/license-mit)
 - 橘猫动画改自 LuizMelo 的 **Pet Cats Pack**，通过 Todak 的 Ginger CC0 图集取得。原图与帧坐标保存在 `sources/cat.png` 和 `sources/cat.json`。[作者素材页](https://luizmelo.itch.io/pet-cat-pack) · [Todak 图集署名](https://github.com/euuuuuuan/todak-public/blob/main/CREDITS.md#pet-atlases--what-ships-and-what-each-was-packed-from) · [图集原图](https://github.com/euuuuuuan/todak-public/blob/main/assets/atlases/pets/cat_normal_cc0_ginger.png) · [帧坐标](https://github.com/euuuuuuan/todak-public/blob/main/assets/atlases/pets/cat_normal_cc0_ginger.json)
 - 早期庭院使用过 Kenney 的 **Tiny Town**，许可为 CC0 1.0。原素材包保存在 `sources/tiny-town.zip`，供早期绘制脚本使用。[作者素材页](https://kenney.nl/assets/tiny-town) · [GitHub 镜像](https://github.com/bill2432/kenney-2d-mirror)
+- 村民和访客的姓名牌、小红书七图使用 **Noto Sans SC 2.004**。版权归 Adobe，字体采用 **SIL Open Font License 1.1**，允许商业设计和成品发布。发布的姓名牌和海报是固定字样的图片。[官方版本](https://github.com/notofonts/noto-cjk/releases/tag/Sans2.004) · [完整字体许可](assets/fonts/OFL-NotoSansSC.txt)
 - 新版庭院参考《星露谷物语》公开画面的斜俯视构图、乡村色彩和地块过渡，新增图形由本项目绘制。[ConcernedApe 官方媒体页](https://www.stardewvalley.net/media/)
 - 项目绘制的管理员、灰猫、黑猫、麻雀、松鼠、刺猬、兔子、青蛙、扩充图集的 21 位角色、扩建建筑、施工道具、庭院布置与光照也按 CC0 1.0 提供。生成的像素图集在 `assets/world/`，绘图脚本采用 MIT 许可。[CC0 1.0 条款](https://creativecommons.org/publicdomain/zero/1.0/)
+
+重新生成姓名牌时，下载 [NotoSansSC-Bold.otf](https://raw.githubusercontent.com/notofonts/noto-cjk/Sans2.004/Sans/SubsetOTF/SC/NotoSansSC-Bold.otf)，把路径传给两个生成脚本。示例从 Windows 临时目录读取字体，脚本会校验官方字体文件的 SHA-256。
+
+```powershell
+python tools/build_visitor_nameplates.py --font "$env:TEMP/NotoSansSC-Bold.otf"
+python tools/bake_village_art.py --font "$env:TEMP/NotoSansSC-Bold.otf"
+```
