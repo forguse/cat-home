@@ -116,7 +116,7 @@ https://github.com/notofonts/noto-cjk/releases/tag/Sans2.004
 https://learn.microsoft.com/en-us/visualstudio/releases/2022/redistribution
 
 项目与完整素材说明
-https://github.com/forguse/cat-home/blob/main/CREDITS.md
+https://github.com/forguse/liuxi-village/blob/main/CREDITS.md
 """, read(ROOT / "LICENSE"), read(ROOT / "assets/fonts/OFL-NotoSansSC.txt")]
     repeated = {}
     for title, notices in dependency_notices(toolchain, offline):

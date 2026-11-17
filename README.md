@@ -2,15 +2,15 @@
 
 **挂在 Windows 桌面一角的像素村庄。** 小禾和阿榆自己种菜、做饭、钓鱼、赶集，橘猫会在院子里打盹、巡逻和躲雨。你可以照常做自己的事，偶尔看一眼村里过得怎么样。
 
-**[下载 Windows 版 EXE](https://github.com/forguse/cat-home/releases/latest/download/cat-home-windows-x64.exe)** · [版本说明与校验值](https://github.com/forguse/cat-home/releases/latest)
+**[下载 Windows 版 EXE](https://github.com/forguse/liuxi-village/releases/latest/download/liuxi-village-windows-x64.exe)** · [版本说明与校验值](https://github.com/forguse/liuxi-village/releases/latest)
 
 免费开源 · Windows x64 · 下载 EXE 后双击运行
 
-![小禾、阿榆与橘猫在柳溪村小院的实机画面](docs/media/cat-home-village.png)
+![小禾、阿榆与橘猫在柳溪村小院的实机画面](docs/media/liuxi-village.png)
 
 ## 开始使用
 
-1. 下载 `cat-home-windows-x64.exe`，放进一个你有写入权限的普通文件夹，再双击打开。
+1. 下载 `liuxi-village-windows-x64.exe`，放进一个你有写入权限的普通文件夹，再双击打开。
 2. 左键拖动小屋到合适的位置，拖右下角调整视野大小。
 3. 右键打开「观察手记」，查看角色在做什么、村里有什么资源，以及最近留下的足迹和观察记录。
 
@@ -32,7 +32,7 @@
 
 ## 更新、迁移和卸载
 
-- **更新**　先在菜单中退出，再用新版替换同目录的 EXE。进度在同目录的 `home-data-v2/world-v4.json`。版本迁移会保留升级前的存档副本。
+- **更新**　先在菜单中退出旧版，把新版 EXE 放进原目录后双击。进度在同目录的 `home-data-v2/world-v4.json`。已为旧版开启登录启动时，同目录第一次运行新版会更新启动路径。
 - **搬到别的文件夹**　连同 `home-data-v2` 和 `cat-home-position.txt` 一起移动。
 - **卸载**　取消「登录 Windows 时启动」，退出后删除 EXE。保留 `home-data-v2`，以后可继续同一个村庄。
 
@@ -45,10 +45,10 @@ cargo test --locked
 cargo build --locked --release
 ```
 
-构建结果位于 `target/release/cat-home.exe`。常规构建使用仓库已生成的地图和图集。修改地图后运行 `python tools/compile_map.py`，并提交对应生成文件。
+构建结果位于 `target/release/liuxi-village.exe`。常规构建使用仓库已生成的地图和图集。修改地图后运行 `python tools/compile_map.py`，并提交对应生成文件。
 
 - [真实时间与城镇发展](docs/REAL_TIME_TOWN.md) · [地图与地貌资源](docs/WORKING_LANDSCAPE.md)
 - [插件开发](docs/PLUGINS.md) · [验证记录](docs/VALIDATION.md) · [行为目录与逐条审查](docs/current-behavior-audit.tsv)
-- [反馈问题](https://github.com/forguse/cat-home/issues)
+- [反馈问题](https://github.com/forguse/liuxi-village/issues)
 
 项目代码采用 [MIT 许可](LICENSE)。像素素材来源见 [CREDITS.md](CREDITS.md)，完整的第三方版权与许可声明见 [THIRD_PARTY_NOTICES.txt](THIRD_PARTY_NOTICES.txt)。更新依赖时用同版 Rust 运行 `python -X utf8 tools/collect_third_party_notices.py` 刷新声明。

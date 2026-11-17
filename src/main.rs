@@ -1650,6 +1650,9 @@ fn run() -> io::Result<()> {
             *cell.borrow_mut() = Some(app);
         });
         with_app(|app| app.refresh(hwnd));
+        if !preview {
+            let _ = startup::migrate_executable_name();
+        }
         let foreground_hook = SetWinEventHook(
             EVENT_SYSTEM_FOREGROUND,
             EVENT_SYSTEM_FOREGROUND,

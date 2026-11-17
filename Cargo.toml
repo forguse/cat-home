@@ -1,8 +1,11 @@
 [package]
-name = "cat-home"
-version = "1.1.11"
+name = "liuxi-village"
+version = "1.1.12"
 edition = "2024"
 license = "MIT"
+
+[lib]
+name = "cat_home"
 
 [dependencies]
 serde = { version = "=1.0.219", features = ["derive"] }
