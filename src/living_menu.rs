@@ -109,6 +109,7 @@ fn show_native(hwnd: HWND, tray: bool) {
     append_plugins(menu, &state.packages);
     append_startup(menu);
     append_label(menu, MF_STRING, HELP, "操作帮助…");
+    append_licenses(menu);
     append_label(menu, MF_STRING, MENU_UNINSTALL_HELP, "卸载小屋的步骤…");
     separator(menu);
     if tray || state.hidden {
@@ -117,7 +118,7 @@ fn show_native(hwnd: HWND, tray: bool) {
     if !state.hidden {
         append_label(menu, MF_STRING, MENU_TOGGLE, "隐藏小屋");
     }
-    append_label(menu, MF_STRING, MENU_QUIT, "退出猫咪小屋");
+    append_label(menu, MF_STRING, MENU_QUIT, "退出柳溪村");
 
     let selected = pick_menu(hwnd, menu, point);
     match selected {
@@ -148,16 +149,17 @@ fn show_native(hwnd: HWND, tray: bool) {
         PLUGIN_USAGE => show_usage(hwnd),
         PLUGIN_FOLDER => open_folder(hwnd),
         MENU_STARTUP => toggle_startup(hwnd),
+        MENU_LICENSES => license_view::show(hwnd),
         HELP => message(
             hwnd,
-            "猫咪小屋 · 操作帮助",
+            "柳溪村 · 操作帮助",
             "左键拖动移动窗口；Shift 拖动平移镜头。\n拖动右下角改变可见范围，像素比例不变；缩小不会删除土地。\n镜头菜单可自动观察生活、跟随主角或固定视角。\n\n存档在同级 home-data-v2/world-v4.json，旧庭院原件保留。\n需要恢复旧庭院时使用 --recover-v3；更早桌宠版本使用 --legacy。\n退出入口在小屋右键和通知区域菜单。",
             MB_ICONINFORMATION,
         ),
         MENU_UNINSTALL_HELP => message(
             hwnd,
-            "猫咪小屋 · 卸载步骤",
-            "如已开启登录 Windows 时启动，请先在菜单取消勾选。\n选择退出猫咪小屋并等待托盘图标消失。\n备份需要保留的 home-data-v2，再用文件资源管理器手动删除小屋所在的安装文件夹。",
+            "柳溪村 · 卸载步骤",
+            "如已开启登录 Windows 时启动，请先在菜单取消勾选。\n选择退出柳溪村并等待托盘图标消失。\n备份需要保留的 home-data-v2，再用文件资源管理器手动删除小屋所在的安装文件夹。",
             MB_ICONINFORMATION,
         ),
         MENU_SHOW => reveal_home(hwnd),

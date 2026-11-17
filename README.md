@@ -1,10 +1,10 @@
-# 猫咪小屋 · 柳溪村
+# 柳溪村
 
 **挂在 Windows 桌面一角的像素村庄。** 小禾和阿榆自己种菜、做饭、钓鱼、赶集，橘猫会在院子里打盹、巡逻和躲雨。你可以照常做自己的事，偶尔看一眼村里过得怎么样。
 
 **[下载 Windows 版 EXE](https://github.com/forguse/cat-home/releases/latest/download/cat-home-windows-x64.exe)** · [版本说明与校验值](https://github.com/forguse/cat-home/releases/latest)
 
-免费开源 · Windows x64 · 单文件约 29 MB（v1.1.9）
+免费开源 · Windows x64 · 下载 EXE 后双击运行
 
 ![小禾、阿榆与橘猫在柳溪村小院的实机画面](docs/media/cat-home-village.png)
 
@@ -18,7 +18,8 @@
 | --- | --- |
 | 换个视角 | 右键 → 镜头，选择自动观察、跟随主角或回到庭院。按住 Shift 拖动可以手动取景。 |
 | 加一个活动 | 右键 → 插件 → 安装插件，选择 `.catpack` 文件。仓库有[篮球示例包](content-packs/basketball)，活动需要已开放场地。 |
-| 登录时打开、隐藏或退出 | 右键小屋或任务栏通知区域的图标。 |
+| 登录时打开、隐藏或退出 | 右键村庄窗口或任务栏通知区域的图标。 |
+| 查看第三方许可与鸣谢 | 右键 → 关于柳溪村 → 第三方许可与鸣谢。完整文本也可从发布页下载。 |
 
 ## 村里会发生什么
 
@@ -27,7 +28,7 @@
 - **村庄会慢慢长大。** 新档从两户人的小院与几块菜地开始。随着真实日历推移，市场、街道和更多住所逐批有机会开工，还要等人手与材料到位。
 - **昼夜、天气和季节会改变日常。** 重新打开时，程序会分批补算关掉期间的生活。调整窗口大小只改变可见范围，视野外的生活仍照常模拟。
 
-v1.1.9 共接入 **100 类基础行为、294 条条件变体**。新增场景包括实际让路并留下足迹、搬运归仓、雨停后续走，以及秋天清晨燕子和麻雀一同落在栏杆上。[查看本版清单](docs/LEGACY_VARIANTS_1_1_9.md)
+目前共接入 **100 类基础行为、294 条条件变体**。场景包括实际让路并留下足迹、搬运归仓、雨停后续走，以及秋天清晨燕子和麻雀一同落在栏杆上。[查看行为清单](docs/LEGACY_VARIANTS_1_1_9.md)
 
 ## 更新、迁移和卸载
 
@@ -50,4 +51,4 @@ cargo build --locked --release
 - [插件开发](docs/PLUGINS.md) · [验证记录](docs/VALIDATION.md) · [行为目录与逐条审查](docs/current-behavior-audit.tsv)
 - [反馈问题](https://github.com/forguse/cat-home/issues)
 
-代码采用 [MIT 许可](LICENSE)。像素素材的生成来源和第三方素材许可见 [CREDITS.md](CREDITS.md)。
+项目代码采用 [MIT 许可](LICENSE)。像素素材来源见 [CREDITS.md](CREDITS.md)，完整的第三方版权与许可声明见 [THIRD_PARTY_NOTICES.txt](THIRD_PARTY_NOTICES.txt)。更新依赖时用同版 Rust 运行 `python -X utf8 tools/collect_third_party_notices.py` 刷新声明。

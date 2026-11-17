@@ -15,6 +15,7 @@ mod startup;
 mod world;
 mod home_host;
 mod living_menu;
+mod license_view;
 mod native_metrics;
 
 use std::{
@@ -55,7 +56,7 @@ use world::ManualActions;
 
 const CLASS: *const u16 = w!("CodexCatHomeWorld");
 const SMOKE_CLASS: *const u16 = w!("CodexCatHomeSmoke");
-const TITLE: *const u16 = w!("猫咪小屋");
+const TITLE: *const u16 = w!("柳溪村");
 const TRAY_MESSAGE: u32 = WM_APP + 1;
 const RESTORE_MESSAGE: u32 = WM_APP + 2;
 const UPDATE_TIMER: usize = 1;
@@ -80,6 +81,7 @@ const MENU_KEEPER: usize = 42;
 const MENU_TAP: usize = 43;
 const MENU_NOTEBOOK: usize = 44;
 const MENU_UNINSTALL_HELP: usize = 45;
+const MENU_LICENSES: usize = 46;
 const MENU_LANTERN: usize = 50;
 const MENU_INVITE: usize = 60;
 const MENU_SPEED: usize = 70;
@@ -967,7 +969,7 @@ impl Tray {
         data.uCallbackMessage = TRAY_MESSAGE;
         // LoadIconW returns a shared icon, which the app must not destroy.
         data.hIcon = unsafe { LoadIconW(GetModuleHandleW(ptr::null()), 1usize as *const u16) };
-        for (output, unit) in data.szTip.iter_mut().zip("猫咪小屋".encode_utf16()) {
+        for (output, unit) in data.szTip.iter_mut().zip("柳溪村".encode_utf16()) {
             *output = unit;
         }
         unsafe { Shell_NotifyIconW(NIM_ADD, &data) };
@@ -1096,16 +1098,24 @@ fn tray_menu(hwnd: HWND) {
     append_label(menu, MF_STRING, MENU_SETTINGS, "小屋设置…");
     append_startup(menu);
     unsafe { AppendMenuW(menu, MF_SEPARATOR, 0, ptr::null()) };
-    append_label(menu, MF_STRING, MENU_QUIT, "退出猫咪小屋");
+    append_licenses(menu);
+    append_label(menu, MF_STRING, MENU_QUIT, "退出柳溪村");
     match pick_menu(hwnd, menu, point) {
         MENU_SHOW => reveal_home(hwnd),
         MENU_SETTINGS => show_menu(hwnd),
         MENU_STARTUP => toggle_startup(hwnd),
+        MENU_LICENSES => license_view::show(hwnd),
         MENU_QUIT => unsafe {
             DestroyWindow(hwnd);
         },
         _ => {}
     }
+}
+
+fn append_licenses(menu: HMENU) {
+    append_group(menu, "关于柳溪村", |about| {
+        append_label(about, MF_STRING, MENU_LICENSES, "第三方许可与鸣谢…");
+    });
 }
 
 fn show_notebook(hwnd: HWND) {
@@ -1327,7 +1337,8 @@ fn show_menu(hwnd: HWND) {
         );
         append_startup(menu);
         AppendMenuW(menu, MF_STRING, MENU_UNINSTALL_HELP, w!("卸载说明"));
-        AppendMenuW(menu, MF_STRING, MENU_QUIT, w!("退出猫咪小屋"));
+        append_licenses(menu);
+        AppendMenuW(menu, MF_STRING, MENU_QUIT, w!("退出柳溪村"));
         match pick_menu(hwnd, menu, point) {
             MENU_TREAT => with_app(|app| app.treat(hwnd)),
             MENU_TOGGLE => toggle_home(hwnd),
@@ -1337,13 +1348,14 @@ fn show_menu(hwnd: HWND) {
             MENU_KEEPER => with_app(|app| app.interact(hwnd, YardAction::CallKeeper)),
             MENU_TAP => with_app(|app| app.interact(hwnd, YardAction::TapWindow)),
             MENU_NOTEBOOK => show_notebook(hwnd),
+            MENU_LICENSES => license_view::show(hwnd),
             MENU_UNINSTALL_HELP => {
                 MessageBoxW(
                     hwnd,
                     w!(
-                        "先取消勾选「登录 Windows 时启动」，再点「退出猫咪小屋」，然后删除「猫咪小屋.exe」。\n\n同目录的 cat-home-settings.txt 和 cat-home-position.txt 是庭院存档和窗口位置。可保留它们，日后继续使用。"
+                        "先取消勾选「登录 Windows 时启动」，再点「退出柳溪村」，然后删除 EXE。\n\n同目录的 cat-home-settings.txt 和 cat-home-position.txt 是旧版庭院存档和窗口位置。可保留它们，日后继续使用。"
                     ),
-                    w!("卸载猫咪小屋"),
+                    w!("卸载柳溪村"),
                     MB_OK | MB_ICONINFORMATION,
                 );
             }
@@ -1603,7 +1615,7 @@ fn run() -> io::Result<()> {
         let hwnd = CreateWindowExW(
             WS_EX_LAYERED | if preview { WS_EX_APPWINDOW } else { WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE },
             window_class,
-            if preview { w!("猫咪小屋 · 验收预览") } else { TITLE },
+            if preview { w!("柳溪村 · 验收预览") } else { TITLE },
             WS_POPUP,
             position.x,
             position.y,
@@ -1675,7 +1687,7 @@ fn run() -> io::Result<()> {
 fn main() {
     if let Err(error) = run() {
         eprintln!("{error}");
-        let message:Vec<u16>=format!("猫咪小屋未能启动或保存。原有存档已保留。\n\n{error}").encode_utf16().chain(Some(0)).collect();
+        let message:Vec<u16>=format!("柳溪村未能启动或保存。原有存档已保留。\n\n{error}").encode_utf16().chain(Some(0)).collect();
         unsafe {MessageBoxW(ptr::null_mut(),message.as_ptr(),TITLE,MB_OK|MB_ICONWARNING);}
         std::process::exit(1);
     }
